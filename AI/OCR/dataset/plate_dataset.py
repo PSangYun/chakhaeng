@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
 
 """
-@Time    : 2025/4/26 15:43
-@File    : plate_dataset.py
-@Author  : zj
+@Time : 2025/4/26 15:43
+@File : plate_dataset.py
+@Author : zj
 @Description: 
 한국 차 번호판 데이터셋을 위한 데이터 로더
 """
 
 import os
-import re
-
-from PIL import Image
+import random
 from pathlib import Path
+import json
+import cv2
+import numpy as np
+import torch
 from torch.utils.data import Dataset
+from torchvision import transforms
 
 RANK = int(os.getenv('RANK', -1))
 
@@ -21,9 +24,10 @@ DELIMITER = '_'
 
 # 한국 번호판에 사용되는 문자 집합 정의
 # 한글 자모는 초성/중성/종성 조합이 아닌, 완성된 글자 형태를 사용해야 합니다.
-KOREAN_CHARS = "가나다라마바사아자차카타파하거너더러머버서어저허고노도로모보소오조호구누두루무부수우주후"
-NUMBERS_AND_ALPHAS = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"
-PLATE_CHARS = KOREAN_CHARS + NUMBERS_AND_ALPHAS
+KOREAN_CHARS = "가나다라마거너더러머서어저고노도로모보소오조구누두루무부수우주아바사자허하호배"
+REGION_CHARS = "경기충북남전천울금영용산인평미추홀"
+NUMBERS = "0123456789"
+PLATE_CHARS = KOREAN_CHARS + REGION_CHARS + NUMBERS
 
 PLATE_DICT = {char: i for i, char in enumerate(PLATE_CHARS)}
 
@@ -51,7 +55,7 @@ def is_plate_right(plate_name):
     return True
 
 
-def create_plate_label(img_list):
+def create_plate_label(img_list, label_dir):
     """
     이미지 경로로부터 번호판 레이블을 추출하고 데이터 리스트를 생성
     """
@@ -64,7 +68,25 @@ def create_plate_label(img_list):
         # 파일명 형식: "번호판-일련번호.jpg" 또는 "번호판_일련번호.jpg"
         # 예시: 25가1234_1.jpg
         img_name = os.path.splitext(os.path.basename(img_path))[0]
-        label_name = img_name.split(DELIMITER)[0]
+        #label_filename = img_name.replace(".jpg", ".json")
+        label_filename = img_name + ".json"
+        label_path = os.path.join(label_dir, label_filename)
+
+        # JSON 파일이 존재하는지 확인
+        if not os.path.isfile(label_path):
+            print(f"경고: 레이블 파일이 없습니다: {label_path}")
+            continue
+
+        try:
+            with open(label_path, 'r', encoding='utf-8') as f:
+                label_data = json.load(f)
+                label_name = label_data.get('value', None)
+        except (json.JSONDecodeError, FileNotFoundError) as e:
+            print(f"경고: 레이블 파일을 읽는 중 오류 발생 ({e}): {label_path}")
+            continue
+
+        if not label_name:
+            continue
         
         # 유효성 검사
         # 한국 번호판은 보통 7~8자이므로, 길이를 기준으로 필터링할 수 있습니다.
@@ -90,34 +112,67 @@ class PlateDataset(Dataset):
     """
     한국 차 번호판 데이터셋 클래스
     """
-    def __init__(self, data_root, is_train=True):
+    def __init__(self, data_root, is_train=True, input_shape=(160, 48)):
         self.data_root = data_root
         self.is_train = is_train
+        self.input_shape = input_shape
 
-        dir_name = '자동차 차종-연식-번호판 인식용 영상\\Training' if is_train else '자동차 차종-연식-번호판 인식용 영상\\Validation'
-        data_dir = os.path.join(data_root, dir_name)
+        # 새로운 데이터셋 구조에 맞게 경로 설정
+        # 이미지와 레이블 디렉토리 경로 설정
+        if is_train:
+            image_dir = os.path.join(data_root, 'plate_data', 'Training', 'images')
+            label_dir = os.path.join(data_root, 'plate_data', 'Training', 'labels')
+        else:
+            image_dir = os.path.join(data_root, 'plate_data', 'Validation', 'images')
+            label_dir = os.path.join(data_root, 'plate_data', 'Validation', 'labels')
         
-        assert os.path.isdir(data_dir), f"경로를 찾을 수 없습니다: {data_dir}"
-        
-        img_list = load_data(data_dir, pattern="*.jpg")
+        assert os.path.isdir(image_dir), f"이미지 경로를 찾을 수 없습니다: {image_dir}"
+        assert os.path.isdir(label_dir), f"레이블 경로를 찾을 수 없습니다: {label_dir}"
+
+        img_list = load_data(image_dir, pattern="*.jpg")
         assert len(img_list) > 0, "데이터셋에서 이미지를 찾을 수 없습니다."
         
-        self.data_list, self.label_dict = create_plate_label(img_list)
+        self.data_list, self.label_dict = create_plate_label(img_list, label_dir)
         if RANK in {-1, 0}:
             print(f"로드된 {'훈련' if is_train else '테스트'} 데이터: {len(self.data_list)}개")
 
         self.dataset_len = len(self.data_list)
+        self.transform = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomRotation(15, fill=0),
+            transforms.RandomAffine(degrees=5, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        ])
 
     def __getitem__(self, index):
         assert index < self.dataset_len
 
         img_path, label_name = self.data_list[index]
-        image = Image.open(img_path)
+        #image = cv2.imread(img_path)
+        image = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+        
+        if image.shape[-1] == 4:
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
 
-        return image, label_name, img_path
+        if self.is_train and random.random() > 0.5:
+            image = self.transform(image)
+            image = np.array(image, dtype=np.uint8)
+        image = cv2.resize(image, self.input_shape)
+        
+        data = torch.from_numpy(image).float() / 255.
+        # HWC -> CHW
+        data = data.permute(2, 0, 1)
+        return data, label_name#, img_path
 
     def __len__(self):
         return self.dataset_len
+    
+    def convert(self, targets):
+        labels = []
+        for label_name in targets:
+            label = self.label_dict[label_name]
+            labels.append(torch.IntTensor(label))
+        return labels
 
 
 if __name__ == '__main__':

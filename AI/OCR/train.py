@@ -31,15 +31,14 @@ import torch.optim as optim
 import torch.distributed as dist
 from torch.utils.data import DataLoader, distributed
 
-from utils.model.crnn import CRNN
-from utils.model.lprnet import LPRNet
+from model.crnn import CRNN
 from utils.loss import CTCLoss
 from utils.evaluator import Evaluator
-from utils.torchutil import select_device
-from utils.ddputil import smart_DDP
 from utils.logger import LOGGER
+from utils.torchutil import select_device
 from utils.general import init_seeds
-from utils.dataset.plate import PlateDataset, PLATE_CHARS
+from dataset.plate_dataset import PlateDataset, PLATE_CHARS
+from contextlib import nullcontext
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -48,14 +47,15 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 def parse_opt():
     parser = argparse.ArgumentParser(description='Training')
-    parser.add_argument('data', metavar='DIR', type=str, help='path to chinese_license_plate dataset')
-    parser.add_argument('output', metavar='OUTPUT', type=str, help='path to output')
+    parser.add_argument('--data', type=str, default="dataset", help='path to license_plate dataset')
+    parser.add_argument('--output', default="output", type=str, help='path to output')
 
     parser.add_argument('--batch-size', type=int, default=512, help='total batch size for all GPUs, -1 for autobatch')
-    parser.add_argument('--use-lstm', action='store_true', help='use nn.LSTM instead of nn.GRU')
-    parser.add_argument('--not-tiny', action='store_true', help='use this flag to specify non-tiny mode')
+    parser.add_argument('--lr', type=float, default=0.001, help='total batch size for all GPUs, -1 for autobatch')
+    
+    parser.add_argument('--use-lstm', type=bool, default=False, help='use nn.LSTM instead of nn.GRU')
+    parser.add_argument('--not-tiny', type=bool, default=False, help='use this flag to specify non-tiny mode')
 
-    parser.add_argument("--use-lprnet", action='store_true', help='use LPRNet instead of CRNN')
     parser.add_argument("--use-origin-block", action='store_true', help='use origin small_basic_block impl')
     parser.add_argument("--add-stnet", action='store_true', help='add STNet for training and evaluation')
 
@@ -78,36 +78,25 @@ def adjust_learning_rate(lr, warmup_epoch, optimizer, epoch: int, step: int, len
 
 
 def train(opt, device):
-    data_root, batch_size, not_tiny, use_lstm, use_lprnet, use_origin_block, add_stnet, output = \
-        opt.data, opt.batch_size, opt.not_tiny, opt.use_lstm, opt.use_lprnet, opt.use_origin_block, opt.add_stnet, opt.output
+    data_root, batch_size, lr, not_tiny, use_lstm, use_origin_block, add_stnet, output = \
+        opt.data, opt.batch_size, opt.lr, opt.not_tiny, opt.use_lstm, opt.use_origin_block, opt.add_stnet, opt.output
     if RANK in {-1, 0} and not os.path.exists(output):
         os.makedirs(output)
 
     LOGGER.info("=> Create Model")
-    if use_lprnet:
-        # (W, H)
-        input_shape = (94, 24)
-        model = LPRNet(in_channel=3, num_classes=len(PLATE_CHARS), use_origin_block=use_origin_block,
-                       add_stnet=add_stnet).to(device)
-        if use_origin_block:
-            model_prefix = 'lprnet'
-        else:
-            model_prefix = "lprnet_plus"
-        if add_stnet:
-            model_prefix += '_stnet'
+    
+    input_shape = (168, 48)
+    model = CRNN(in_channel=3, num_classes=len(PLATE_CHARS), cnn_input_height=input_shape[1], is_tiny=not not_tiny,
+                    use_gru=not use_lstm).to(device)
+    if not_tiny:
+        model_prefix = 'crnn'
     else:
-        input_shape = (168, 48)
-        model = CRNN(in_channel=3, num_classes=len(PLATE_CHARS), cnn_input_height=input_shape[1], is_tiny=not not_tiny,
-                     use_gru=not use_lstm).to(device)
-        if not_tiny:
-            model_prefix = 'crnn'
-        else:
-            model_prefix = "crnn_tiny"
+        model_prefix = "crnn_tiny"
 
     blank_label = 0
     criterion = CTCLoss(blank_label=blank_label).to(device)
 
-    learn_rate = 0.001 * WORLD_SIZE
+    learn_rate = lr * WORLD_SIZE
     weight_decay = 1e-5
     LOGGER.info(f"Final learning rate: {learn_rate}, weight decay: {weight_decay}")
     optimizer = optim.Adam(model.parameters(), lr=learn_rate, weight_decay=weight_decay)
@@ -134,12 +123,12 @@ def train(opt, device):
     LOGGER.info("=> Start training")
     t0 = time.time()
     amp = True
-    scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    scaler = torch.amp.GradScaler(enabled=amp)
 
     # DDP mode
-    cuda = device.type != 'cpu'
-    if cuda and RANK != -1:
-        model = smart_DDP(model)
+    device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
+    autocast_context = torch.amp.autocast(device_type) if amp else nullcontext()
+
 
     epochs = 100
     start_epoch = 1
@@ -161,7 +150,7 @@ def train(opt, device):
             target_lengths = torch.IntTensor([len(t) for t in targets]).to(device)
             targets = torch.concat(targets).to(device)
 
-            with torch.cuda.amp.autocast(amp):
+            with autocast_context:
                 outputs = model(images.to(device))
                 loss = criterion(outputs, targets, target_lengths)
             scaler.scale(loss).backward()
