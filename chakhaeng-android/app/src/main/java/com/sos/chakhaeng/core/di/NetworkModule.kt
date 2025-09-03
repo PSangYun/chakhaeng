@@ -2,11 +2,13 @@ package com.sos.chakhaeng.core.di
 
 import com.sos.chakhaeng.BuildConfig
 import com.sos.chakhaeng.core.data.remote.AuthInterceptor
+import com.sos.chakhaeng.core.data.remote.TokenAuthenticator
 import com.sos.chakhaeng.core.session.SessionManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -20,7 +22,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private val baseUrl = BuildConfig.BASE_URL.toHttpUrl()
+    @Provides
+    @Singleton
+    fun proivdeBaseUrl(): HttpUrl = BuildConfig.BASE_URL.toHttpUrl()
+
     @Provides
     @Singleton
     @Named("TEST")
@@ -40,6 +45,7 @@ object NetworkModule {
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
+            redactHeader("Authorization")
         }
 
     @Provides
@@ -47,25 +53,51 @@ object NetworkModule {
     fun provideAuthInterceptor(sessionManager: SessionManager): AuthInterceptor =
         AuthInterceptor(sessionManager)
 
+    // -------- No-Auth OkHttp (로그인/리프레시 전용) --------
+    @Provides @Singleton @Named("noauth")
+    fun provideNoAuthOkHttp(
+        logging: HttpLoggingInterceptor
+    ): OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .writeTimeout(20, TimeUnit.SECONDS)
+        .addInterceptor(logging)           // 순서 상관 X
+        .build()
 
 
-    @Provides @Singleton
+    @Provides @Singleton @Named("auth")
     fun provideOkHttpClient(
         logging: HttpLoggingInterceptor,
-        auth: AuthInterceptor
+        auth: AuthInterceptor,
+        sessionManager: SessionManager
     ): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(logging)
         .addInterceptor(auth)
+        .authenticator(TokenAuthenticator(sessionManager))
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
         .writeTimeout(20, TimeUnit.SECONDS)
         .build()
 
+    @Provides @Singleton @Named("noauth")
+    fun provideNoAuthRetrofit(
+        @Named("noauth") okHttp: OkHttpClient,
+        baseUrl: HttpUrl
+    ): Retrofit = Retrofit.Builder()
+        .baseUrl(baseUrl)
+        .client(okHttp)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
     @Provides
     @Singleton
-    fun provideRetrofit(@Named("TEST") okHttpClient: OkHttpClient): Retrofit {
+    @Named("auth")
+    fun provideRetrofit(
+        @Named("auth") okHttpClient: OkHttpClient,
+        baseUrl: HttpUrl
+    ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("${baseUrl}")
+            .baseUrl(baseUrl)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

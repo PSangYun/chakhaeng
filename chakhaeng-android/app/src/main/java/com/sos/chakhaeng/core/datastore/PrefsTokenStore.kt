@@ -48,17 +48,26 @@ class PrefsTokenStore @Inject constructor(
         User(id, email, name, pic)
     }
 
-    override suspend fun save(token: TokenBundle, user: User) {
+    override suspend fun save(token: TokenBundle, user: User?) {
         dataStore.edit { p ->
+            // 토큰 저장
             p[Keys.ACCESS] = token.accessToken
             p[Keys.ACCESS_EXP] = token.accessTokenExpiresAt
             token.refreshToken?.let { p[Keys.REFRESH] = it } ?: run { p.remove(Keys.REFRESH) }
             token.refreshTokenExpiresAt?.let { p[Keys.REFRESH_EXP] = it } ?: run { p.remove(Keys.REFRESH_EXP) }
 
-            p[Keys.USER_ID] = user.id
-            p[Keys.USER_EMAIL] = user.email
-            p[Keys.USER_NAME] = user.name
-            p[Keys.USER_PIC] = user.pictureUrl
+            if (user != null) {
+                p[Keys.USER_ID] = user.id
+                p[Keys.USER_EMAIL] = user.email
+                p[Keys.USER_NAME] = user.name
+                p[Keys.USER_PIC] = user.pictureUrl
+            } else {
+                p.remove(Keys.USER_ID)
+                p.remove(Keys.USER_EMAIL)
+                p.remove(Keys.USER_NAME)
+                p.remove(Keys.USER_PIC)
+            }
+
         }
     }
 

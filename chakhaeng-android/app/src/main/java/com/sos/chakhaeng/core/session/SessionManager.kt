@@ -2,7 +2,8 @@
 package com.sos.chakhaeng.core.session
 
 import com.sos.chakhaeng.core.data.model.auth.SignInData
-import com.sos.chakhaeng.core.data.mapper.toDomain
+import com.sos.chakhaeng.core.data.model.request.RefreshTokenRequest
+import com.sos.chakhaeng.core.data.service.AuthService
 import com.sos.chakhaeng.core.datastore.TokenStore
 import com.sos.chakhaeng.core.datastore.di.GoogleAuthManager // 고정 파일 (패키지 경로는 프로젝트에 맞춰 수정)
 import com.sos.chakhaeng.core.domain.model.TokenBundle
@@ -12,15 +13,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import javax.inject.Named
 import kotlin.math.max
 
 class SessionManager @Inject constructor(
     private val tokenStore: TokenStore,
-    private val googleAuthManager: GoogleAuthManager
+    private val googleAuthManager: GoogleAuthManager,
+    @Named("noauth") private val authService: AuthService,
 ) {
 
     private val scope = CoroutineScope(Dispatchers.IO + Job())
+    private val refreshMutex = Mutex()
+    private val skewMs = 60_000L
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
@@ -35,7 +42,11 @@ class SessionManager @Inject constructor(
                 .collect { (t, u) ->
                     cachedAccessToken = t?.accessToken
                     accessTokenExpiresAt = t?.accessTokenExpiresAt ?: 0L
-                    _authState.value = if (t != null && u != null && !isAccessExpired(System.currentTimeMillis())) {
+
+                    val now = System.currentTimeMillis()
+                    val tokenValid = t != null && !isAccessExpired(now)
+
+                    _authState.value = if (tokenValid) {
                         AuthState.Authenticated(u)
                     } else {
                         AuthState.Unauthenticated
@@ -45,20 +56,86 @@ class SessionManager @Inject constructor(
     }
 
     private fun isAccessExpired(now: Long): Boolean = now >= accessTokenExpiresAt
+    private fun isAccessExpiringSoon(now: Long): Boolean = now + 10_000L >= accessTokenExpiresAt // 10초 이내 만료면 임박
+
+    /** 요청 직전에 호출: 만료 임박 시 선제 갱신 */
+    suspend fun refreshIfNeeded(now: Long = System.currentTimeMillis()): Boolean {
+        val (t, _) = tokenStore.snapshot()
+        if (t == null) return false
+        if (!isAccessExpiringSoon(now)) return true
+        return doRefreshLocked()
+    }
+
+    /** 401에서 호출: 한 번만 강제 갱신 */
+    suspend fun forceRefresh(): Boolean = doRefreshLocked()
+
+    private suspend fun doRefreshLocked(): Boolean = refreshMutex.withLock {
+        // 스냅샷 재확인 (동시성 고려)
+        val (current, _) = tokenStore.snapshot()
+        val refresh = current?.refreshToken ?: return false
+
+        // 리프레시 만료 체크
+        current.refreshTokenExpiresAt?.let { if (it <= System.currentTimeMillis()) {
+            // 리프레시도 만료 → 완전 로그아웃
+            tokenStore.clear()
+            _authState.value = AuthState.Unauthenticated
+            return false
+        } }
+
+        return runCatching {
+            val resp = authService.refreshToken(RefreshTokenRequest(refresh)).data ?: return@runCatching false
+            val now = System.currentTimeMillis()
+            fun toAt(sec: Long?): Long? {
+                if (sec == null) return null
+                val ms = sec * 1000L
+                val safe = if (ms > skewMs) ms - skewMs else 0L
+                return now + safe
+            }
+            val newAccessAt  = toAt(resp.accessTokenExpiresIn) ?: now
+            val newRefreshAt = toAt(resp.refreshTokenExpiresIn) ?: current?.refreshTokenExpiresAt
+            val newAccess    = resp.accessToken
+            val newRefresh   = resp.refreshToken ?: current?.refreshToken
+
+            tokenStore.save(
+                TokenBundle(
+                    accessToken = newAccess,
+                    accessTokenExpiresAt = newAccessAt,
+                    refreshToken = newRefresh,
+                    refreshTokenExpiresAt = newRefreshAt
+                ),
+                user = null // 프로필은 나중에 /users/me
+            )
+            cachedAccessToken = resp.accessToken
+            accessTokenExpiresAt = newAccessAt
+            true
+        }.getOrElse { e ->
+            // 갱신 실패시 깔끔히 끊고 재로그인 유도
+            tokenStore.clear()
+            _authState.value = AuthState.Unauthenticated
+            false
+        }
+    }
 
     suspend fun onLogin(signInData: SignInData, nowMs: Long = System.currentTimeMillis()) {
-        val skew = 60_000L // 60s 버퍼
-        val accessAt = nowMs + max(0, signInData.accessTokenExpiresIn * 1000L) - skew
-        val refreshAt = signInData.refreshTokenExpiresIn?.let { nowMs + max(0, it * 1000L) - skew }
+        fun toExpiresAt(inSeconds: Long?): Long? {
+            if (inSeconds == null) return null
+            val totalMs = inSeconds * 1000L
+            val safeMs = if (totalMs > skewMs) totalMs - skewMs else 0L
+            return nowMs + safeMs
+        }
 
-        val user: User = signInData.user.toDomain()
+        val accessAt  = toExpiresAt(signInData.accessTokenExpiresIn)
+        val refreshAt = toExpiresAt(signInData.refreshTokenExpiresIn)
+
         val bundle = TokenBundle(
             accessToken = signInData.accessToken,
-            accessTokenExpiresAt = accessAt,
+            accessTokenExpiresAt = accessAt ?: nowMs,
             refreshToken = signInData.refreshToken,
             refreshTokenExpiresAt = refreshAt
         )
-        tokenStore.save(bundle, user)
+
+        // 지금은 프로필 없음: TokenStore.save(token, user = null)
+        tokenStore.save(bundle, null)
     }
 
     suspend fun logout() {

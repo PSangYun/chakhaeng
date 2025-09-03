@@ -14,8 +14,16 @@ import com.sos.chakhaeng.presentation.ui.navigation.ChakhaengNavigation
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.sos.chakhaeng.core.session.AppEntryViewModel
+import com.sos.chakhaeng.core.session.AuthState
+import com.sos.chakhaeng.presentation.ui.navigation.Routes
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -33,13 +41,45 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ChakhaengApp() {
     val navController = rememberNavController()
+
+    val vm: AppEntryViewModel = hiltViewModel()
+    val authState by vm.authState.collectAsState()
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    Log.d("TAG", "ChakhaengApp: ${currentRoute}")
+
+    val showBottomBar by remember(currentRoute) {
+        derivedStateOf {
+            currentRoute != Routes.Login.route
+        }
+    }
+
+    LaunchedEffect(authState) {
+        when(authState) {
+            is AuthState.Authenticated -> {
+                if (navController.currentDestination?.route != Routes.Home.route) {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
+            }
+            AuthState.Unauthenticated -> {
+                if (navController.currentDestination?.route != Routes.Login.route) {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
+    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            BottomNavigationBar(navController = navController)
+            if (showBottomBar) {
+                BottomNavigationBar(navController = navController)
+            }
         }
     ) { paddingValues ->
         ChakhaengNavigation(

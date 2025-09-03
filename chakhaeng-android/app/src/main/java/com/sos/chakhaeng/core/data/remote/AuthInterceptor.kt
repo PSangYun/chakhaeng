@@ -4,6 +4,8 @@ package com.sos.chakhaeng.core.data.remote
 import okhttp3.Interceptor
 import okhttp3.Response
 import com.sos.chakhaeng.core.session.SessionManager
+import kotlinx.coroutines.runBlocking
+import okhttp3.Request
 
 class AuthInterceptor(
     private val sessionManager: SessionManager
@@ -12,10 +14,12 @@ class AuthInterceptor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val req = chain.request()
 
-        // 로그인 엔드포인트는 제외
-        val path = req.url.encodedPath
-        if (path.contains("/auth/google")) {
+        if (shouldSkipAuth(req)) {
             return chain.proceed(req)
+        }
+
+        runBlocking {
+            sessionManager.refreshIfNeeded()
         }
 
         val token = sessionManager.getFreshAccessTokenOrNull()
@@ -27,5 +31,14 @@ class AuthInterceptor(
             req // 토큰 없으면 그대로 (서버가 401 응답할 수 있음)
         }
         return chain.proceed(newReq)
+    }
+
+    private fun shouldSkipAuth(req: Request): Boolean {
+        val path = req.url.encodedPath
+        // 필요시 public 경로도 여기에 추가
+        return path.startsWith("/auth/")
+                || path.contains("/auth/google")
+                || path.contains("/auth/refresh")
+                || path.contains("/auth/logout")
     }
 }

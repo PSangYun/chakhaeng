@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.core.di
 
+import com.sos.chakhaeng.core.data.service.AuthService
 import com.sos.chakhaeng.core.datastore.TokenStore
 import com.sos.chakhaeng.core.datastore.di.GoogleAuthManager
 import com.sos.chakhaeng.core.session.SessionManager
@@ -7,6 +8,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -17,6 +19,7 @@ object SessionModule {
     @Singleton
     fun provideSessionManager(
         tokenStore: TokenStore,
-        googleAuthManager: GoogleAuthManager
-    ): SessionManager = SessionManager(tokenStore, googleAuthManager)
+        googleAuthManager: GoogleAuthManager,
+        @Named("noauth") authService: AuthService
+    ): SessionManager = SessionManager(tokenStore, googleAuthManager, authService)
 }
