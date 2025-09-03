@@ -1,6 +1,7 @@
 package com.sos.chakhaeng.presentation.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,8 @@ import com.sos.chakhaeng.presentation.ui.navigation.ChakhaengNavigation
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.getValue
+import androidx.navigation.compose.currentBackStackEntryAsState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -30,7 +33,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ChakhaengApp() {
     val navController = rememberNavController()
-
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    Log.d("TAG", "ChakhaengApp: ${currentRoute}")
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {

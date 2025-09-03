@@ -10,6 +10,7 @@ import com.sos.chakhaeng.presentation.ui.screen.report.ReportScreen
 import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsScreen
 import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileScreen
 import androidx.compose.ui.Modifier
+import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
 
 @Composable
 fun ChakhaengNavigation(
@@ -18,9 +19,12 @@ fun ChakhaengNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.Home.route,
+        startDestination = Routes.Login.route,
         modifier = modifier
     ) {
+        composable(Routes.Login.route) {
+            LoginScreen()
+        }
         composable(Routes.Home.route) {
             // Hilt가 자동으로 ViewModel을 주입합니다
             HomeScreen()
