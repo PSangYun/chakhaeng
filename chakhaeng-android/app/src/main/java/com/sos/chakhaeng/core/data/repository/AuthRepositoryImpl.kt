@@ -13,11 +13,11 @@ class AuthRepositoryImpl @Inject constructor(
     private val remote: AuthRemoteDataSource,
     private val session: SessionManager
 ): AuthRepository {
-    override suspend fun signInWithGoogle(idToken: String): Result<User>  = runCatching {
+    override suspend fun signInWithGoogle(idToken: String): Result<Boolean>  = runCatching {
         val res = remote.loginWithGoogle(idToken)
         require(res.success && res.data != null) { res.message ?: "Login failed" }
 
         session.onLogin(res.data)               // 토큰/유저 저장 + 상태 전파
-        res.data.user.toDomain()                // User 반환
+        res.data.firstLogin            // User 반환
     }
 }

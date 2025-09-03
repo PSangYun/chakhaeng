@@ -6,5 +6,5 @@ import com.sos.chakhaeng.core.domain.model.User
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
-    suspend fun signInWithGoogle(idToken: String): Result<User>
+    suspend fun signInWithGoogle(idToken: String): Result<Boolean>
 }

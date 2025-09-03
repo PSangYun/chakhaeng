@@ -23,7 +23,12 @@ fun ChakhaengNavigation(
         modifier = modifier
     ) {
         composable(Routes.Login.route) {
-            LoginScreen()
+            LoginScreen(
+                navigateToHome = { navController.navigate(Routes.Home.route) {
+                    popUpTo(0)
+                    launchSingleTop = true
+                } }
+            )
         }
         composable(Routes.Home.route) {
             // Hilt가 자동으로 ViewModel을 주입합니다

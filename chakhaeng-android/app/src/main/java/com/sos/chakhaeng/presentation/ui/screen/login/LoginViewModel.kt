@@ -32,18 +32,21 @@ class LoginViewModel @Inject constructor(
                 _uiState.value = LoginUiState.Error("Google 인증이 취소되었거나 계정이 없습니다.")
                 return@launch
             }
-            Log.d("test1234","성공")
             val result = googleLoginUseCase(idToken)
             result
                 .onSuccess {
                     user ->
-                    _uiState.value = LoginUiState.Success(user)
-                    Log.d("test1234","성공1")
+                    _uiState.value = LoginUiState.Success
                 }
                 .onFailure { e ->
                     _uiState.value = LoginUiState.Error(e.message ?: "로그인 실패")
-                    Log.d("test1234", e.toString())
                 }
+        }
+    }
+
+    fun consumeSuccess() {
+        if (_uiState.value is LoginUiState.Success) {
+            _uiState.value = LoginUiState.Idle
         }
     }
 }
