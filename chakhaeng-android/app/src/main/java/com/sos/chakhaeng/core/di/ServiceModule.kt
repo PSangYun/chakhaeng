@@ -1,7 +1,7 @@
 package com.sos.chakhaeng.core.di
 
-import com.sos.chakhaeng.core.data.service.AuthService
-import com.sos.chakhaeng.core.data.service.UserService
+import com.sos.chakhaeng.data.api.AuthService
+import com.sos.chakhaeng.data.api.UserService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

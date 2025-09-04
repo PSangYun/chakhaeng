@@ -10,12 +10,14 @@ import com.sos.chakhaeng.presentation.ui.screen.report.ReportScreen
 import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsScreen
 import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileScreen
 import androidx.compose.ui.Modifier
+import com.sos.chakhaeng.datastore.di.GoogleAuthManager
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
 
 @Composable
 fun ChakhaengNavigation(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    googleAuthManager: GoogleAuthManager
 ) {
     NavHost(
         navController = navController,
@@ -27,7 +29,8 @@ fun ChakhaengNavigation(
                 navigateToHome = { navController.navigate(Routes.Home.route) {
                     popUpTo(0)
                     launchSingleTop = true
-                } }
+                } },
+                googleAuthManager = googleAuthManager
             )
         }
         composable(Routes.Home.route) {

@@ -1,11 +1,10 @@
 package com.sos.chakhaeng.presentation.ui.screen.login
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sos.chakhaeng.core.datastore.di.GoogleAuthManager
-import com.sos.chakhaeng.core.domain.usecase.auth.GoogleLoginUseCase
+import com.sos.chakhaeng.datastore.di.GoogleAuthManager
+import com.sos.chakhaeng.domain.usecase.auth.GoogleLoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,14 +23,13 @@ class LoginViewModel @Inject constructor(
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
 
-    fun login() {
+    fun googleLogin(idToken: String?) {
         viewModelScope.launch {
-            _uiState.value = LoginUiState.Loading
-            val idToken = googleAuthManager.signInWithGoogle()
             if (idToken.isNullOrBlank()) {
                 _uiState.value = LoginUiState.Error("Google 인증이 취소되었거나 계정이 없습니다.")
                 return@launch
             }
+            _uiState.value = LoginUiState.Loading
             val result = googleLoginUseCase(idToken)
             result
                 .onSuccess {

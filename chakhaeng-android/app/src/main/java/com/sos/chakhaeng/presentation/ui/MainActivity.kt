@@ -1,7 +1,6 @@
 package com.sos.chakhaeng.presentation.ui
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,17 +20,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.sos.chakhaeng.core.session.AppEntryViewModel
-import com.sos.chakhaeng.core.session.AuthState
+import com.sos.chakhaeng.datastore.di.GoogleAuthManager
+import com.sos.chakhaeng.session.AppEntryViewModel
+import com.sos.chakhaeng.session.AuthState
 import com.sos.chakhaeng.presentation.ui.navigation.Routes
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var googleAuthManager: GoogleAuthManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ChakHaengTheme {
-                ChakhaengApp()
+                ChakhaengApp(googleAuthManager)
             }
         }
     }
@@ -39,7 +43,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChakhaengApp() {
+fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
     val navController = rememberNavController()
 
     val vm: AppEntryViewModel = hiltViewModel()
@@ -53,7 +57,6 @@ fun ChakhaengApp() {
             currentRoute != Routes.Login.route
         }
     }
-
     LaunchedEffect(authState) {
         when(authState) {
             is AuthState.Authenticated -> {
@@ -84,7 +87,8 @@ fun ChakhaengApp() {
     ) { paddingValues ->
         ChakhaengNavigation(
             navController = navController,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
+            googleAuthManager = googleAuthManager
         )
     }
 }

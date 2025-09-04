@@ -8,20 +8,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sos.chakhaeng.datastore.di.GoogleAuthManager
 import com.sos.chakhaeng.presentation.ui.theme.ChakHaengTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     navigateToHome: () -> Unit = {},
-    viewModel: LoginViewModel = hiltViewModel()
+    viewModel: LoginViewModel = hiltViewModel(),
+    googleAuthManager: GoogleAuthManager
 ) {
     val context = LocalContext.current
     val state = viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(state) {
         if (state.value is LoginUiState.Success) {
@@ -35,7 +40,12 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = {viewModel.login() },
+            onClick = {
+                scope.launch {
+                    val idToken = googleAuthManager.signInWithGoogle()
+                    viewModel.googleLogin(idToken)
+                }
+                      },
             modifier = Modifier.fillMaxWidth()) {
             Text(
                 when (state) {
@@ -51,6 +61,6 @@ fun LoginScreen(
 @Composable
 fun LoginScreenPriview() {
     ChakHaengTheme {
-        LoginScreen()
+        LoginScreen(googleAuthManager = GoogleAuthManager(LocalContext.current))
     }
 }
