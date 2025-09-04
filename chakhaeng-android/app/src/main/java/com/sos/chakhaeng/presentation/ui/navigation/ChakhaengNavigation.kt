@@ -17,11 +17,12 @@ import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
 fun ChakhaengNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    googleAuthManager: GoogleAuthManager
+    googleAuthManager: GoogleAuthManager,
+    startDestination: String
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.Login.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         composable(Routes.Login.route) {
