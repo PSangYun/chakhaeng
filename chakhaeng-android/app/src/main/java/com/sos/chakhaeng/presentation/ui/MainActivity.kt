@@ -3,6 +3,7 @@ package com.sos.chakhaeng.presentation.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             ChakHaengTheme {
                 ChakhaengApp(googleAuthManager)
@@ -91,9 +93,10 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
     ) { paddingValues ->
         ChakhaengNavigation(
             navController = navController,
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier,
             googleAuthManager = googleAuthManager,
-            startDestination = startDestination
+            startDestination = startDestination,
+            paddingValues = paddingValues
         )
     }
 

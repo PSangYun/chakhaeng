@@ -64,7 +64,6 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
     googleAuthManager: GoogleAuthManager
 ) {
-    val context = LocalContext.current
     val state = viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
 
@@ -112,7 +111,8 @@ fun LoginScreen(
                         viewModel.googleLogin(idToken)
                     }
                 })
-                TermsText(Modifier.padding(bottom = 24.dp))
+//                TermsText(Modifier.padding(bottom = 24.dp))
+                Spacer(Modifier.height(128.dp))
             }
         }
     }
@@ -259,29 +259,29 @@ fun NaverSignInButton(
 }
 
 /* 약관 문구 */
-@Composable
-fun TermsText(
-    modifier: Modifier = Modifier,
-    onClickTerms: () -> Unit = {},
-    onClickPrivacy: () -> Unit = {}
-) {
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = "계속 진행하시면",
-            color = Color(0xFF98A2B3),
-            fontSize = 13.sp
-        )
-        Spacer(Modifier.height(6.dp))
-        // 간단 버전: 클릭 콜백 분리 필요하면 AnnotatedString로 확장 가능
-        Text(
-            text = "이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다.",
-            color = Color(0xFF4C42FF),
-            fontSize = 13.sp,
-            textAlign = TextAlign.Center
-        )
-    }
-}
+//@Composable
+//fun TermsText(
+//    modifier: Modifier = Modifier,
+//    onClickTerms: () -> Unit = {},
+//    onClickPrivacy: () -> Unit = {}
+//) {
+//    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+//        Spacer(Modifier.height(16.dp))
+//        Text(
+//            text = "계속 진행하시면",
+//            color = Color(0xFF98A2B3),
+//            fontSize = 13.sp
+//        )
+//        Spacer(Modifier.height(6.dp))
+//        // 간단 버전: 클릭 콜백 분리 필요하면 AnnotatedString로 확장 가능
+//        Text(
+//            text = "이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다.",
+//            color = Color(0xFF4C42FF),
+//            fontSize = 13.sp,
+//            textAlign = TextAlign.Center
+//        )
+//    }
+//}
 
 @Preview(showBackground = true)
 @Composable
