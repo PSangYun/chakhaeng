@@ -3,6 +3,7 @@ package com.sos.chakhaeng.presentation.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             ChakHaengTheme {
                 ChakhaengApp(googleAuthManager)
@@ -49,6 +51,10 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
     val vm: AppEntryViewModel = hiltViewModel()
     val authState by vm.authState.collectAsState()
 
+    val startDestination = remember(authState) {
+        if (authState is AuthState.Authenticated) Routes.Home.route else Routes.Login.route
+    }
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -57,26 +63,26 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
             currentRoute != Routes.Login.route
         }
     }
-    LaunchedEffect(authState) {
-        when(authState) {
-            is AuthState.Authenticated -> {
-                if (navController.currentDestination?.route != Routes.Home.route) {
-                    navController.navigate(Routes.Home.route) {
-                        popUpTo(0)
-                        launchSingleTop = true
-                    }
-                }
-            }
-            AuthState.Unauthenticated -> {
-                if (navController.currentDestination?.route != Routes.Login.route) {
-                    navController.navigate(Routes.Login.route) {
-                        popUpTo(0)
-                        launchSingleTop = true
-                    }
-                }
-            }
-        }
-    }
+//    LaunchedEffect(authState) {
+//        when(authState) {
+//            is AuthState.Authenticated -> {
+//                if (navController.currentDestination?.route != Routes.Home.route) {
+//                    navController.navigate(Routes.Home.route) {
+//                        popUpTo(0)
+//                        launchSingleTop = true
+//                    }
+//                }
+//            }
+//            AuthState.Unauthenticated -> {
+//                if (navController.currentDestination?.route != Routes.Login.route) {
+//                    navController.navigate(Routes.Login.route) {
+//                        popUpTo(0)
+//                        launchSingleTop = true
+//                    }
+//                }
+//            }
+//        }
+//    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -87,8 +93,21 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
     ) { paddingValues ->
         ChakhaengNavigation(
             navController = navController,
-            modifier = Modifier.padding(paddingValues),
-            googleAuthManager = googleAuthManager
+            modifier = Modifier,
+            googleAuthManager = googleAuthManager,
+            startDestination = startDestination,
+            paddingValues = paddingValues
         )
+    }
+
+    LaunchedEffect(authState, currentRoute) {
+        val target = if (authState is AuthState.Authenticated) Routes.Home.route else Routes.Login.route
+        val graphAttached = navController.currentDestination != null
+        if (graphAttached && currentRoute != null && currentRoute != target) {
+            navController.navigate(target) {
+                popUpTo(0)
+                launchSingleTop = true
+            }
+        }
     }
 }
