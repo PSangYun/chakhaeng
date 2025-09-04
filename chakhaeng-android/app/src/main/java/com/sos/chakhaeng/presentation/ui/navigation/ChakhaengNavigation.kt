@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -18,7 +19,8 @@ fun ChakhaengNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     googleAuthManager: GoogleAuthManager,
-    startDestination: String
+    startDestination: String,
+    paddingValues: PaddingValues
 ) {
     NavHost(
         navController = navController,
