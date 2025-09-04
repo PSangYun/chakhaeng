@@ -1,21 +1,21 @@
 package com.sos.chakhaeng.core.usecase
 
-import com.sos.chakhaeng.core.repository.DetectionStateRepository
+import com.sos.chakhaeng.core.utils.DetectionStateManager
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class DetectionUseCase @Inject constructor(
-    private val detectionStateRepository: DetectionStateRepository
+    private val detectionStateManager: DetectionStateManager
 ) {
-    val isDetectionActive: StateFlow<Boolean> = detectionStateRepository.isDetectionActive
+    val isDetectionActive: StateFlow<Boolean> = detectionStateManager.isDetectionActive
 
     fun startDetection() {
-        detectionStateRepository.startDetection()
+        detectionStateManager.startDetection()
     }
 
     fun stopDetection() {
-        detectionStateRepository.stopDetection()
+        detectionStateManager.stopDetection()
     }
 }
