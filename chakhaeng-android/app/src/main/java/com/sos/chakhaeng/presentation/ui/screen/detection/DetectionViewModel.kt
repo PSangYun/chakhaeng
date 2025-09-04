@@ -5,20 +5,22 @@ import androidx.camera.core.Camera
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sos.chakhaeng.core.utils.DetectionStateManager
+import com.sos.chakhaeng.core.usecase.DetectionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class DetectionViewModel @Inject constructor() : ViewModel() {
+class DetectionViewModel @Inject constructor(
+    private val detectionUseCase: DetectionUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetectionUiState())
 
     val uiState: StateFlow<DetectionUiState> = combine(
         _uiState,
-        DetectionStateManager.isDetectionActive
+        detectionUseCase.isDetectionActive
     ) { state, isDetectionActive ->
         state.copy(isDetectionActive = isDetectionActive)
     }.stateIn(
@@ -31,7 +33,7 @@ class DetectionViewModel @Inject constructor() : ViewModel() {
 
     init {
         viewModelScope.launch {
-            DetectionStateManager.isDetectionActive.collect { isActive ->
+            detectionUseCase.isDetectionActive.collect { isActive ->
                 if (isActive) {
                     initializeCamera()
                 } else {
