@@ -15,14 +15,16 @@ import javax.inject.Inject
 private const val TAG = "HomeViewModel"
 
 @HiltViewModel
-class HomeViewModel @Inject constructor() : ViewModel() {
+class HomeViewModel @Inject constructor(
+    private val detectionStateManager: DetectionStateManager
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
 
     // DetectionStateManager의 상태와 UI 상태를 결합 -> 카메라 샹태를 전역으로 관리하기 위해
     val uiState: StateFlow<HomeUiState> = combine(
         _uiState,
-        DetectionStateManager.isDetectionActive
+        detectionStateManager.isDetectionActive
     ) { state, isDetectionActive ->
         state.copy(isDetectionActive = isDetectionActive)
     }.stateIn(
@@ -61,7 +63,7 @@ class HomeViewModel @Inject constructor() : ViewModel() {
 
     // 탐지 시작
     fun startDetection() {
-        DetectionStateManager.startDetection()
+        detectionStateManager.startDetection()
         Log.d(TAG, "탐지 시작됨")
     }
 
@@ -77,7 +79,7 @@ class HomeViewModel @Inject constructor() : ViewModel() {
 
     // 탐지 정지 확인
     fun confirmStopDetection() {
-        DetectionStateManager.stopDetection()
+        detectionStateManager.stopDetection()
         _uiState.value = _uiState.value.copy(showStopDetectionDialog = false)
         Log.d(TAG, "탐지 정지됨")
     }
