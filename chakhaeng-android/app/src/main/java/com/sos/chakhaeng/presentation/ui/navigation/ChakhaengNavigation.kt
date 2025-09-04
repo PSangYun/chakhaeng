@@ -34,8 +34,16 @@ fun ChakhaengNavigation(
             )
         }
         composable(Routes.Home.route) {
-            // Hilt가 자동으로 ViewModel을 주입합니다
-            HomeScreen()
+            HomeScreen(
+                onNavigateToDetection = {
+                    navController.navigate(Routes.Detection.route) {
+                        launchSingleTop = true
+                        popUpTo(Routes.Home.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
         }
         composable(Routes.Detection.route) {
             DetectionScreen()
