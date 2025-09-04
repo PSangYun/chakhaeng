@@ -13,14 +13,29 @@ import com.sos.chakhaeng.presentation.ui.navigation.ChakhaengNavigation
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.sos.chakhaeng.datastore.di.GoogleAuthManager
+import com.sos.chakhaeng.session.AppEntryViewModel
+import com.sos.chakhaeng.session.AuthState
+import com.sos.chakhaeng.presentation.ui.navigation.Routes
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var googleAuthManager: GoogleAuthManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ChakHaengTheme {
-                ChakhaengApp()
+                ChakhaengApp(googleAuthManager)
             }
         }
     }
@@ -28,18 +43,52 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChakhaengApp() {
+fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
     val navController = rememberNavController()
 
+    val vm: AppEntryViewModel = hiltViewModel()
+    val authState by vm.authState.collectAsState()
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    val showBottomBar by remember(currentRoute) {
+        derivedStateOf {
+            currentRoute != Routes.Login.route
+        }
+    }
+    LaunchedEffect(authState) {
+        when(authState) {
+            is AuthState.Authenticated -> {
+                if (navController.currentDestination?.route != Routes.Home.route) {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
+            }
+            AuthState.Unauthenticated -> {
+                if (navController.currentDestination?.route != Routes.Login.route) {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
+    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            BottomNavigationBar(navController = navController)
+            if (showBottomBar) {
+                BottomNavigationBar(navController = navController)
+            }
         }
     ) { paddingValues ->
         ChakhaengNavigation(
             navController = navController,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
+            googleAuthManager = googleAuthManager
         )
     }
 }
