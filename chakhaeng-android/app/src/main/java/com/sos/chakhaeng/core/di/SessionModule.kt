@@ -1,9 +1,9 @@
 package com.sos.chakhaeng.core.di
 
-import com.sos.chakhaeng.core.data.service.AuthService
-import com.sos.chakhaeng.core.datastore.TokenStore
-import com.sos.chakhaeng.core.datastore.di.GoogleAuthManager
-import com.sos.chakhaeng.core.session.SessionManager
+import com.sos.chakhaeng.data.api.AuthService
+import com.sos.chakhaeng.datastore.TokenStore
+import com.sos.chakhaeng.datastore.di.GoogleAuthManager
+import com.sos.chakhaeng.session.SessionManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
