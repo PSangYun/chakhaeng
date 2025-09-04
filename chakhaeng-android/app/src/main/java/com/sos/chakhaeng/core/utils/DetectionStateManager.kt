@@ -1,4 +1,4 @@
-package com.sos.chakhaeng.core.repository
+package com.sos.chakhaeng.core.utils
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -7,7 +7,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DetectionStateRepository @Inject constructor() {
+class DetectionStateManager @Inject constructor() {
     private val _isDetectionActive = MutableStateFlow(false)
     val isDetectionActive: StateFlow<Boolean> = _isDetectionActive.asStateFlow()
 
