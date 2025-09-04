@@ -1,7 +1,8 @@
 package com.sos.chakhaeng.presentation.ui.theme
 import androidx.compose.ui.graphics.Color
 
-val primaryLight = Color(0xFF475D92)
+//val primaryLight = Color(0xFF475D92)
+val primaryLight = Color(0xFF537FE7)
 val onPrimaryLight = Color(0xFFFFFFFF)
 val primaryContainerLight = Color(0xFFD9E2FF)
 val onPrimaryContainerLight = Color(0xFF2F4578)
