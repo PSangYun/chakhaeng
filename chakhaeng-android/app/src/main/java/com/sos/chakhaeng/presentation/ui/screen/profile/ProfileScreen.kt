@@ -45,5 +45,11 @@ fun ProfileScreen(
             text = "가챠 포인트: ${uiState.gachaPoints}개",
             style = MaterialTheme.typography.bodyLarge
         )
+        Text(
+            text = "로그아웃",
+            modifier = Modifier.clickable { viewModel.logout() },
+            style = MaterialTheme.typography.bodyLarge
+        )
+
     }
 }

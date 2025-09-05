@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.exoplayer.dash)
+    implementation(libs.androidx.core.splashscreen)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     hilt{
@@ -100,6 +101,26 @@ dependencies {
     // RxJava2
     implementation(libs.rxjava)
     implementation(libs.rxandroid)
+
+    // 카메라
+    implementation("androidx.camera:camera-core:1.3.1")
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
+
+    // AI/ML
+    implementation("org.tensorflow:tensorflow-lite:2.13.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
+
+    // 음성 (STT/TTS)
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // 위치
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // 권한
+    implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 
     // Test dependencies
     testImplementation(libs.junit)

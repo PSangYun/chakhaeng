@@ -1,7 +1,8 @@
 package com.sos.chakhaeng.presentation.ui.theme
 import androidx.compose.ui.graphics.Color
 
-val primaryLight = Color(0xFF475D92)
+//val primaryLight = Color(0xFF475D92)
+val primaryLight = Color(0xFF537FE7)
 val onPrimaryLight = Color(0xFFFFFFFF)
 val primaryContainerLight = Color(0xFFD9E2FF)
 val onPrimaryContainerLight = Color(0xFF2F4578)
@@ -216,6 +217,9 @@ val surfaceContainerLowDarkHighContrast = Color(0xFF1E1F25)
 val surfaceContainerDarkHighContrast = Color(0xFF2F3036)
 val surfaceContainerHighDarkHighContrast = Color(0xFF3A3B41)
 val surfaceContainerHighestDarkHighContrast = Color(0xFF46464C)
+
+val neutral = Color(0xFFF2F2F2)
+val naverGreen = Color(0xFF06BE34)
 
 
 

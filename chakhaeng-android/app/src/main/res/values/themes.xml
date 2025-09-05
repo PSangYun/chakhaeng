@@ -2,4 +2,14 @@
 <resources>
 
     <style name="Theme.ChakHaeng" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- 스플래시 스크린(시작 화면) 테마 -->
+    <style name="Theme.ChakHaeng.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/white</item>
+
+        <item name="windowSplashScreenAnimatedIcon">@drawable/police_rabbit2</item>
+
+        <!-- 스플래시 스크린 이후 전환될 테마 지정 -->
+        <item name="postSplashScreenTheme">@style/Theme.ChakHaeng</item>
+    </style>
 </resources>
