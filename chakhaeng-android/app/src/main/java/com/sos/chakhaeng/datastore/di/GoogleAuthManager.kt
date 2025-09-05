@@ -52,14 +52,4 @@ class GoogleAuthManager @Inject constructor(
             Log.e(TAG, "signInWithGoogle failed", e)
         }
         .getOrNull()
-
-    suspend fun googleLogout() {
-        runCatching {
-            credentialManager.clearCredentialState(
-                ClearCredentialStateRequest()
-            )
-        }
-            .onSuccess { Log.d(TAG, "googleLogout: cleared successfully") }
-            .onFailure { Log.e(TAG, "googleLogout failed: ${it.message}") }
-    }
 }

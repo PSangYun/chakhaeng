@@ -1,8 +1,10 @@
 package com.sos.chakhaeng.presentation.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sos.chakhaeng.datastore.di.GoogleAuthManager
@@ -32,7 +35,9 @@ class MainActivity : ComponentActivity() {
     lateinit var googleAuthManager: GoogleAuthManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             ChakHaengTheme {
                 ChakhaengApp(googleAuthManager)
@@ -49,6 +54,10 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
     val vm: AppEntryViewModel = hiltViewModel()
     val authState by vm.authState.collectAsState()
 
+    val startDestination = remember(authState) {
+        if (authState is AuthState.Authenticated) Routes.Home.route else Routes.Login.route
+    }
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -57,11 +66,29 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
             currentRoute != Routes.Login.route
         }
     }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            if (showBottomBar) {
+                BottomNavigationBar(navController = navController)
+            }
+        }
+    ) { paddingValues ->
+        ChakhaengNavigation(
+            navController = navController,
+            modifier = Modifier,
+            googleAuthManager = googleAuthManager,
+            startDestination = startDestination,
+            paddingValues = paddingValues
+        )
+    }
     LaunchedEffect(authState) {
         when(authState) {
             is AuthState.Authenticated -> {
                 if (navController.currentDestination?.route != Routes.Home.route) {
                     navController.navigate(Routes.Home.route) {
+                        Log.d("TAG", "ChakhaengApp: 123")
                         popUpTo(0)
                         launchSingleTop = true
                     }
@@ -76,19 +103,5 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
                 }
             }
         }
-    }
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (showBottomBar) {
-                BottomNavigationBar(navController = navController)
-            }
-        }
-    ) { paddingValues ->
-        ChakhaengNavigation(
-            navController = navController,
-            modifier = Modifier.padding(paddingValues),
-            googleAuthManager = googleAuthManager
-        )
     }
 }

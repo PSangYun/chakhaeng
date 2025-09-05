@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -17,11 +18,13 @@ import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
 fun ChakhaengNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    googleAuthManager: GoogleAuthManager
+    googleAuthManager: GoogleAuthManager,
+    startDestination: String,
+    paddingValues: PaddingValues
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.Login.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         composable(Routes.Login.route) {
@@ -34,8 +37,16 @@ fun ChakhaengNavigation(
             )
         }
         composable(Routes.Home.route) {
-            // Hilt가 자동으로 ViewModel을 주입합니다
-            HomeScreen()
+            HomeScreen(
+                onNavigateToDetection = {
+                    navController.navigate(Routes.Detection.route) {
+                        launchSingleTop = true
+                        popUpTo(Routes.Home.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
         }
         composable(Routes.Detection.route) {
             DetectionScreen()
