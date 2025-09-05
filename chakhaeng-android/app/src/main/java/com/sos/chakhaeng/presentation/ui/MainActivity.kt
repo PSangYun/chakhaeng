@@ -20,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sos.chakhaeng.datastore.di.GoogleAuthManager
@@ -34,6 +35,7 @@ class MainActivity : ComponentActivity() {
     lateinit var googleAuthManager: GoogleAuthManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -86,6 +88,7 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
             is AuthState.Authenticated -> {
                 if (navController.currentDestination?.route != Routes.Home.route) {
                     navController.navigate(Routes.Home.route) {
+                        Log.d("TAG", "ChakhaengApp: 123")
                         popUpTo(0)
                         launchSingleTop = true
                     }
