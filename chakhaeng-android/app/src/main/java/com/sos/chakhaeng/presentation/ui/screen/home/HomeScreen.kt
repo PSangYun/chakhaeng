@@ -84,7 +84,7 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(
                     top = 24.dp,
-                    bottom = 16.dp
+                    bottom = 120.dp
                 )
             ) {
                 // ESG 점수 카드
