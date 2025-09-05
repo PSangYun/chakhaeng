@@ -56,6 +56,10 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    // exo player
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
@@ -67,6 +71,8 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.media3.exoplayer.dash)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     hilt{
