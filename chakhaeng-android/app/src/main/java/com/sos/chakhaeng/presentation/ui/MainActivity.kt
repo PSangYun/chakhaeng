@@ -1,6 +1,7 @@
 package com.sos.chakhaeng.presentation.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -63,26 +64,7 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
             currentRoute != Routes.Login.route
         }
     }
-//    LaunchedEffect(authState) {
-//        when(authState) {
-//            is AuthState.Authenticated -> {
-//                if (navController.currentDestination?.route != Routes.Home.route) {
-//                    navController.navigate(Routes.Home.route) {
-//                        popUpTo(0)
-//                        launchSingleTop = true
-//                    }
-//                }
-//            }
-//            AuthState.Unauthenticated -> {
-//                if (navController.currentDestination?.route != Routes.Login.route) {
-//                    navController.navigate(Routes.Login.route) {
-//                        popUpTo(0)
-//                        launchSingleTop = true
-//                    }
-//                }
-//            }
-//        }
-//    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -99,14 +81,23 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
             paddingValues = paddingValues
         )
     }
-
-    LaunchedEffect(authState, currentRoute) {
-        val target = if (authState is AuthState.Authenticated) Routes.Home.route else Routes.Login.route
-        val graphAttached = navController.currentDestination != null
-        if (graphAttached && currentRoute != null && currentRoute != target) {
-            navController.navigate(target) {
-                popUpTo(0)
-                launchSingleTop = true
+    LaunchedEffect(authState) {
+        when(authState) {
+            is AuthState.Authenticated -> {
+                if (navController.currentDestination?.route != Routes.Home.route) {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
+            }
+            AuthState.Unauthenticated -> {
+                if (navController.currentDestination?.route != Routes.Login.route) {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
             }
         }
     }
