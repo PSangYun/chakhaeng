@@ -1,49 +1,104 @@
-from pathlib import Path
 import json
+from pathlib import Path
+import argparse
+import shutil
 
-JSON_DIR = Path("dataset/labels")     # JSON 폴더
-IMAGES_DIR = Path("dataset/images")  # 이미지 폴더
-LABELS_DIR = Path("dataset/texts")  # YOLO 라벨 저장 폴더
-LABELS_DIR.mkdir(parents=True, exist_ok=True)
+# 유지할 클래스와 각 카테고리의 최소 점 개수 규칙
+KEEP_CLASSES = {
+    "crosswalk": ("polygon", 3),   # (기대 category, 최소 점 수)
+    "stop_line": ("polyline", 2),
+}
 
-CLASS_NAME = "crosswalk"
-CLASS_ID = 0  # 단일 클래스라면 0
+def is_valid_ann(ann: dict) -> bool:
+    cls = ann.get("class")
+    cat = ann.get("category")
+    pts = ann.get("data", [])
+    if cls not in KEEP_CLASSES:
+        return False
+    expected_cat, min_pts = KEEP_CLASSES[cls]
+    if cat != expected_cat:
+        return False
+    if not isinstance(pts, list) or len(pts) < min_pts:
+        return False
+    # 좌표 키 검증
+    for p in pts:
+        if not isinstance(p, dict) or "x" not in p or "y" not in p:
+            return False
+    return True
 
-def norm_xy(x, y, w, h):
-    return min(max(x / w, 0.0), 1.0), min(max(y / h, 0.0), 1.0)
+def filter_one(in_path: Path, out_path: Path, keep_empty: bool):
+    with open(in_path, "r", encoding="utf-8") as f:
+        src = json.load(f)
 
-def process_one(json_path: Path):
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    anns_in = src.get("annotations", [])
+    kept = []
+    for ann in anns_in:
+        if is_valid_ann(ann):
+            # 필요한 키만 정리해서 보존(원하면 attributes 등도 유지 가능)
+            kept.append({
+                "class": ann["class"],
+                "attributes": ann.get("attributes", []),
+                "category": ann["category"],
+                "data": ann["data"],
+            })
 
-    file_name = data["image"]["file_name"]
-    img_h, img_w = data["image"]["image_size"]  # [H, W]
-    anns = data.get("annotations", [])
+    if not kept and not keep_empty:
+        return False
 
-    lines = []
-    for ann in anns:
-        if ann.get("class") != CLASS_NAME or ann.get("category") != "polygon":
-            continue
-        pts = ann.get("data", [])
-        if not pts or len(pts) < 3:
-            continue
-
-        coords = []
-        for p in pts:
-            x_n, y_n = norm_xy(p["x"], p["y"], img_w, img_h)
-            coords.append(f"{x_n:.6f} {y_n:.6f}")
-        line = f"{CLASS_ID} " + " ".join(coords)
-        lines.append(line)
-
-    if lines:
-        out_path = LABELS_DIR / (Path(file_name).stem + ".txt")
-        with open(out_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines))
+    dst = {
+        "image": src.get("image", {}),
+        "annotations": kept
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(dst, f, ensure_ascii=False, indent=2)
+    return True
 
 def main():
-    for jp in JSON_DIR.glob("*.json"):
-        process_one(jp)
-    print("✅ crosswalk만 YOLO segmentation 라벨 변환 완료")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--in_dir", default="dataset/labels", help="원본 JSON 폴더")
+    ap.add_argument("--out_dir", default="dataset/labels_filtered", help="필터 결과 JSON 폴더")
+    ap.add_argument("--keep_empty", default=True,
+                    help="대상 객체가 없어도 빈 annotations로 JSON 생성")
+    ap.add_argument("--copy_images", default=False,
+                    help="image.file_name을 기준으로 이미지를 out_dir/images로 복사")
+    ap.add_argument("--images_root", default="dataset/images",
+                    help="이미지 루트 경로 (copy_images 사용할 때 필요)")
+    args = ap.parse_args()
+
+    in_dir = Path(args.in_dir)
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    n_json = n_written = n_objs = 0
+
+    for jp in sorted(in_dir.glob("*.json")):
+        n_json += 1
+        out_path = out_dir / jp.name
+        ok = filter_one(jp, out_path, args.keep_empty)
+        if ok:
+            n_written += 1
+            # 카운트
+            with open(out_path, "r", encoding="utf-8") as f:
+                n_objs += len(json.load(f).get("annotations", []))
+            # 이미지 복사(옵션)
+            if args.copy_images and args.images_root:
+                try:
+                    with open(jp, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    img_name = data.get("image", {}).get("file_name")
+                    if img_name:
+                        src_img = Path(args.images_root) / img_name
+                        dst_img = out_dir / "images" / Path(img_name).name
+                        dst_img.parent.mkdir(parents=True, exist_ok=True)
+                        if src_img.exists():
+                            shutil.copy2(src_img, dst_img)
+                except Exception:
+                    pass
+
+    print(f"총 JSON: {n_json}")
+    print(f"생성된 결과 JSON: {n_written}")
+    print(f"남은 객체 수 합계: {n_objs}")
 
 if __name__ == "__main__":
     main()
