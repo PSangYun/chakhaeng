@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.screen.profile
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,5 +41,11 @@ fun ProfileScreen(
             text = "가챠 포인트: ${uiState.gachaPoints}개",
             style = MaterialTheme.typography.bodyLarge
         )
+        Text(
+            text = "로그아웃",
+            modifier = Modifier.clickable { viewModel.logout() },
+            style = MaterialTheme.typography.bodyLarge
+        )
+
     }
 }
