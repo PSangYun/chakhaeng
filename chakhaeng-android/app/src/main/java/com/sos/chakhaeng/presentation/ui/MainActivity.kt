@@ -14,7 +14,6 @@ import com.sos.chakhaeng.presentation.ui.theme.ChakHaengTheme
 import com.sos.chakhaeng.presentation.ui.navigation.ChakhaengNavigation
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -82,23 +81,23 @@ fun ChakhaengApp(googleAuthManager: GoogleAuthManager) {
             startDestination = startDestination,
             paddingValues = paddingValues
         )
-    }
-    LaunchedEffect(authState) {
-        when(authState) {
-            is AuthState.Authenticated -> {
-                if (navController.currentDestination?.route != Routes.Home.route) {
-                    navController.navigate(Routes.Home.route) {
-                        Log.d("TAG", "ChakhaengApp: 123")
-                        popUpTo(0)
-                        launchSingleTop = true
+
+        LaunchedEffect(authState) {
+            when(authState) {
+                is AuthState.Authenticated -> {
+                    if (navController.currentDestination?.route != Routes.Home.route) {
+                        navController.navigate(Routes.Home.route) {
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
                     }
                 }
-            }
-            AuthState.Unauthenticated -> {
-                if (navController.currentDestination?.route != Routes.Login.route) {
-                    navController.navigate(Routes.Login.route) {
-                        popUpTo(0)
-                        launchSingleTop = true
+                AuthState.Unauthenticated -> {
+                    if (navController.currentDestination?.route != Routes.Login.route) {
+                        navController.navigate(Routes.Login.route) {
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
                     }
                 }
             }

@@ -2,13 +2,16 @@ package com.sos.chakhaeng.presentation.ui.screen.detection
 
 import android.util.Log
 import androidx.camera.core.Camera
-import androidx.camera.core.ImageProxy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.usecase.DetectionUseCase
+import com.sos.chakhaeng.presentation.ui.model.ViolationDetectionUiModel
+import com.sos.chakhaeng.presentation.ui.model.ViolationType
+import com.sos.chakhaeng.presentation.ui.mapper.ViolationUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -22,7 +25,15 @@ class DetectionViewModel @Inject constructor(
         _uiState,
         detectionUseCase.isDetectionActive
     ) { state, isDetectionActive ->
-        state.copy(isDetectionActive = isDetectionActive)
+        val filteredViolations = filterViolations(
+            violations = state.violationDetections,
+            filter = state.selectedViolationFilter
+        )
+
+        state.copy(
+            isDetectionActive = isDetectionActive,
+            filteredViolations = filteredViolations
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -36,6 +47,7 @@ class DetectionViewModel @Inject constructor(
             detectionUseCase.isDetectionActive.collect { isActive ->
                 if (isActive) {
                     initializeCamera()
+                    generateSampleViolationData()
                 } else {
                     pauseCamera()
                 }
@@ -73,18 +85,78 @@ class DetectionViewModel @Inject constructor(
             isCameraReady = false,
             isLoading = false
         )
-        Log.d("DetectionViewModel", "카메라 정지됨")
     }
 
-    fun processFrame(imageProxy: ImageProxy) {
-        if (uiState.value.isDetectionActive && uiState.value.isCameraReady) {
-            Log.d("DetectionViewModel", "프레임 처리 중: ${imageProxy.width}x${imageProxy.height}")
-        }
-        imageProxy.close()
+    fun toggleFullscreen() {
+        _uiState.value = _uiState.value.copy(
+            isFullscreen = !_uiState.value.isFullscreen
+        )
+    }
+
+    fun onViolationFilterSelected(filter: ViolationType) {
+        _uiState.value = _uiState.value.copy(selectedViolationFilter = filter)
+    }
+
+    fun onViolationClick(violation: ViolationDetectionUiModel) {
+        Log.d("DetectionViewModel", "위반 선택됨: ${violation.id}")
     }
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    private fun filterViolations(
+        violations: List<ViolationDetectionUiModel>,
+        filter: ViolationType
+    ): List<ViolationDetectionUiModel> {
+        return if (filter == ViolationType.ALL) {
+            violations
+        } else {
+            violations.filter { it.type == filter }
+        }
+    }
+
+    private fun generateSampleViolationData() {
+        val sampleViolations = listOf(
+            ViolationUiMapper.mapToUiModel(
+                id = 1,
+                type = ViolationType.TRAFFIC_LIGHT_VIOLATION,
+                licenseNumber = "12가1234",
+                location = "강남구 테헤란로 123",
+                detectedAt = LocalDateTime.now().minusMinutes(2),
+                confidence = 0.95f,
+                thumbnailUrl = null
+            ),
+            ViolationUiMapper.mapToUiModel(
+                id = 2,
+                type = ViolationType.SPEED_VIOLATION,
+                licenseNumber = "34나5678",
+                location = "서초구 서초대로 456",
+                detectedAt = LocalDateTime.now().minusMinutes(5),
+                confidence = 0.88f,
+                thumbnailUrl = null
+            ),
+            ViolationUiMapper.mapToUiModel(
+                id = 3,
+                type = ViolationType.LANE_VIOLATION,
+                licenseNumber = "56다9012",
+                location = "마포구 월드컵로 789",
+                detectedAt = LocalDateTime.now().minusMinutes(12),
+                confidence = 0.73f,
+                thumbnailUrl = null
+            ),
+            ViolationUiMapper.mapToUiModel(
+                id = 4,
+                type = ViolationType.CUTTING_IN,
+                licenseNumber = "78라3456",
+                location = "용산구 한강대로 321",
+                detectedAt = LocalDateTime.now().minusMinutes(25),
+                confidence = 0.82f,
+                thumbnailUrl = null
+            )
+        )
+
+        _uiState.value = _uiState.value.copy(violationDetections = sampleViolations)
     }
 
     override fun onCleared() {
