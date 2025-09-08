@@ -221,6 +221,11 @@ val surfaceContainerHighestDarkHighContrast = Color(0xFF46464C)
 val neutral = Color(0xFFF2F2F2)
 val naverGreen = Color(0xFF06BE34)
 
+val Orange = Color(0xFFFF9800)
+
+val LightOrange = Color(0xFFFFB74D)
+
+val BackgroundGray = Color(0xFFE5E7EB)
 
 
 
