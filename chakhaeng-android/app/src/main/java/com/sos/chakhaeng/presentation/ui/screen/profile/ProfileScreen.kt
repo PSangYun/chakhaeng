@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.screen.profile
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -12,6 +13,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun ProfileScreen(
+    navigateToStreaming: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -25,7 +27,10 @@ fun ProfileScreen(
     ) {
         Text(
             text = "프로필",
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.clickable{
+                navigateToStreaming()
+            }
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -40,5 +45,11 @@ fun ProfileScreen(
             text = "가챠 포인트: ${uiState.gachaPoints}개",
             style = MaterialTheme.typography.bodyLarge
         )
+        Text(
+            text = "로그아웃",
+            modifier = Modifier.clickable { viewModel.logout() },
+            style = MaterialTheme.typography.bodyLarge
+        )
+
     }
 }
