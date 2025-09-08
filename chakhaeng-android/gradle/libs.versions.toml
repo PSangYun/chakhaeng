@@ -28,6 +28,11 @@ google-auth = "21.3.0"
 credential = "1.5.0"
 credential-auth = "1.5.0"
 identity = "1.1.1"
+media3Exoplayer = "1.8.0"
+media3Ui = "1.8.0"
+media3ExoplayerHls = "1.8.0"
+media3ExoplayerDash = "1.8.0"
+coreSplashscreen = "1.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -75,6 +80,11 @@ google-auth = {group = "com.google.android.gms", name = "play-services-auth", ve
 credential = { group = "androidx.credentials", name = "credentials", version.ref = "credential" }
 credential-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credential-auth" }
 google-identity = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "identity" }
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3Exoplayer" }
+androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3Ui" }
+androidx-media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exoplayer-hls", version.ref = "media3ExoplayerHls" }
+androidx-media3-exoplayer-dash = { group = "androidx.media3", name = "media3-exoplayer-dash", version.ref = "media3ExoplayerDash" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -138,8 +138,6 @@ class SessionManager @Inject constructor(
 
     suspend fun logout() {
         tokenStore.clear()
-        // 구글 계정 세션도 정리 (고정 파일 기능 활용)
-        runCatching { googleAuthManager.googleLogout() }
     }
 
     /**
