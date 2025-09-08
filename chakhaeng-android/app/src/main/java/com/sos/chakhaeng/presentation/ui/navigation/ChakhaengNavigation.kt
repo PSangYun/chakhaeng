@@ -1,7 +1,9 @@
 package com.sos.chakhaeng.presentation.ui.navigation
 
+import android.util.Log
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +15,9 @@ import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileScreen
 import androidx.compose.ui.Modifier
 import com.sos.chakhaeng.datastore.di.GoogleAuthManager
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
+import com.sos.chakhaeng.presentation.ui.screen.violationDetail.ViolationDetailScreen
+import com.sos.chakhaeng.session.AuthState
+import okhttp3.Route
 
 @Composable
 fun ChakhaengNavigation(
@@ -20,7 +25,8 @@ fun ChakhaengNavigation(
     modifier: Modifier = Modifier,
     googleAuthManager: GoogleAuthManager,
     startDestination: String,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    authState: AuthState
 ) {
     NavHost(
         navController = navController,
@@ -59,6 +65,36 @@ fun ChakhaengNavigation(
         }
         composable(Routes.Profile.route) {
             ProfileScreen()
+        }
+        composable(Routes.ViolationDetail.route) {
+            ViolationDetailScreen(
+                onBack = {},
+                onSubmitToGovernment = {},
+                paddingVaules = paddingValues
+            )
+        }
+    }
+    LaunchedEffect(authState) {
+        when(authState) {
+            is AuthState.Authenticated -> {
+                if (navController.currentDestination?.route != Routes.Home.route) {
+                    navController.navigate(Routes.Home.route) {
+                        Log.d("TAG", "ChakhaengApp: 123")
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
+            }
+            AuthState.Unauthenticated -> {
+                if (navController.currentDestination?.route != Routes.Login.route) {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            AuthState.Loading -> Unit
         }
     }
 }

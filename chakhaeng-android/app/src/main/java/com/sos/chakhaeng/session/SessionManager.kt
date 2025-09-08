@@ -27,7 +27,7 @@ class SessionManager @Inject constructor(
     private val refreshMutex = Mutex()
     private val skewMs = 60_000L
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     // In-memory 캐시(인터셉터에서 즉시 접근)
@@ -50,10 +50,11 @@ class SessionManager @Inject constructor(
                         AuthState.Unauthenticated
                     }
                 }
+
         }
     }
 
-    private fun isAccessExpired(now: Long): Boolean = now >= accessTokenExpiresAt
+    private fun isAccessExpired(now: Long): Boolean = now + skewMs >= accessTokenExpiresAt
     private fun isAccessExpiringSoon(now: Long): Boolean = now + 10_000L >= accessTokenExpiresAt // 10초 이내 만료면 임박
 
     /** 요청 직전에 호출: 만료 임박 시 선제 갱신 */
