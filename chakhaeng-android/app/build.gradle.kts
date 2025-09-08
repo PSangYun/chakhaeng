@@ -74,6 +74,8 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     hilt{
