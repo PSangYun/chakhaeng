@@ -21,7 +21,7 @@ services:
 
   app:
     build:
-      context: ./app
+      context: .
       dockerfile: Dockerfile
     container_name: chakeng-app
     depends_on:
