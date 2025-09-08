@@ -21,13 +21,13 @@ import com.sos.chakhaeng.presentation.ui.components.home.DetectionSection
 import com.sos.chakhaeng.presentation.ui.components.home.ESGScoreCard
 import com.sos.chakhaeng.presentation.ui.components.home.RecentViolationsSection
 import com.sos.chakhaeng.presentation.ui.theme.primaryLight
-import com.sos.chakhaeng.presentation.ui.theme.errorLight
 import com.sos.chakhaeng.presentation.ui.model.TodayInfoUiModel
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToDetection: () -> Unit = {}
+    onNavigateToDetection: () -> Unit = {},
+    paddingValues: PaddingValues
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -68,7 +68,8 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(
                     color = if (uiState.isDetectionActive) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else primaryLight
-                ),
+                )
+                .padding(bottom = 16.dp),
         ) {
             LazyColumn(
                 modifier = Modifier
@@ -82,10 +83,7 @@ fun HomeScreen(
                     )
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(
-                    top = 24.dp,
-                    bottom = 120.dp
-                )
+                contentPadding = paddingValues
             ) {
                 // ESG 점수 카드
                 item {
