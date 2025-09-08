@@ -17,6 +17,8 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
+    ports:
+      - "5431:5432"
     networks: [ appnet ]
 
   app:
