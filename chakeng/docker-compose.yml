@@ -30,12 +30,12 @@ services:
     environment:
       TZ: ${TZ}
 
-      # --- application.properties 덮어쓰기용 ---
+      # DB 연결
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
 
-      # OAuth2 (IP로 직접 접근 시)
+      # OAuth2
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_ID}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_SECRET}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
@@ -52,7 +52,7 @@ services:
       SPRINGDOC_SWAGGER_UI_TAGSSORTER: ${SPRINGDOC_SWAGGER_UI_TAGSSORTER}
 
     ports:
-      - "8080:8080"   # EC2_IP:8080 으로 접근
+      - "8080:8080"
     restart: unless-stopped
     networks: [ appnet ]
 
