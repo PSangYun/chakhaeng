@@ -115,6 +115,9 @@ dependencies {
     // 권한
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 
+    // 사진
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
     // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
