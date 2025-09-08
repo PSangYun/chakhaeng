@@ -45,7 +45,8 @@ fun ChakhaengNavigation(
                             inclusive = true
                         }
                     }
-                }
+                },
+                paddingValues = paddingValues
             )
         }
         composable(Routes.Detection.route) {
