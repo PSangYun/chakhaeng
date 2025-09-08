@@ -9,7 +9,7 @@ pipeline {
 
     DEPLOY_HOST  = 'ubuntu@j13d202.p.ssafy.io'
     DEPLOY_DIR   = '/home/ubuntu/S13P21D202/chakeng'                          // 서버에 클론되어 있는 작업 디렉터리
-    COMPOSE_FILE = 'docker-compose.yml'                        // 서버에서 사용할 compose 파일 경로(DEPLOY_DIR 기준)
+    COMPOSE_FILE = 'chakeng/docker-compose.yml'                        // 서버에서 사용할 compose 파일 경로(DEPLOY_DIR 기준)
   }
 
   stages {
@@ -27,8 +27,8 @@ pipeline {
       }
       post {
         always {
-          junit 'backend/build/test-results/test/*.xml'
-          archiveArtifacts artifacts: 'backend/build/libs/*.jar', fingerprint: true, onlyIfSuccessful: false
+          junit '**/build/test-results/test/*.xml'  // ← 안전 패턴
+          archiveArtifacts artifacts: '**/build/libs/*.jar', fingerprint: true, onlyIfSuccessful: false
         }
       }
     }
