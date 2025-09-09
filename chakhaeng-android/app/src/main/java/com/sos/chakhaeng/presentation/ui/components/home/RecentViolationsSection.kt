@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.components.home
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -14,12 +15,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.sos.chakhaeng.presentation.ui.model.RecentViolationUiModel
-import com.sos.chakhaeng.presentation.ui.model.ViolationSeverity
+import com.sos.chakhaeng.domain.model.home.RecentViolation
 
 @Composable
 fun RecentViolationsSection(
-    violations: List<RecentViolationUiModel>,
+    violations: List<RecentViolation>,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -112,7 +112,7 @@ fun RecentViolationsSection(
 
 @Composable
 fun ViolationItem(
-    violation: RecentViolationUiModel
+    violation: RecentViolation
 ) {
     Card(
         modifier = Modifier
@@ -134,7 +134,7 @@ fun ViolationItem(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        color = getSeverityColor(violation.severity).copy(alpha = 0.2f),
+                        color = getSeverityColor(violation.type).copy(alpha = 0.2f),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -142,7 +142,7 @@ fun ViolationItem(
                 Icon(
                     imageVector = getViolationIcon(violation.type),
                     contentDescription = null,
-                    tint = getSeverityColor(violation.severity),
+                    tint = getSeverityColor(violation.type),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -158,6 +158,7 @@ fun ViolationItem(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
+                Log.d("TAG", "ViolationItem: ${violation.type}")
                 Text(
                     text = violation.location,
                     style = MaterialTheme.typography.bodySmall,
@@ -183,22 +184,24 @@ fun ViolationItem(
 }
 
 // 유틸리티 함수들
-private fun getSeverityColor(severity: ViolationSeverity): Color {
+private fun getSeverityColor(severity: String): Color {
     return when (severity) {
-        ViolationSeverity.LOW -> Color(0xFF4CAF50)
-        ViolationSeverity.MEDIUM -> Color(0xFFFF9800)
-        ViolationSeverity.HIGH -> Color(0xFFF44336)
-        ViolationSeverity.CRITICAL -> Color(0xFF9C27B0)
+        "역주행" -> Color(0xFFF44336)
+        "신호위반" -> Color(0xFFFF9800)
+        "차선침법" -> Color(0xFFFFEB3B)
+        "무번호판" -> Color(0xFFCDDC39)
+        "헬멧 미착용" -> Color(0xFF9C27B0)
+        else -> Color.Black
     }
 }
 
 private fun getViolationIcon(violationType: String): ImageVector {
     return when (violationType) {
+        "역주행" -> Icons.Default.UTurnLeft
         "신호위반" -> Icons.Default.Traffic
         "차선침범" -> Icons.Default.SwapHoriz
-        "역주행" -> Icons.Default.UTurnLeft
-        "인도주행" -> Icons.Default.DirectionsWalk
-        "불법주정차" -> Icons.Default.LocalParking
+        "무번호판" -> Icons.Default.Badge
+        "헬멧 미착용" -> Icons.Default.PersonOff
         else -> Icons.Default.Warning
     }
 }

@@ -11,14 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.sos.chakhaeng.presentation.ui.model.ViolationDetectionUiModel
-import com.sos.chakhaeng.presentation.ui.model.ViolationType
-import com.sos.chakhaeng.presentation.ui.theme.primaryLight
+import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
+import com.sos.chakhaeng.presentation.model.ViolationType
 
 @Composable
 fun ViolationThumbnail(

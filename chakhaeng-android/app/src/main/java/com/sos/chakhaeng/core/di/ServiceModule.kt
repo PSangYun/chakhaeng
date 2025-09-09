@@ -1,7 +1,8 @@
 package com.sos.chakhaeng.core.di
 
-import com.sos.chakhaeng.data.api.AuthService
-import com.sos.chakhaeng.data.api.UserService
+import com.sos.chakhaeng.data.network.api.AuthApi
+import com.sos.chakhaeng.data.network.api.HomeApi
+import com.sos.chakhaeng.data.network.api.UserApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,18 +16,25 @@ import javax.inject.Singleton
 object ServiceModule {
 
     @Provides @Singleton @Named("noauth")
-    fun provideAuthService(@Named("noauth") retrofit: Retrofit): AuthService =
-        retrofit.create(AuthService::class.java)
+    fun provideAuthService(@Named("noauth") retrofit: Retrofit): AuthApi =
+        retrofit.create(AuthApi::class.java)
 
     @Provides
     @Singleton
     fun provideAuthServiceDefault(
         @Named("noauth") retrofit: Retrofit
-    ): AuthService = retrofit.create(
-        AuthService::class.java
+    ): AuthApi = retrofit.create(
+        AuthApi::class.java
     )
 
-    @Provides @Singleton
-    fun provideUserService(@Named("auth") retrofit: Retrofit): UserService =
-        retrofit.create(UserService::class.java)
+    @Provides
+    @Singleton
+    fun provideUserService(@Named("auth") retrofit: Retrofit): UserApi =
+        retrofit.create(UserApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideHomeApi(@Named("auth") retrofit: Retrofit): HomeApi {
+        return retrofit.create(HomeApi::class.java)
+    }
 }

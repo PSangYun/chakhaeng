@@ -5,8 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
-import com.sos.chakhaeng.datastore.PrefsTokenStore
-import com.sos.chakhaeng.datastore.TokenStore
+import com.sos.chakhaeng.data.datastore.PrefsTokenStore
+import com.sos.chakhaeng.data.datastore.TokenStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

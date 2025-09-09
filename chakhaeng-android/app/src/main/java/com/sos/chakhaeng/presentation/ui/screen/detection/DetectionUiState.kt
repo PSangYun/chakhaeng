@@ -1,7 +1,7 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
-import com.sos.chakhaeng.presentation.ui.model.ViolationDetectionUiModel
-import com.sos.chakhaeng.presentation.ui.model.ViolationType
+import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
+import com.sos.chakhaeng.presentation.model.ViolationType
 
 data class DetectionUiState(
     val isLoading: Boolean = false,
