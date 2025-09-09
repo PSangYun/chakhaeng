@@ -9,7 +9,7 @@ import java.util.UUID;
 @Data
 public class ReportCreateRequest {
     @NotNull
-    private UUID ownerId;
+    private UUID videoId;
     @NotBlank
     private String violationType;
     @NotBlank

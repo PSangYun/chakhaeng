@@ -19,18 +19,19 @@ public class ReportService {
     private final ReportRepository reportRepository;
 
     @Transactional
-    public Report createFromRequest(ReportCreateRequest req) {
+    public Report createFromRequest(ReportCreateRequest req, UUID userId) {
         ZoneId KST = ZoneId.of("Asia/Seoul");
         LocalDate d = LocalDate.parse(req.getDate());
         LocalTime t = LocalTime.parse(req.getTime());
         OffsetDateTime occurredAt = ZonedDateTime.of(d, t, KST).toOffsetDateTime();
 
-        if (reportRepository.existsByOwnerIdAndPlateNumberAndOccurredAt(req.getOwnerId(), req.getPlateNumber(), occurredAt)) {
+        if (reportRepository.existsByOwnerIdAndPlateNumberAndOccurredAt(userId, req.getPlateNumber(), occurredAt)) {
             throw new IllegalArgumentException("이미 동일 시간/차량으로 신고가 존재합니다.");
         }
 
         Report report = Report.builder()
-                .ownerId(req.getOwnerId())
+                .ownerId(userId)
+                .videoId(req.getVideoId())
                 .violationType(req.getViolationType())
                 .location(req.getLocation())
                 .title(req.getTitle())

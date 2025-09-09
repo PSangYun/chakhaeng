@@ -38,8 +38,8 @@ public class ReportController {
 
 
     @PostMapping("/create-report")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> send(@RequestBody ReportCreateRequest body) {
-        Report saved = reportService.createFromRequest(body);
+    public ResponseEntity<ApiResponse<Map<String, Object>>> send(@RequestBody ReportCreateRequest body, @RequestAttribute("userId") UUID userId) {
+        Report saved = reportService.createFromRequest(body,userId);
 
         String occurredDate = saved.getOccurredAt().toLocalDate().format(DateTimeFormatter.ISO_DATE);
         String occurredTime = saved.getOccurredAt().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
