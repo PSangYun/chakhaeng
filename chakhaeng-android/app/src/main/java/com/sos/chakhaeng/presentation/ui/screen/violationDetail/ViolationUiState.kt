@@ -15,3 +15,7 @@ data class ViolationDetailUiState(
     val videoUrl: String? = null,             // ✅ 추가
     val photoUrls: List<String> = emptyList()
 )
+
+val VIOLATION_TYPE_OPTIONS = listOf(
+    "신호위반", "차선침범", "역주행", "무번호판", "헬멧 미착용", "위반"
+)

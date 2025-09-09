@@ -76,6 +76,9 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.core)
+    implementation(libs.calendar)
+    implementation(libs.clock)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     hilt{
