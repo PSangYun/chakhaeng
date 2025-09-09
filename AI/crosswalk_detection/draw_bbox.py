@@ -107,9 +107,9 @@ def process_split(images_root: Path, labels_root: Path, out_root: Path, split: s
 
 def main():
     ap = argparse.ArgumentParser(description="YOLO 시각화 (images/, labels/ 분리 구조)")
-    ap.add_argument("--images_root", default="dataset/images", help="예: dataset/images")
-    ap.add_argument("--labels_root", default="dataset/labels_bbox", help="예: dataset/labels")
-    ap.add_argument("--out_root", default="dataset/images_vis", help="예: dataset/images_vis")
+    ap.add_argument("--images_root", default="dataset/train/images", help="예: dataset/images")
+    ap.add_argument("--labels_root", default="dataset/train/labels", help="예: dataset/labels")
+    ap.add_argument("--out_root", default="dataset/train_images_vis", help="예: dataset/images_vis")
     ap.add_argument("--split", default="", help="train/val/test 등 (기본: train)")
     ap.add_argument("--classes", default=None, help="클래스 이름 파일(각 줄 하나)")
     ap.add_argument("--thickness", type=int, default=2, help="박스 두께")
