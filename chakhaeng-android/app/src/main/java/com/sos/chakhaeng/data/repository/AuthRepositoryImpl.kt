@@ -1,9 +1,9 @@
 package com.sos.chakhaeng.data.repository
 
 import com.sos.chakhaeng.data.datasource.remote.AuthRemoteDataSource
-import com.sos.chakhaeng.datastore.di.GoogleAuthManager
+import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.domain.repository.AuthRepository
-import com.sos.chakhaeng.session.SessionManager
+import com.sos.chakhaeng.core.session.SessionManager
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(

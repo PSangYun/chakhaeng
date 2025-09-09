@@ -8,8 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.sos.chakhaeng.presentation.ui.navigation.Routes
-import com.sos.chakhaeng.presentation.ui.navigation.bottomNavItems
+import com.sos.chakhaeng.presentation.navigation.bottomNavItems
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {

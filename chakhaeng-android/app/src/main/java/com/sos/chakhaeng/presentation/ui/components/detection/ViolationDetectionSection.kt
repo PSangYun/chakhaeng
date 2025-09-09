@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.sos.chakhaeng.presentation.ui.model.ViolationDetectionUiModel
-import com.sos.chakhaeng.presentation.ui.model.ViolationType
-import com.sos.chakhaeng.presentation.ui.theme.BackgroundGray
+import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
+import com.sos.chakhaeng.presentation.model.ViolationType
+import com.sos.chakhaeng.presentation.theme.BackgroundGray
 
 @Composable
 fun ViolationDetectionSection(
