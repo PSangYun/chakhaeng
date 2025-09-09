@@ -1,5 +1,6 @@
-package com.ssafy.chakeng.domain.user;
+package com.ssafy.chakeng.user;
 
+import com.ssafy.chakeng.user.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

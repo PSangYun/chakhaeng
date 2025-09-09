@@ -7,8 +7,8 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.ssafy.chakeng.auth.dto.AuthResponse;
 import com.ssafy.chakeng.auth.refresh.RefreshTokenStore;
 import com.ssafy.chakeng.config.security.JwtTokenProvider;
-import com.ssafy.chakeng.domain.user.User;
-import com.ssafy.chakeng.domain.user.UserRepository;
+import com.ssafy.chakeng.user.domain.User;
+import com.ssafy.chakeng.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -61,9 +61,9 @@ public class GoogleAuthService {
         }
         users.save(u);
 
-        String access = jwt.createAccessToken(u.getUserId(), u.getEmail());
-        String refresh = jwt.createRefreshToken(u.getUserId());
-        refreshStore.save(u.getUserId(), refresh, Duration.ofDays(30));
+        String access = jwt.createAccessToken(u.getId(), u.getEmail());
+        String refresh = jwt.createRefreshToken(u.getId());
+        refreshStore.save(u.getId(), refresh, Duration.ofDays(30));
 
         return new AuthResponse(access, 15 * 60, refresh, 30L * 24 * 60 * 60, first);
     }

@@ -15,7 +15,7 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     @Query("""
     select count(r)
     from Report r
-    where r.ownerId = :ownerId and r.status = "COMPLETED"
+    where r.ownerId = :ownerId and (r.status = "COMPLETED" or r.status = "PENDING")
       and r.createdAt >= :start
   """)
     long countTodayCompleted(@Param("ownerId") UUID ownerId, @Param("start") OffsetDateTime start);

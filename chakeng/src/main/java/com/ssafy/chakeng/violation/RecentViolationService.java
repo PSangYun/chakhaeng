@@ -38,6 +38,7 @@ public class RecentViolationService {
             case "LANE" -> "차선침범";
             case "WRONG_WAY" -> "역주행";
             case "NO_PLATE" -> "무번호판";
+            case "NO_HELMET" -> "헬멧 미착용";
             default -> "위반";
         };
     }
