@@ -22,12 +22,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sos.chakhaeng.presentation.theme.onSurfaceLight
+import com.sos.chakhaeng.presentation.theme.outlineVariantLight
+import com.sos.chakhaeng.presentation.theme.primaryLight
+import com.sos.chakhaeng.presentation.theme.surfaceLight
+import com.sos.chakhaeng.presentation.theme.surfaceVariantLight
 import com.sos.chakhaeng.presentation.ui.screen.violationDetail.VIOLATION_TYPE_OPTIONS
-import com.sos.chakhaeng.presentation.ui.theme.onSurfaceLight
-import com.sos.chakhaeng.presentation.ui.theme.outlineVariantLight
-import com.sos.chakhaeng.presentation.ui.theme.primaryLight
-import com.sos.chakhaeng.presentation.ui.theme.surfaceLight
-import com.sos.chakhaeng.presentation.ui.theme.surfaceVariantLight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

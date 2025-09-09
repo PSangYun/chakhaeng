@@ -19,6 +19,9 @@ import com.sos.chakhaeng.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
+import com.sos.chakhaeng.presentation.theme.onPrimaryContainerLight
+import com.sos.chakhaeng.presentation.theme.primaryLight
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.DatePickerField
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.TimePickerField
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationDetailTopBar
@@ -26,9 +29,6 @@ import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationInf
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationMediaSection
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationTypeField
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationVideoPlayerDialog
-import com.sos.chakhaeng.presentation.ui.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.ui.theme.onPrimaryContainerLight
-import com.sos.chakhaeng.presentation.ui.theme.primaryLight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

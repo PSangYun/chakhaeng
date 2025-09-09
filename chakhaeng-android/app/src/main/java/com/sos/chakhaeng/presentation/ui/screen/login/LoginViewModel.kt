@@ -3,7 +3,7 @@ package com.sos.chakhaeng.presentation.ui.screen.login
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sos.chakhaeng.datastore.di.GoogleAuthManager
+import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.domain.usecase.auth.GoogleLoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -36,13 +36,13 @@ import com.maxkeppeler.sheets.clock.models.ClockSelection
 import com.sos.chakhaeng.R
 import com.sos.chakhaeng.core.utils.formatKoreanTime
 import com.sos.chakhaeng.core.utils.toHourMinute
-import com.sos.chakhaeng.presentation.ui.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.ui.theme.onSurfaceLight
-import com.sos.chakhaeng.presentation.ui.theme.onSurfaceVariantLight
-import com.sos.chakhaeng.presentation.ui.theme.outlineVariantLight
-import com.sos.chakhaeng.presentation.ui.theme.primaryLight
-import com.sos.chakhaeng.presentation.ui.theme.surfaceLight
-import com.sos.chakhaeng.presentation.ui.theme.surfaceVariantLight
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
+import com.sos.chakhaeng.presentation.theme.onSurfaceLight
+import com.sos.chakhaeng.presentation.theme.onSurfaceVariantLight
+import com.sos.chakhaeng.presentation.theme.outlineVariantLight
+import com.sos.chakhaeng.presentation.theme.primaryLight
+import com.sos.chakhaeng.presentation.theme.surfaceLight
+import com.sos.chakhaeng.presentation.theme.surfaceVariantLight
 import java.time.LocalTime
 
 @Composable

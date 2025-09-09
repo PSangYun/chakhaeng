@@ -1,12 +1,14 @@
 package com.sos.chakhaeng.presentation.ui.components
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.sos.chakhaeng.presentation.ui.navigation.Routes
-import com.sos.chakhaeng.presentation.ui.navigation.bottomNavItems
+import com.sos.chakhaeng.presentation.navigation.bottomNavItems
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -15,7 +17,8 @@ fun BottomNavigationBar(navController: NavController) {
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.height(84.dp)
     ) {
         bottomNavItems.forEach { item ->
             NavigationBarItem(

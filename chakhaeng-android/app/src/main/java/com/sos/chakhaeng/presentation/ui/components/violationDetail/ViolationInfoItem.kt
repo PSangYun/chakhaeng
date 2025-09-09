@@ -8,14 +8,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.sos.chakhaeng.presentation.ui.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.ui.theme.onSurfaceLight
-import com.sos.chakhaeng.presentation.ui.theme.onSurfaceVariantLight
-import com.sos.chakhaeng.presentation.ui.theme.outlineLight
-import com.sos.chakhaeng.presentation.ui.theme.outlineVariantLight
-import com.sos.chakhaeng.presentation.ui.theme.primaryLight
-import com.sos.chakhaeng.presentation.ui.theme.surfaceLight
-import com.sos.chakhaeng.presentation.ui.theme.surfaceVariantLight
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
+import com.sos.chakhaeng.presentation.theme.onSurfaceLight
+import com.sos.chakhaeng.presentation.theme.outlineVariantLight
+import com.sos.chakhaeng.presentation.theme.primaryLight
+import com.sos.chakhaeng.presentation.theme.surfaceLight
+import com.sos.chakhaeng.presentation.theme.surfaceVariantLight
 
 /**
  * 텍스트성 항목을 모두 커버하는 공통 카드.
