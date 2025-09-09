@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.R
-import com.sos.chakhaeng.presentation.ui.theme.primaryLight
+import com.sos.chakhaeng.presentation.theme.primaryLight
 
 @Composable
 fun DetectionSection(

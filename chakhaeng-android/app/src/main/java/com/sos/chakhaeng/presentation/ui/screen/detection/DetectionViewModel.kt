@@ -4,10 +4,10 @@ import android.util.Log
 import androidx.camera.core.Camera
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sos.chakhaeng.core.usecase.DetectionUseCase
-import com.sos.chakhaeng.presentation.ui.model.ViolationDetectionUiModel
-import com.sos.chakhaeng.presentation.ui.model.ViolationType
-import com.sos.chakhaeng.presentation.ui.mapper.ViolationUiMapper
+import com.sos.chakhaeng.domain.usecase.DetectionUseCase
+import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
+import com.sos.chakhaeng.presentation.model.ViolationType
+import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
