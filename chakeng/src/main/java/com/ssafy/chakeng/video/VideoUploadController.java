@@ -1,13 +1,17 @@
 package com.ssafy.chakeng.video;
 
+import com.ssafy.chakeng.common.ApiResponse;
 import com.ssafy.chakeng.video.dto.CreateUploadUrlRequest;
 import com.ssafy.chakeng.video.dto.CreateUploadUrlResponse;
+import com.ssafy.chakeng.video.dto.VideoCompleteRequest;
+import com.ssafy.chakeng.video.dto.VideoResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/videos")
@@ -15,10 +19,18 @@ import java.util.Map;
 public class VideoUploadController {
 
     private final VideoStorageService videoStorageService;
+    private final VideoService videoService;
 
     @PostMapping("/upload-url")
-    public ResponseEntity<CreateUploadUrlResponse> createUploadUrl(@Valid @RequestBody CreateUploadUrlRequest req) {
-        return ResponseEntity.ok(videoStorageService.createUploadUrl(req));
+    public ResponseEntity<ApiResponse<CreateUploadUrlResponse>> createUploadUrl(@Valid @RequestBody CreateUploadUrlRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok("S3 주소입니다",videoStorageService.createUploadUrl(req)));
+    }
+
+    @PostMapping("/videos/complete")
+    public ResponseEntity<ApiResponse<VideoResponse>> complete(@RequestBody VideoCompleteRequest req,
+                                                  @RequestAttribute("userId") UUID userId) {
+        VideoResponse response = videoService.registerUploadedObject(userId, req);
+        return ResponseEntity.ok(ApiResponse.ok("서버에 동영상 url 저장 완료욧",response));
     }
 
     @GetMapping("/{videoKey}/play-url")
