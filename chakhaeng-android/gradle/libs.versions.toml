@@ -35,6 +35,9 @@ media3ExoplayerDash = "1.8.0"
 coreSplashscreen = "1.0.1"
 coilCompose = "3.2.0"
 coilNetworkOkhttp = "3.2.0"
+core = "1.3.0"
+calendar = "1.3.0"
+clock = "1.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -89,6 +92,9 @@ androidx-media3-exoplayer-dash = { group = "androidx.media3", name = "media3-exo
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coilCompose" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coilNetworkOkhttp" }
+core = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "core", version.ref = "core" }
+calendar = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "calendar", version.ref = "calendar" }
+clock = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "clock", version.ref = "clock" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

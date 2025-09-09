@@ -16,7 +16,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 import coil3.compose.AsyncImage
+import com.sos.chakhaeng.presentation.ui.theme.chakhaengTypography
 
 @Composable
 fun ViolationMediaSection(
@@ -28,7 +30,8 @@ fun ViolationMediaSection(
 ) {
     ElevatedCard(modifier = modifier.fillMaxWidth(), shape = cardShape) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            Text("사진/동영상", style = MaterialTheme.typography.labelLarge,
+            Text("사진/동영상", style = chakhaengTypography().bodyMedium,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(12.dp))
 
