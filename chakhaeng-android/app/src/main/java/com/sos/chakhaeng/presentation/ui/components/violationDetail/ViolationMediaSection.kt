@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import coil3.compose.AsyncImage
-import com.sos.chakhaeng.presentation.ui.theme.chakhaengTypography
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 
 @Composable
 fun ViolationMediaSection(

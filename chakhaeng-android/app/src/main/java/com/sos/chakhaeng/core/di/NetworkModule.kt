@@ -1,9 +1,10 @@
 package com.sos.chakhaeng.core.di
 
 import com.sos.chakhaeng.BuildConfig
-import com.sos.chakhaeng.data.remote.AuthInterceptor
-import com.sos.chakhaeng.data.remote.TokenAuthenticator
-import com.sos.chakhaeng.session.SessionManager
+import com.sos.chakhaeng.data.network.api.HomeApi
+import com.sos.chakhaeng.data.network.interceptor.AuthInterceptor
+import com.sos.chakhaeng.data.network.interceptor.TokenAuthenticator
+import com.sos.chakhaeng.core.session.SessionManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
