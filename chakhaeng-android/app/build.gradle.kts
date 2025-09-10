@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
-    id("kotlin-kapt")
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -66,7 +66,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.coil.video)
-    
+
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
@@ -78,13 +78,17 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
-
+    implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.core.splashscreen)
+    ksp(libs.hilt.compiler)
 
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(libs.core)
     implementation(libs.calendar)
     implementation(libs.clock)
-    kapt(libs.hilt.compiler)
+//    kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     hilt{
         enableAggregatingTask = false
