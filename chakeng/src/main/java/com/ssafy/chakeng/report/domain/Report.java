@@ -23,7 +23,7 @@ public class Report {
     @Column(nullable=false)
     private UUID ownerId;
 
-    @Column(nullable=false)
+    @Column(nullable=true)
     private UUID videoId;
 
     @Column(nullable = false)

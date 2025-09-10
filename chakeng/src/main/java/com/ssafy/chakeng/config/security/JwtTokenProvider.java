@@ -3,6 +3,7 @@ package com.ssafy.chakeng.config.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
+@Slf4j
 @Component
 public class JwtTokenProvider {
 
@@ -34,6 +36,7 @@ public class JwtTokenProvider {
 
     public String createAccessToken(UUID userId, String email) {
         Instant now = Instant.now();
+        log.info(String.valueOf(accessMinutes));
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .claim("email", email)

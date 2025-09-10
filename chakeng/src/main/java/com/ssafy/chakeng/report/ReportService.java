@@ -72,4 +72,12 @@ public class ReportService {
 
         report.setStatus(ReportStatus.CANCELED);
     }
+
+    @Transactional
+    public void deleteReport(UUID ownerId, UUID reportId) {
+        Report report = reportRepository.findByIdAndOwnerId(reportId, ownerId)
+                .orElseThrow(() -> new IllegalArgumentException("신고가 없거나 권한이 없습니다."));
+
+        reportRepository.delete(report);
+    }
 }

@@ -65,7 +65,7 @@ public class GoogleAuthService {
         String refresh = jwt.createRefreshToken(u.getId());
         refreshStore.save(u.getId(), refresh, Duration.ofDays(30));
 
-        return new AuthResponse(access, 15 * 60, refresh, 30L * 24 * 60 * 60, first);
+        return new AuthResponse(access, 150000, refresh, 30L * 24 * 60 * 60, first);
     }
 
     private GoogleIdToken verify(String idToken) {

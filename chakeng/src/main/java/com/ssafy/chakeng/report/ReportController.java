@@ -93,4 +93,13 @@ public class ReportController {
         reportService.cancelReport(userId, reportId);
         return ResponseEntity.ok(ApiResponse.ok("신고를 취소했습니다.", null));
     }
+
+    @DeleteMapping("/{reportId}/delete")
+    public ResponseEntity<ApiResponse<Void>> deleteReport(
+            @PathVariable UUID reportId,
+            @RequestAttribute("userId") UUID userId
+    ) {
+        reportService.deleteReport(userId, reportId);
+        return ResponseEntity.ok(ApiResponse.ok("신고를 삭제했습니다.", null));
+    }
 }
