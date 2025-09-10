@@ -81,7 +81,7 @@ dependencies {
     implementation(libs.core)
     implementation(libs.calendar)
     implementation(libs.clock)
-    kapt(libs.hilt.compiler)
+//    kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     hilt{
         enableAggregatingTask = false
