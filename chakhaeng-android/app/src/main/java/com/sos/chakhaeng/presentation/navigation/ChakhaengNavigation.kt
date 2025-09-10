@@ -53,7 +53,9 @@ fun ChakhaengNavigation(
             DetectionScreen()
         }
         composable(Routes.Report.route) {
-            ReportScreen()
+            ReportScreen(
+                paddingValues = paddingValues
+            )
         }
         composable(Routes.Statistics.route) {
             StatisticsScreen()

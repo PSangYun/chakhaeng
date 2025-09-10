@@ -8,7 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.sos.chakhaeng.presentation.model.ViolationType
+import com.sos.chakhaeng.domain.model.ViolationType
 
 @Composable
 fun ViolationFilterChips(
@@ -18,10 +18,12 @@ fun ViolationFilterChips(
 ) {
     val filters = listOf(
         ViolationType.ALL,
-        ViolationType.TRAFFIC_LIGHT_VIOLATION,
-        ViolationType.SPEED_VIOLATION,
-        ViolationType.LANE_VIOLATION,
-        ViolationType.CUTTING_IN
+        ViolationType.WRONG_WAY,
+        ViolationType.SIGNAL,
+        ViolationType.LANE,
+        ViolationType.NO_PLATE,
+        ViolationType.NO_HELMET,
+        ViolationType.OTHERS
     )
 
     LazyRow(
