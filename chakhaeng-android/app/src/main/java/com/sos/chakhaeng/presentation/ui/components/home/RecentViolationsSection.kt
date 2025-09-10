@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.domain.model.home.RecentViolation
+import com.sos.chakhaeng.presentation.theme.primaryLight
 
 @Composable
 fun RecentViolationsSection(
@@ -50,7 +51,7 @@ fun RecentViolationsSection(
                         text = "전체보기",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = primaryLight
                     )
                 }
             }

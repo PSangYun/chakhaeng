@@ -7,8 +7,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.domain.model.ViolationType
+import com.sos.chakhaeng.presentation.theme.BLUE300
+import com.sos.chakhaeng.presentation.theme.BackgroundGray
+import com.sos.chakhaeng.presentation.theme.inverseSurfaceLight
 
 @Composable
 fun ViolationFilterChips(
@@ -42,10 +46,10 @@ fun ViolationFilterChips(
                 selected = selectedFilter == filter,
                 shape = RoundedCornerShape(20.dp),
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    selectedContainerColor = BLUE300,
+                    selectedLabelColor = Color.White,
+                    containerColor = BackgroundGray,
+                    labelColor = inverseSurfaceLight
                 )
             )
         }
