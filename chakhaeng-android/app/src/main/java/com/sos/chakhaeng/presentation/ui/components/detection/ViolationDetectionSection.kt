@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
-import com.sos.chakhaeng.presentation.model.ViolationType
-import com.sos.chakhaeng.presentation.theme.BackgroundGray
+import com.sos.chakhaeng.presentation.theme.backgroundLight
 
 @Composable
 fun ViolationDetectionSection(
@@ -22,7 +22,7 @@ fun ViolationDetectionSection(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.background(BackgroundGray),
+        modifier = modifier.background(backgroundLight),
     ) {
 
         ViolationFilterChips(

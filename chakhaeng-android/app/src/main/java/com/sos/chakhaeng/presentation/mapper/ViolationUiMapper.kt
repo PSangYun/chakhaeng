@@ -1,7 +1,7 @@
 package com.sos.chakhaeng.presentation.mapper
 
+import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
-import com.sos.chakhaeng.presentation.model.ViolationType
 import java.time.Duration
 import java.time.LocalDateTime
 
