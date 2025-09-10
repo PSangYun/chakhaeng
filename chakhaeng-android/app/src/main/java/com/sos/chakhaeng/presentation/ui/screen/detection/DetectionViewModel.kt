@@ -4,9 +4,9 @@ import android.util.Log
 import androidx.camera.core.Camera
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.usecase.DetectionUseCase
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
-import com.sos.chakhaeng.presentation.model.ViolationType
 import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -120,7 +120,7 @@ class DetectionViewModel @Inject constructor(
         val sampleViolations = listOf(
             ViolationUiMapper.mapToUiModel(
                 id = 1,
-                type = ViolationType.TRAFFIC_LIGHT_VIOLATION,
+                type = ViolationType.WRONG_WAY,
                 licenseNumber = "12가1234",
                 location = "강남구 테헤란로 123",
                 detectedAt = LocalDateTime.now().minusMinutes(2),
@@ -129,7 +129,7 @@ class DetectionViewModel @Inject constructor(
             ),
             ViolationUiMapper.mapToUiModel(
                 id = 2,
-                type = ViolationType.SPEED_VIOLATION,
+                type = ViolationType.SIGNAL,
                 licenseNumber = "34나5678",
                 location = "서초구 서초대로 456",
                 detectedAt = LocalDateTime.now().minusMinutes(5),
@@ -138,7 +138,7 @@ class DetectionViewModel @Inject constructor(
             ),
             ViolationUiMapper.mapToUiModel(
                 id = 3,
-                type = ViolationType.LANE_VIOLATION,
+                type = ViolationType.LANE,
                 licenseNumber = "56다9012",
                 location = "마포구 월드컵로 789",
                 detectedAt = LocalDateTime.now().minusMinutes(12),
@@ -147,7 +147,7 @@ class DetectionViewModel @Inject constructor(
             ),
             ViolationUiMapper.mapToUiModel(
                 id = 4,
-                type = ViolationType.CUTTING_IN,
+                type = ViolationType.NO_PLATE,
                 licenseNumber = "78라3456",
                 location = "용산구 한강대로 321",
                 detectedAt = LocalDateTime.now().minusMinutes(25),
