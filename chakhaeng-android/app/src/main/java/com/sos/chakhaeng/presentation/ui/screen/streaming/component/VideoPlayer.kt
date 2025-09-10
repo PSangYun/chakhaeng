@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -29,6 +30,9 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.request.videoFrameMillis
 import com.sos.chakhaeng.core.utils.findActivity
 import com.sos.chakhaeng.core.utils.setFullscreen
 import com.sos.chakhaeng.presentation.ui.screen.streaming.PlayerViewModel
@@ -49,7 +53,6 @@ fun VideoPlayer(
     val activity = context.findActivity()
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val uiState by playerViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -129,9 +132,29 @@ fun VideoPlayer(
             pv.resizeMode = if (uiState.isFullscreen) AspectRatioFrameLayout.RESIZE_MODE_FIT
             else AspectRatioFrameLayout.RESIZE_MODE_FIT
         })
-
+        if (uiState.showPoster && uiState.posterModel != null) {
+            AsyncImage(
+                model = uiState.posterModel,
+                contentDescription = null,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else if (uiState.showPoster) {
+            // posterModel이 없는데 포스터가 필요한 경우(파일 기반): Coil VideoFrameDecoder로 프레임 썸네일 시도
+            // (m3u8 HLS는 실패할 수 있으므로 서버 포스터 권장)
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(playerViewModel.player.currentMediaItem?.localConfiguration?.uri)
+                    .videoFrameMillis(500) // 0.5s 지점 프레임
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
         AnimatedVisibility(
-            visible = uiState.isBuffering,
+            visible = uiState.showSpinner,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.Center)
