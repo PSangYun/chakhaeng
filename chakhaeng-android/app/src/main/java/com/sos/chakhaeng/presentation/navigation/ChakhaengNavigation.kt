@@ -70,7 +70,6 @@ fun ChakhaengNavigation(
         composable(Routes.ViolationDetail.route) {
             ViolationDetailScreen(
                 onBack = {},
-                onSubmitToGovernment = {},
                 paddingVaules = paddingValues
             )
         }

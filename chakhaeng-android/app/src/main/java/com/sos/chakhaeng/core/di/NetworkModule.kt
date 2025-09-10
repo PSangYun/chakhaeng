@@ -45,8 +45,8 @@ object NetworkModule {
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-            redactHeader("Authorization")
+            level = HttpLoggingInterceptor.Level.HEADERS
+//            redactHeader("Authorization")
         }
 
     @Provides
@@ -72,8 +72,8 @@ object NetworkModule {
         auth: AuthInterceptor,
         sessionManager: SessionManager
     ): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(logging)
         .addInterceptor(auth)
+        .addInterceptor(logging)
         .authenticator(TokenAuthenticator(sessionManager))
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
