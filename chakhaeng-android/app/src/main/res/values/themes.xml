@@ -7,7 +7,7 @@
     <style name="Theme.ChakHaeng.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
 
-        <item name="windowSplashScreenAnimatedIcon">@drawable/police_rabbit2</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/police_rabbit1</item>
 
         <!-- 스플래시 스크린 이후 전환될 테마 지정 -->
         <item name="postSplashScreenTheme">@style/Theme.ChakHaeng</item>
