@@ -85,13 +85,13 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = paddingValues
             ) {
-                // ESG 점수 카드
-                item {
-                    ESGScoreCard(
-                        score = uiState.esgScore,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+//                // ESG 점수 카드
+//                item {
+//                    ESGScoreCard(
+//                        score = uiState.esgScore,
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//                }
 
                 // 오늘의 탐지/신고 현황
                 item {
