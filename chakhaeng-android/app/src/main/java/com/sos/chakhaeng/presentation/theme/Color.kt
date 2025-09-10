@@ -221,11 +221,44 @@ val surfaceContainerHighestDarkHighContrast = Color(0xFF46464C)
 val neutral = Color(0xFFF2F2F2)
 val naverGreen = Color(0xFF06BE34)
 
-val Orange = Color(0xFFFF9800)
+val lightGray = Color(0xFFE5E7EB)
+val BackgroundGray = Color(0xFFF3F4F6)
 
-val LightOrange = Color(0xFFFFB74D)
+object ViolationColors {
+    // 배경색
+    val All = Color(0xFFD2CFCC)
+    val Critical = Color(0xFFFFEBEE)
+    val High = Color(0xFFFFCDD2)
+    val Medium = Color(0xFFFFF3E0)
+    val LowAmber = Color(0xFFFFF8E1)
+    val LowPurple = Color(0xFFF3E5F5)
+    val Others = Color(0xFFF5F5F5)
 
-val BackgroundGray = Color(0xFFE5E7EB)
+    // 아이콘 색상 (배경색보다 진한 색상)
+    val AllIcon = Color(0xFF4A5568)
+    val CriticalIcon = Color(0xFFD32F2F)
+    val HighIcon = Color(0xFFE53E3E)
+    val MediumIcon = Color(0xFFDD6B20)
+    val LowAmberIcon = Color(0xFFF57C00)
+    val LowPurpleIcon = Color(0xFF7B1FA2)
+    val OthersIcon = Color(0xFF718096)
+}
+
+
+object ReportStatusColors {
+    // 배경색 (Background Colors)
+    val Processing = Color(0xFFFFF4E0)      // 연한 주황 (처리중)
+    val Completed = Color(0xFFE8F5E8)       // 연한 초록 (완료)
+    val Rejected = Color(0xFFFFE5E5)        // 연한 빨강 (반려)
+    val Pending = Color(0xFFF0F8FF)         // 연한 파랑 (대기)
+
+    // 텍스트 색상 (Text Colors) - 배경색보다 진한 색상
+    val ProcessingText = Color(0xFFDD6B20)  // 주황
+    val CompletedText = Color(0xFF38A169)   // 초록
+    val RejectedText = Color(0xFFE53E3E)    // 빨강
+    val PendingText = Color(0xFF3182CE)     // 파랑
+}
+
 
 
 

@@ -15,8 +15,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
-import com.sos.chakhaeng.presentation.model.ViolationType
 
 @Composable
 fun ViolationThumbnail(

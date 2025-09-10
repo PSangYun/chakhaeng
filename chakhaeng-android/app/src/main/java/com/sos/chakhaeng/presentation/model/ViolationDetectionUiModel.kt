@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.model
 
+import com.sos.chakhaeng.domain.model.ViolationType
 import java.time.LocalDateTime
 
 data class ViolationDetectionUiModel(
