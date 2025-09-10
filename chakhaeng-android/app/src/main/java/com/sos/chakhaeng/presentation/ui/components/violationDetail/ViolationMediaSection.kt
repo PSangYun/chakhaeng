@@ -3,78 +3,91 @@ package com.sos.chakhaeng.presentation.ui.components.violationDetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
-import coil3.compose.AsyncImage
-import com.sos.chakhaeng.presentation.theme.chakhaengTypography
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.media3.common.MimeTypes
+import com.sos.chakhaeng.presentation.ui.screen.streaming.component.VideoPlayer
 
 @Composable
 fun ViolationMediaSection(
-    videoThumbnailUrl: String?,
-    onPlayVideoClick: @Composable () -> Unit,      // ✅ 썸네일 탭 → 재생 콜백
-    photoUrls: List<String>,
+    videoUrl: String,                           // ✅ 비디오 URL만 받음
     modifier: Modifier = Modifier,
-    cardShape: Shape = RoundedCornerShape(16.dp)
+    cardShape: Shape = RoundedCornerShape(16.dp),
+    autoPlay: Boolean = false,
+    showControls: Boolean = false,
+    initialMute: Boolean = false,
 ) {
     ElevatedCard(modifier = modifier.fillMaxWidth(), shape = cardShape) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            Text("사진/동영상", style = chakhaengTypography().bodyMedium,
+            Text(
+                "동영상",
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Spacer(Modifier.height(12.dp))
 
-            if (videoThumbnailUrl != null) {
+            if (!videoUrl.isNullOrBlank()) {
+                val mime = remember(videoUrl) {
+                    when {
+                        videoUrl.endsWith(".m3u8", true) -> MimeTypes.APPLICATION_M3U8
+                        videoUrl.endsWith(".mpd", true)  -> MimeTypes.APPLICATION_MPD
+                        videoUrl.endsWith(".mp4", true)  -> MimeTypes.VIDEO_MP4
+                        else -> null                     // VideoPlayer 내부 기본 탐지 사용
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16/9f)
+                        .aspectRatio(16f / 9f)
+                        .clip(cardShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    VideoPlayer(
+                        modifier = Modifier.fillMaxSize(),
+                        url = videoUrl,
+                        mimeType = mime,
+                        autoPlay = autoPlay,
+                        useController = showControls,
+                        initialMute = initialMute,
+                        onBackFromFullscreen = { /* no-op */ }
+                    )
+                }
+            } else {
+                // 빈 상태
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
                         .clip(cardShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
-                    AsyncImage(
-                        model = videoThumbnailUrl,
-                        contentDescription = "위반 동영상 썸네일",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    FilledTonalIconButton(onClick = onPlayVideoClick as () -> Unit) {
-                        Icon(Icons.Outlined.PlayCircle, contentDescription = "재생")
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
-            }
-
-            if (photoUrls.isNotEmpty()) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(photoUrls) { url ->
-                        AsyncImage(
-                            model = url,
-                            contentDescription = "증거 사진",
-                            modifier = Modifier
-                                .width(160.dp)
-                                .height(100.dp)
-                                .clip(cardShape),
-                            contentScale = ContentScale.Crop
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Outlined.PlayCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "동영상이 없습니다.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-            } else {
-                Text("등록된 사진이 없습니다.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
