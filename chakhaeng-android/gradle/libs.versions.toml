@@ -39,6 +39,7 @@ coilNetworkOkhttp = "3.2.0"
 core = "1.3.0"
 calendar = "1.3.0"
 clock = "1.3.0"
+coilVideo = "2.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -96,6 +97,7 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 core = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "core", version.ref = "core" }
 calendar = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "calendar", version.ref = "calendar" }
 clock = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "clock", version.ref = "clock" }
+coil-video = { group = "io.coil-kt", name = "coil-video", version.ref = "coilVideo" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
