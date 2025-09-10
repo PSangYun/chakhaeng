@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.navigation
 
+import StreamingScreen
 import android.util.Log
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
@@ -65,7 +66,11 @@ fun ChakhaengNavigation(
             StatisticsScreen()
         }
         composable(Routes.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(
+                navigateToStreaming = {
+                    navController.navigate(Routes.Streaming.route)
+                }
+            )
         }
         composable(Routes.ViolationDetail.route) {
             ViolationDetailScreen(
@@ -73,6 +78,9 @@ fun ChakhaengNavigation(
                 onSubmitToGovernment = {},
                 paddingVaules = paddingValues
             )
+        }
+        composable(Routes.Streaming.route) {
+            StreamingScreen()
         }
     }
     LaunchedEffect(authState) {
