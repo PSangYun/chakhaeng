@@ -8,7 +8,6 @@ import com.sos.chakhaeng.domain.model.home.TodayStats
 import com.sos.chakhaeng.domain.repository.HomeRepository
 import javax.inject.Inject
 
-private const val TAG = "HomeRepositoryImpl"
 class HomeRepositoryImpl @Inject constructor(
     private val homeApi: HomeApi
 ) : HomeRepository {
