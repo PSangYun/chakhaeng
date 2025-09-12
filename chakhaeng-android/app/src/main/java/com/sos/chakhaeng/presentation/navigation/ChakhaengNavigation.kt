@@ -13,6 +13,8 @@ import com.sos.chakhaeng.presentation.ui.screen.report.ReportScreen
 import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsScreen
 import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileScreen
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.sos.chakhaeng.core.session.AuthState
 import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
@@ -56,7 +58,15 @@ fun ChakhaengNavigation(
             )
         }
         composable(Routes.Detection.route) {
-            DetectionScreen()
+            DetectionScreen(
+                onCreateNewViolation = {
+                    navController.navigate(Routes.ViolationDetail.route)
+                },
+                onViolationClick = {
+                    navController.navigate(Routes.ViolationDetail.route)
+                },
+                paddingValues = paddingValues
+            )
         }
         composable(Routes.Report.route) {
             ReportScreen(
@@ -69,9 +79,11 @@ fun ChakhaengNavigation(
         composable(Routes.Profile.route) {
             ProfileScreen()
         }
-        composable(Routes.ViolationDetail.route) {
+        composable(
+            route = Routes.ViolationDetail.route,
+            arguments = listOf(navArgument("id"){type = NavType.StringType; nullable = true})) {
             ViolationDetailScreen(
-                onBack = {},
+                onBack = { navController.popBackStack() },
                 paddingVaules = paddingValues
             )
         }

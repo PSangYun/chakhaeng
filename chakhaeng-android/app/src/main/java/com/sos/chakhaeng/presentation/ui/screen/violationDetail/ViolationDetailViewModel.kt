@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.screen.violationDetail
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,6 +63,29 @@ class ViolationDetailViewModel @Inject constructor(
     fun updateTime(v: String)              = updateEntity { copy(time = v) }
     fun updateVideoUrl(url: String)       = updateEntity { copy(videoUrl = url) }
 
+
+    fun onVideoSelected(uri: Uri) {
+        viewModelScope.launch {
+//            // TODO: 업로드 진행 표시 (로딩 상태)
+//            repository.uploadViolationVideo(uri)
+//                .onSuccess { newUrl ->
+//                    // TODO: 상태 갱신
+//                    // uiState = uiState.copy(videoUrl = newUrl, …)
+//                }
+//                .onFailure { e ->
+//                    // TODO: 에러 처리(토스트/스낵바/상태)
+//                }
+        }
+    }
+
+    fun deleteVideo() {
+        viewModelScope.launch {
+//            repository.deleteViolationVideo()
+//                .onSuccess {
+//                    // uiState = uiState.copy(videoUrl = "")
+//                }
+        }
+    }
 
 
     // 서버에서 상세(동영상 URL 포함) 다시 받아올 때 호출 예시

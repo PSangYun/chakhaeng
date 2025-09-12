@@ -4,6 +4,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -13,7 +15,11 @@ fun ViolationDetailTopBar(
     onToggleEdit: () -> Unit
 ) {
     CenterAlignedTopAppBar(
-        title = { Text("위반 상세정보") },
+        title = { Text(
+            text = "위반 상세정보",
+            style = chakhaengTypography().titleSmall,
+            fontWeight = FontWeight.SemiBold
+        ) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "뒤로")
