@@ -2,6 +2,7 @@ package com.sos.chakhaeng.core.di
 
 import com.sos.chakhaeng.data.network.api.AuthApi
 import com.sos.chakhaeng.data.network.api.HomeApi
+import com.sos.chakhaeng.data.network.api.ReportApi
 import com.sos.chakhaeng.data.network.api.UserApi
 import com.sos.chakhaeng.data.network.api.ViolationApi
 import dagger.Module
@@ -16,7 +17,9 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object ServiceModule {
 
-    @Provides @Singleton @Named("noauth")
+    @Provides
+    @Singleton
+    @Named("noauth")
     fun provideAuthService(@Named("noauth") retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
 
@@ -37,6 +40,12 @@ object ServiceModule {
     @Singleton
     fun provideHomeApi(@Named("auth") retrofit: Retrofit): HomeApi {
         return retrofit.create(HomeApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReportApi(@Named("auth") retrofit: Retrofit): ReportApi {
+        return retrofit.create(ReportApi::class.java)
     }
 
     @Provides
