@@ -2,6 +2,8 @@ package com.sos.chakhaeng.presentation.navigation
 
 import StreamingScreen
 import android.util.Log
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,14 +34,40 @@ fun ChakhaengNavigation(
     NavHost(
         navController = navController,
         startDestination = startDestination,
+        enterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Start,
+                tween(700)
+            )
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Start,
+                tween(700)
+            )
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.End,
+                tween(700)
+            )
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.End,
+                tween(700)
+            )
+        },
         modifier = modifier
     ) {
         composable(Routes.Login.route) {
             LoginScreen(
-                navigateToHome = { navController.navigate(Routes.Home.route) {
-                    popUpTo(0)
-                    launchSingleTop = true
-                } },
+                navigateToHome = {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                },
                 googleAuthManager = googleAuthManager
             )
         }
@@ -85,7 +113,7 @@ fun ChakhaengNavigation(
         }
     }
     LaunchedEffect(authState) {
-        when(authState) {
+        when (authState) {
             is AuthState.Authenticated -> {
                 if (navController.currentDestination?.route != Routes.Home.route) {
                     navController.navigate(Routes.Home.route) {
@@ -95,6 +123,7 @@ fun ChakhaengNavigation(
                     }
                 }
             }
+
             AuthState.Unauthenticated -> {
                 if (navController.currentDestination?.route != Routes.Login.route) {
                     navController.navigate(Routes.Login.route) {
