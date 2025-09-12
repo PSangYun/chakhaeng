@@ -33,6 +33,7 @@ class PlayerViewModel @OptIn(UnstableApi::class)
 
     private var hideJob: Job? = null
     private var tickerJob: Job? = null
+    private var spinnerJob: Job? = null
 
     init {
         // 기본 스케일링(비율 유지)
@@ -43,7 +44,21 @@ class PlayerViewModel @OptIn(UnstableApi::class)
                 _uiState.update { it.copy(isPlaying = isPlaying) }
             }
             override fun onIsLoadingChanged(isLoading: Boolean) {
-                _uiState.update { it.copy(isBuffering = isLoading) }
+
+            }
+            override fun onPlaybackStateChanged(state: Int) {
+                _uiState.update { it.copy(playbackState = state) }
+                when (state) {
+                    Player.STATE_BUFFERING -> setSpinnerVisibleDebounced(true)
+                    Player.STATE_READY -> {
+                        setSpinnerVisibleDebounced(false)
+                    }
+                    Player.STATE_ENDED, Player.STATE_IDLE -> setSpinnerVisibleDebounced(false)
+                }
+            }
+
+            override fun onRenderedFirstFrame() {
+                _uiState.update { it.copy(showPoster = false) }
             }
             override fun onPlayerError(error: PlaybackException) {
                 _uiState.update { it.copy(error = error) }
@@ -52,14 +67,37 @@ class PlayerViewModel @OptIn(UnstableApi::class)
 
         startTicker()
     }
-    fun setSource(url: String, mimeType: String? = MimeTypes.APPLICATION_M3U8, autoPlay: Boolean, initialMute: Boolean) {
-        if (player.mediaItemCount == 0 || player.currentMediaItem?.localConfiguration?.uri.toString() != url) {
+    fun setSource(
+        url: String,
+        mimeType: String? = MimeTypes.APPLICATION_M3U8,
+        autoPlay: Boolean,
+        initialMute: Boolean,
+        poster: Any? = null,
+    ) {
+        val needReplace = player.mediaItemCount == 0 ||
+                player.currentMediaItem?.localConfiguration?.uri.toString() != url
+
+        _uiState.update { it.copy(posterModel = poster, showPoster = true) }
+
+        if (needReplace) {
             val item = MediaItem.Builder().setUri(url).setMimeType(mimeType).build()
             player.setMediaItem(item)
         }
         player.playWhenReady = autoPlay
         setMuted(initialMute)
         player.prepare()
+    }
+
+    private fun setSpinnerVisibleDebounced(visible: Boolean) {
+        spinnerJob?.cancel()
+        if (visible) {
+            spinnerJob = viewModelScope.launch {
+                delay(250)
+                _uiState.update { it.copy(showSpinner = true) }
+            }
+        } else {
+            _uiState.update { it.copy(showSpinner = false) }
+        }
     }
 
     fun playPause() { if (player.isPlaying) player.pause() else player.play() }
@@ -87,7 +125,7 @@ class PlayerViewModel @OptIn(UnstableApi::class)
     private fun scheduleAutoHide() {
         hideJob?.cancel()
         hideJob = viewModelScope.launch {
-            delay(1000)
+            delay(3000)
             _uiState.update { it.copy(controlsVisible = false) }
         }
     }
