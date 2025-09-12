@@ -1,18 +1,10 @@
 package com.sos.chakhaeng.presentation.ui.screen.violationDetail
 
-import com.sos.chakhaeng.domain.model.ViolationEntity
+import com.sos.chakhaeng.domain.model.violation.ViolationEntity
 
 data class ViolationDetailUiState(
     val isEditing: Boolean = false,
-    val reportType: String = "",
-    val region: String = "",
-    val title: String = "",
-    val content: String = "",
-    val carNumber: String = "",
-    val date: String = "",
-    val time: String = "",
-    val videoThumbnailUrl: String? = null,
-    val videoUrl: String? = null,             // ✅ 추가
+    val violationDetail: ViolationEntity = ViolationEntity(),
     val photoUrls: List<String> = emptyList()
 )
 
