@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -16,21 +17,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.domain.model.report.ReportItem
+import com.sos.chakhaeng.presentation.theme.ChakHaengTheme
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.errorLight
 import com.sos.chakhaeng.presentation.theme.onSurfaceVariantLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
 import com.sos.chakhaeng.presentation.theme.surfaceLight
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportItemCard(
     reportItem: ReportItem,
     onClick: () -> Unit,
-    onWatchVideo: (ReportItem) -> Unit = {},
     onDelete: (ReportItem) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -121,7 +128,7 @@ fun ReportItemCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = reportItem.occurredAt,
+                        text = formatTimestamp(reportItem.occurredAt),
                         style = chakhaengTypography().bodyMedium,
                         color = onSurfaceVariantLight
                     )
@@ -146,7 +153,6 @@ fun ReportItemCard(
                 }
             }
 
-
             HorizontalDivider(
                 thickness = 0.2.dp,
                 color = onSurfaceVariantLight
@@ -155,50 +161,82 @@ fun ReportItemCard(
             // 하단 버튼 영역
             ReportItemButtons(
                 reportItem = reportItem,
-                onWatchVideo = onWatchVideo,
-                onDelete = onDelete,
+                onDelete = { showDeleteDialog = true },
             )
         }
+    }
+
+    // 삭제 확인 다이얼로그
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    text = "삭제하시겠습니까?",
+                    style = chakhaengTypography().titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "삭제된 신고는 복구할 수 없습니다.",
+                        style = chakhaengTypography().bodySmall,
+                        color = errorLight
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDelete(reportItem)
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(
+                        text = "삭제",
+                        style = chakhaengTypography().bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = errorLight
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false }
+                ) {
+                    Text(
+                        text = "취소",
+                        style = chakhaengTypography().bodySmall,
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 }
 
 @Composable
 private fun ReportItemButtons(
     reportItem: ReportItem,
-    onWatchVideo: (ReportItem) -> Unit,
-    onDelete: (ReportItem) -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxSize()
             .padding(top = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.Center,
     ) {
         Row(
-            modifier = Modifier.clickable{onWatchVideo(reportItem) },
+            modifier = Modifier.clickable { onDelete() },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = primaryLight
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = "영상보기",
-                style = chakhaengTypography().bodyMedium,
-                color = primaryLight
-            )
-        }
-
-        Row(
-            modifier = Modifier.clickable{onDelete(reportItem) },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Delete,
+                imageVector = Icons.Default.Cancel,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = errorLight
@@ -211,4 +249,11 @@ private fun ReportItemButtons(
             )
         }
     }
+}
+
+private fun formatTimestamp(epochMilli: Long): String {
+    val instant = Instant.ofEpochMilli(epochMilli)
+    val localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    return localDateTime.format(formatter)
 }
