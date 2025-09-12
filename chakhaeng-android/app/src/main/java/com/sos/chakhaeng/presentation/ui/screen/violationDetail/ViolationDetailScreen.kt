@@ -1,5 +1,9 @@
 package com.sos.chakhaeng.presentation.ui.screen.violationDetail
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -19,6 +24,7 @@ import com.sos.chakhaeng.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sos.chakhaeng.core.utils.rememberVideoPicker
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.onPrimaryContainerLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
@@ -37,13 +43,17 @@ fun ViolationDetailScreen(
     onBack: () -> Unit,
     paddingVaules: PaddingValues
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val entity = state.violationDetail
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     var videoDialogVisible by remember { mutableStateOf(false) }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
+    val openVideoPicker = rememberVideoPicker { uri ->
+        viewModel.onVideoSelected(uri)     // 업로드/교체 로직으로 연결
+    }
 
     Scaffold(
         modifier = Modifier
@@ -73,7 +83,8 @@ fun ViolationDetailScreen(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+//                    .padding(horizontal = 16.dp),
+                        ,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
 
@@ -110,7 +121,7 @@ fun ViolationDetailScreen(
                             Text(
                                 text = "AI가 위반 상황을 분석하여 신고서를 자동 작성했습니다. 각 항목을 확인하고 필요시 수정하세요.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                color = onPrimaryContainerLight.copy(alpha = 0.8f),
                                 lineHeight = 20.sp
                             )
                         }
@@ -119,6 +130,9 @@ fun ViolationDetailScreen(
 
                 ViolationMediaSection(
                     videoUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+                    onRequestUpload = { openVideoPicker() },
+                    onRequestEdit   = { openVideoPicker() },
+                    onRequestDelete = { viewModel.deleteVideo() }
                 )
 
                 // 이하 공통 카드들
