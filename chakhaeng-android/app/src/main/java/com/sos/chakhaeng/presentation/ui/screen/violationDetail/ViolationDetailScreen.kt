@@ -35,10 +35,10 @@ import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationVid
 fun ViolationDetailScreen(
     viewModel: ViolationDetailViewModel = hiltViewModel(),
     onBack: () -> Unit,
-    onSubmitToGovernment: (ViolationDetailUiState) -> Unit,
     paddingVaules: PaddingValues
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val entity = state.violationDetail
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var videoDialogVisible by remember { mutableStateOf(false) }
@@ -118,44 +118,34 @@ fun ViolationDetailScreen(
                 }
 
                 ViolationMediaSection(
-                    videoThumbnailUrl = state.videoThumbnailUrl,
-                    onPlayVideoClick = {
-                        if (state.videoUrl.isNullOrBlank()) {
-                            LaunchedEffect(Unit) {
-                                snackbarHostState.showSnackbar("동영상 주소를 불러오지 못했습니다.")
-                            }
-                        } else {
-                            videoDialogVisible = true
-                        }
-                    },
-                    photoUrls = state.photoUrls
+                    videoUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
                 )
 
                 // 이하 공통 카드들
                 ViolationTypeField(
-                    value = state.reportType,
+                    value = entity.violationType,
                     isEditing = state.isEditing,
-                    onValueChange = viewModel::updateReportType
+                    onValueChange = viewModel::updateViolationType
                 )
-                ViolationInfoItem("신고 발생 지역", state.region, state.isEditing, viewModel::updateRegion, placeholder = "도로명 주소 또는 지점 설명")
-                ViolationInfoItem("제목", state.title, state.isEditing, viewModel::updateTitle, placeholder = "예: 강남대로 522에서 신호위반")
-                ViolationInfoItem("신고 내용", state.content, state.isEditing, viewModel::updateContent,
+                ViolationInfoItem("신고 발생 지역", entity.location, state.isEditing, viewModel::updateLocation, placeholder = "도로명 주소 또는 지점 설명")
+                ViolationInfoItem("제목", entity.title, state.isEditing, viewModel::updateTitle, placeholder = "예: 강남대로 522에서 신호위반")
+                ViolationInfoItem("신고 내용", entity.description, state.isEditing, viewModel::updateDescription,
                     placeholder = "상세한 상황 설명을 입력하세요", singleLine = false, minLines = 5)
-                ViolationInfoItem("차량 번호", state.carNumber, state.isEditing, viewModel::updateCarNumber, placeholder = "예: 12가1234")
+                ViolationInfoItem("차량 번호", entity.plateNumber, state.isEditing, viewModel::updatePlateNumber, placeholder = "예: 12가1234")
                 DatePickerField(
-                    value = state.date,
+                    value = entity.date,
                     isEditing = state.isEditing,
                     onDateChange = viewModel::updateDate,
                 )
                 TimePickerField(
-                    value = state.time,
+                    value = entity.time,
                     isEditing = state.isEditing,
                     onTimeChange = viewModel::updateTime
                 )
 
                 Spacer(Modifier.height(8.dp))
                 Button(
-                    onClick = { onSubmitToGovernment(state) },
+                    onClick = { viewModel.onSubmit() },
                     modifier = Modifier.fillMaxWidth().height(64.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -183,9 +173,9 @@ fun ViolationDetailScreen(
 
 
     // ✅ 동영상 재생 다이얼로그
-    if (videoDialogVisible && !state.videoUrl.isNullOrBlank()) {
+    if (videoDialogVisible && !entity.videoUrl.isNullOrBlank()) {
         ViolationVideoPlayerDialog(
-            url = state.videoUrl!!,
+            url = entity.videoUrl!!,
             onDismiss = { videoDialogVisible = false }
         )
     }

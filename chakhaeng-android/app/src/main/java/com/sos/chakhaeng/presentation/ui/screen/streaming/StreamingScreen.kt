@@ -1,5 +1,6 @@
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import com.sos.chakhaeng.presentation.ui.screen.streaming.component.VideoPlayer
@@ -7,10 +8,13 @@ import com.sos.chakhaeng.presentation.ui.screen.streaming.component.VideoPlayer
 
 @OptIn(UnstableApi::class)
 @Composable
-fun StreamingScreen() {
+fun StreamingScreen(
+    modifier: Modifier = Modifier
+) {
     val hlsUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
 
     VideoPlayer(
+        modifier = modifier,
         url = hlsUrl,
         mimeType = MimeTypes.APPLICATION_M3U8,
         autoPlay = false,

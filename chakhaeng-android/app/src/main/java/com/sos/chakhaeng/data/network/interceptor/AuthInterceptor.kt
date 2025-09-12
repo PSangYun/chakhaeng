@@ -1,6 +1,7 @@
 // core/data/remote/AuthInterceptor.kt
 package com.sos.chakhaeng.data.network.interceptor
 
+import android.util.Log
 import okhttp3.Interceptor
 import okhttp3.Response
 import com.sos.chakhaeng.core.session.SessionManager
@@ -13,6 +14,7 @@ class AuthInterceptor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val req = chain.request()
+        Log.d("AuthInt", "→ ${req.method} ${req.url.encodedPath}")
 
         if (shouldSkipAuth(req)) {
             return chain.proceed(req)
@@ -23,9 +25,10 @@ class AuthInterceptor(
         }
 
         val token = sessionManager.getFreshAccessTokenOrNull()
+        Log.d("AuthInt", "token? ${!token.isNullOrBlank()} / ${token?.take(12)}…")
         val newReq = if (token != null) {
             req.newBuilder()
-                .addHeader("Authorization", "Bearer $token")
+                .header("Authorization", "Bearer $token")
                 .build()
         } else {
             req // 토큰 없으면 그대로 (서버가 401 응답할 수 있음)

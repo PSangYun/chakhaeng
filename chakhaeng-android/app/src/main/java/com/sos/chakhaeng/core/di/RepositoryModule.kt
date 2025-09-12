@@ -2,8 +2,12 @@ package com.sos.chakhaeng.core.di
 
 import com.sos.chakhaeng.data.repository.AuthRepositoryImpl
 import com.sos.chakhaeng.data.repository.HomeRepositoryImpl
+import com.sos.chakhaeng.data.repository.ReportRepositoryImpl
+import com.sos.chakhaeng.domain.repository.ReportRepository
+import com.sos.chakhaeng.data.repository.ViolationRepositoryImpl
 import com.sos.chakhaeng.domain.repository.AuthRepository
 import com.sos.chakhaeng.domain.repository.HomeRepository
+import com.sos.chakhaeng.domain.repository.ViolationRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -23,4 +27,16 @@ abstract class RepositoryModule {
     abstract fun bindHomeRepository(
         homeRepositoryImpl: HomeRepositoryImpl
     ) : HomeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindReportRepository(
+        reportRepositoryImpl: ReportRepositoryImpl
+    ) : ReportRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindViolationRepository(
+        violationRepositoryImpl: ViolationRepositoryImpl
+    ) : ViolationRepository
 }

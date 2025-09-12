@@ -8,8 +8,7 @@ data class ReportItem(
     val location: String,
     val videoFileName: String,
     val plateNumber: String,
-    val occurredAt: String,
+    val occurredAt: Long,
     val status: ReportStatus,
-    val createdAt: String,
-    val thumbnailUrl: String? = null,
+    val createdAt: Long,
 )
