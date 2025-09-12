@@ -2,6 +2,8 @@
 package com.sos.chakhaeng.presentation.ui.components.violationDetail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PlayCircle
@@ -15,9 +17,23 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.composed
 import androidx.media3.common.MimeTypes
+import com.sos.chakhaeng.presentation.theme.ViolationColors.HighIcon
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
+import com.sos.chakhaeng.presentation.theme.errorLight
+import com.sos.chakhaeng.presentation.theme.onSurfaceVariantLight
+import com.sos.chakhaeng.presentation.theme.primaryLight
 import com.sos.chakhaeng.presentation.ui.screen.streaming.component.VideoPlayer
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViolationMediaSection(
     videoUrl: String,                           // ✅ 비디오 URL만 받음
@@ -26,15 +42,41 @@ fun ViolationMediaSection(
     autoPlay: Boolean = false,
     showControls: Boolean = false,
     initialMute: Boolean = false,
+    onRequestUpload: () -> Unit = {},
+    onRequestEdit: () -> Unit = {},
+    onRequestDelete: () -> Unit = {},
 ) {
+    // 바텀 시트 관리
+    var openSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     ElevatedCard(modifier = modifier.fillMaxWidth(), shape = cardShape) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            Text(
-                "동영상",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "동영상",
+                    style = chakhaengTypography().bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = onSurfaceVariantLight
+                )
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = { openSheet = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = null,
+                        tint = primaryLight
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "영상 관리",
+                        style = chakhaengTypography().bodyMedium,
+                        color = primaryLight
+                    )
+                }
+            }
             Spacer(Modifier.height(12.dp))
 
             if (!videoUrl.isNullOrBlank()) {
@@ -91,4 +133,75 @@ fun ViolationMediaSection(
             }
         }
     }
+
+    if (openSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { openSheet = false },
+            sheetState = sheetState,
+        ) {
+            if (videoUrl.isNotBlank()) {
+                ActionItem(
+                    icon = { Icon(Icons.Default.Edit, contentDescription = null)},
+                    title = "동영상 수정",
+                    onClick = {
+                        openSheet = false
+                        onRequestEdit()
+                    }
+                )
+                ActionItem(
+                    icon = { Icon(Icons.Default.Delete, contentDescription = null)},
+                    title = "동영상 삭제",
+                    isDelete = true,
+                    onClick = {
+                        openSheet = false
+                        onRequestDelete()
+                    }
+                )
+            } else {
+                ActionItem(
+                    icon = { Icon(Icons.Outlined.CloudUpload, contentDescription = null)},
+                    title = "동영상 업로드",
+                    onClick = {
+                        openSheet = false
+                        onRequestUpload()
+                    }
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
 }
+
+@Composable
+private fun ActionItem(
+    icon: @Composable () -> Unit,
+    title: String,
+    isDelete: Boolean = false,
+    onClick: () -> Unit
+) {
+    val colors = if (isDelete) {
+        ListItemDefaults.colors(
+            headlineColor = HighIcon,
+            leadingIconColor = HighIcon
+        )
+    } else {
+        ListItemDefaults.colors()
+    }
+    ListItem(
+        leadingContent = icon,
+        headlineContent = { Text(title) },
+        colors = colors,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickableNoRipple { onClick() }
+    )
+}
+
+@Composable
+private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
+    composed {
+        clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }
+        ) { onClick() }
+    }

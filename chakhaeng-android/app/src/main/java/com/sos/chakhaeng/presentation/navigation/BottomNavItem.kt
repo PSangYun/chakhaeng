@@ -17,7 +17,7 @@ val bottomNavItems = listOf(
         label = "홈"
     ),
     BottomNavItem(
-        route = Routes.ViolationDetail.route,
+        route = Routes.Detection.route,
         icon = Icons.Default.PhotoCamera,
         label = "탐지"
     ),
