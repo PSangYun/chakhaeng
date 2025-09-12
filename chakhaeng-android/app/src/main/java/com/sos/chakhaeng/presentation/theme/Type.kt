@@ -12,11 +12,9 @@ import com.sos.chakhaeng.R
 
 @Composable
 fun chakhaengDefaultFont(): FontFamily {
-    return if (LocalInspectionMode.current) {
-        FontFamily.Default
-    } else {
-        FontFamily(Font(R.font.pretendard_variable))
-    }
+
+    return FontFamily(Font(R.font.pretendard_variable))
+
 }
 
 @Composable

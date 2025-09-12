@@ -59,6 +59,13 @@ dependencies {
     // exo player
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.media3.exoplayer.dash)
+
+    // coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.video)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
@@ -76,8 +83,6 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     ksp(libs.hilt.compiler)
 
-    implementation(libs.coil.compose)
-    implementation(libs.coil.network.okhttp)
     implementation(libs.core)
     implementation(libs.calendar)
     implementation(libs.clock)
