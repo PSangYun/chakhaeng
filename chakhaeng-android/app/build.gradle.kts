@@ -80,6 +80,8 @@ dependencies {
     implementation(libs.hilt.android)
 
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.lifecycle.service)
+    implementation(libs.protolite.well.known.types)
 
     ksp(libs.hilt.compiler)
 

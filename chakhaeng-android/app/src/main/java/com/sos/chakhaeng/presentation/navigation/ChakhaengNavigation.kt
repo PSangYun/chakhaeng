@@ -20,9 +20,9 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.sos.chakhaeng.core.session.AuthState
 import com.sos.chakhaeng.core.session.GoogleAuthManager
+import com.sos.chakhaeng.presentation.main.AppEntryViewModel
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
 import com.sos.chakhaeng.presentation.ui.screen.violationDetail.ViolationDetailScreen
-import okhttp3.Route
 
 @Composable
 fun ChakhaengNavigation(
@@ -31,7 +31,8 @@ fun ChakhaengNavigation(
     googleAuthManager: GoogleAuthManager,
     startDestination: String,
     paddingValues: PaddingValues,
-    authState: AuthState
+    authState: AuthState,
+    appEntryViewModel: AppEntryViewModel
 ) {
     NavHost(
         navController = navController,
@@ -94,7 +95,8 @@ fun ChakhaengNavigation(
                 onViolationClick = {
                     navController.navigate(Routes.ViolationDetail.route)
                 },
-                paddingValues = paddingValues
+                paddingValues = paddingValues,
+                appEntryViewModel = appEntryViewModel
             )
         }
         composable(Routes.Report.route) {
