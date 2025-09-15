@@ -28,6 +28,7 @@ import com.sos.chakhaeng.core.utils.rememberVideoPicker
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.onPrimaryContainerLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
+import com.sos.chakhaeng.presentation.ui.components.UploadingOverlay
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.DatePickerField
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.TimePickerField
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationDetailTopBar
@@ -182,6 +183,14 @@ fun ViolationDetailScreen(
 
             }
         }
+
+        // ✅ 업로드 오버레이
+        UploadingOverlay(
+            visible = state.isUploading,
+            progress = state.uploadProgress.takeIf { !it.isNaN() },
+            lottieUrl = "https://lottie.host/3828abb2-6b0d-40c4-9878-435899ab26fa/q4i8TQV1qV.json" // 예시 URL (원하는 걸로 교체)
+            // lottieRawRes = R.raw.uploading   // 오프라인 파일 쓰려면 요걸로
+        )
     }
 
 
