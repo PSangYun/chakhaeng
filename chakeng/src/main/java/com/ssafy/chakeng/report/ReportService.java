@@ -3,6 +3,7 @@ package com.ssafy.chakeng.report;
 import com.ssafy.chakeng.report.domain.Report;
 import com.ssafy.chakeng.report.domain.ReportStatus;
 import com.ssafy.chakeng.report.dto.ReportCreateRequest;
+import com.ssafy.chakeng.report.dto.ReportResponse;
 import com.ssafy.chakeng.report.dto.ReportsResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +61,21 @@ public class ReportService {
                         .build())
                 .collect(Collectors.toList());
     }
-
+    public ReportResponse getReportsById(UUID reportId) {
+        return reportRepository.findById(reportId)
+                .map(r -> ReportResponse.builder()
+                        .id(r.getId())
+                        .violationType(r.getViolationType())
+                        .location(r.getLocation())
+                        .title(r.getTitle())
+                        .plateNumber(r.getPlateNumber())
+                        .occurredAt(r.getOccurredAt())
+                        .status(r.getStatus())
+                        .description(r.getDescription())
+                        .createdAt(r.getCreatedAt())
+                        .build())
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID로 신고가 존재하지 않습니다"));
+    }
     @Transactional
     public void cancelReport(UUID ownerId, UUID reportId) {
         Report report = reportRepository.findByIdAndOwnerId(reportId, ownerId)

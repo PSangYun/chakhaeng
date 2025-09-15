@@ -3,6 +3,7 @@ package com.ssafy.chakeng.report;
 import com.ssafy.chakeng.common.ApiResponse;
 import com.ssafy.chakeng.report.domain.Report;
 import com.ssafy.chakeng.report.dto.ReportCreateRequest;
+import com.ssafy.chakeng.report.dto.ReportResponse;
 import com.ssafy.chakeng.report.dto.ReportsResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
@@ -36,7 +37,13 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공",reportService.getReportsByUser(userId)));
     }
 
-
+    @GetMapping("/{reportId}")
+    public ResponseEntity<ApiResponse<ReportResponse>> getReport(
+            @PathVariable UUID reportId
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공",
+                reportService.getReportsById(reportId)));
+    }
     @PostMapping("/create-report")
     public ResponseEntity<ApiResponse<Map<String, Object>>> send(@RequestBody ReportCreateRequest body, @RequestAttribute("userId") UUID userId) {
         Report saved = reportService.createFromRequest(body,userId);
