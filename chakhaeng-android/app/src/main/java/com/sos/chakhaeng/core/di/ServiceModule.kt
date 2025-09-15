@@ -4,6 +4,7 @@ import com.sos.chakhaeng.data.network.api.AuthApi
 import com.sos.chakhaeng.data.network.api.HomeApi
 import com.sos.chakhaeng.data.network.api.ReportApi
 import com.sos.chakhaeng.data.network.api.UserApi
+import com.sos.chakhaeng.data.network.api.VideoApi
 import com.sos.chakhaeng.data.network.api.ViolationApi
 import dagger.Module
 import dagger.Provides
@@ -53,4 +54,10 @@ object ServiceModule {
     fun provideViolationService(
         @Named("auth") retrofit: Retrofit
     ): ViolationApi = retrofit.create(ViolationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideVideoApi(
+        @Named("auth") retrofit: Retrofit
+    ): VideoApi = retrofit.create(VideoApi::class.java)
 }

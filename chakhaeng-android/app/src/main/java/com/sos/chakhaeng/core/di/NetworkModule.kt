@@ -80,6 +80,16 @@ object NetworkModule {
         .writeTimeout(20, TimeUnit.SECONDS)
         .build()
 
+    @Provides
+    @Singleton
+    @Named("s3")
+    fun provideS3OkHttpClient(): OkHttpClient =
+        OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.MINUTES)
+            .writeTimeout(5, TimeUnit.MINUTES)
+            .build()
+
     @Provides @Singleton @Named("noauth")
     fun provideNoAuthRetrofit(
         @Named("noauth") okHttp: OkHttpClient,

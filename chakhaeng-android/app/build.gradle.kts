@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.hilt.android)
 
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.lottie.compose)
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.protolite.well.known.types)
 
