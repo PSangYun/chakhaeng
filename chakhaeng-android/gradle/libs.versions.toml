@@ -100,13 +100,10 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 core = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "core", version.ref = "core" }
 calendar = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "calendar", version.ref = "calendar" }
 clock = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "clock", version.ref = "clock" }
-<<<<<<< chakhaeng-android/gradle/libs.versions.toml
 lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottieCompose" }
-=======
 coil-video = { group = "io.coil-kt", name = "coil-video", version.ref = "coilVideo" }
 androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycleService" }
 protolite-well-known-types = { group = "com.google.firebase", name = "protolite-well-known-types", version.ref = "protoliteWellKnownTypes" }
->>>>>>> chakhaeng-android/gradle/libs.versions.toml
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
