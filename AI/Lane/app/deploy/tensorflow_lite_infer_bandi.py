@@ -94,7 +94,7 @@ class UFLDv2TFLite:
         inp = img_norm[np.newaxis, ...].astype(np.float32)  # [1, 320, 1600, 3]
         
         return inp
-
+    
     def forward(self, img_bgr):
         
         inp = self.data_preprocess(img_bgr)
@@ -123,9 +123,63 @@ class UFLDv2TFLite:
         sort_left_to_right: bool = True,
         ):
 
+        loc_row = pred["loc_row"]      # [1, 200, 72, 4]
+        loc_col = pred["loc_col"]      # [1, 100, 81, 4]
+        exist_row = pred["exist_row"]  # [1, 2, 72, 4]
+        exist_col = pred["exist_col"]  # [1, 2, 81, 4]
+        
+        exist_row_prob = softmax_np(exist_row.astype(np.float32), axis=1)[0, 1]#[:, 1, :, :] 는 존재 여부에 대한 확률값을 가지고 있음
+        exist_col_prob = softmax_np(exist_col.astype(np.float32), axis=1)[0, 1]
+        
+        _, grid_row, num_row, num_lanes = loc_row.shape
+        _, grid_col, num_col, _ = loc_col.shape
+
+        valid_row   = np.argmax(exist_row, axis=1)  # [1, num_row, 4]
+        valid_col   = np.argmax(exist_col, axis=1)  # [1, num_col, 4]
+        max_idx_row = np.argmax(loc_row,  axis=1)   # [1, num_row, 4]
+        max_idx_col = np.argmax(loc_col,  axis=1)   # [1, num_col, 4]
+
+        lanes = {i: [] for i in range(num_lanes)}
+
+        def longest_run(indices: np.adarray, weights: np.ndarray | None = None) -> np.ndarray:
+            if indices.size == 0:
+                return indices
+            splits = np.where(np.diff(indices) > 1)[0] + 1
+            groups = np.split(indices, splits)
+            if weights is None:
+                groups.sort(key=lambda g: len(g), reverse=True)
+            else:
+                groups.sort(key=lambda g: (len(g), float(weights[g].sum())), reverse=True)
+        
+        breakpoint()
         coords = None
 
         return coords
+    
+    # 출력 텐서를 shape로 자동 매핑
+    def _collect_outputs(self):
+        outs = {}
+        for od in self.output_details:
+            name = od["name"]
+            val = self.interpreter.get_tensor(od["index"])
+            s = tuple(val.shape)
+            if s == (1, self.num_cell_row, self.num_row, self.num_lanes):
+                outs["loc_row"] = val
+            elif s == (1, self.num_cell_col, self.num_col, self.num_lanes):
+                outs["loc_col"] = val
+            elif s == (1, 2, self.num_row, self.num_lanes):
+                outs["exist_row"] = val
+            elif s == (1, 2, self.num_col, self.num_lanes):
+                outs["exist_col"] = val
+            else:
+                if self.debug:
+                    print(f"[WARN] 매핑 불가 출력: {name} shape={s}")
+        
+        need = {"loc_row", "loc_col", "exist_row", "exist_col"}
+        missing = need - set(outs.keys())
+        if missing:
+            raise RuntimeError(f"필수 출력 누락: {missing}. 모델 출력 shape를 확인하세요.")
+        return outs
 
 def main():
     args = get_args()
@@ -139,7 +193,7 @@ def main():
     )
 
     path = args.input_path
-    ext = os.path.splittext(path)[1].lower()
+    ext = os.path.splitext(path)[1].lower()
 
     # 단일 이미지
     if is_image_file(path):
