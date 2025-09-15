@@ -1,6 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.components.detection
 
-import androidx.camera.core.Camera
+import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -11,13 +11,13 @@ fun CameraPreviewSection(
     isDetectionActive: Boolean,
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit,
-    onCameraReady: (Camera) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    controller: LifecycleCameraController
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         CameraPreview(
             modifier = Modifier.fillMaxSize(),
-            onCameraReady = onCameraReady
+            controller = controller
         )
 
         CameraStatusOverlay(
