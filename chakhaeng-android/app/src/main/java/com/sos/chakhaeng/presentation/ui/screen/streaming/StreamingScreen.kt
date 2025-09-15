@@ -12,11 +12,12 @@ fun StreamingScreen(
     modifier: Modifier = Modifier
 ) {
     val hlsUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+
     VideoPlayer(
         modifier = modifier,
         url = hlsUrl,
         mimeType = MimeTypes.APPLICATION_M3U8,
-        autoPlay = true,
+        autoPlay = false,
         useController = false,
         initialMute = false,
         onBackFromFullscreen = { /* 전체화면에서 복귀 시 UI 처리 */ }

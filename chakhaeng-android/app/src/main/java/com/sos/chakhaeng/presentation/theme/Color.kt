@@ -18,7 +18,7 @@ val errorLight = Color(0xFF904A43)
 val onErrorLight = Color(0xFFFFFFFF)
 val errorContainerLight = Color(0xFFFFDAD6)
 val onErrorContainerLight = Color(0xFF73332E)
-val backgroundLight = Color(0xFFFAF8FF)
+val backgroundLight = Color(0xFFFFFFFF)
 val onBackgroundLight = Color(0xFF1A1B21)
 val surfaceLight = Color(0xFFFAF8FF)
 val onSurfaceLight = Color(0xFF1A1B21)
@@ -223,6 +223,10 @@ val naverGreen = Color(0xFF06BE34)
 
 val lightGray = Color(0xFFE5E7EB)
 val BackgroundGray = Color(0xFFF3F4F6)
+val NEUTRAL400 = Color(0xFF727272)
+val NEUTRAL800 = Color(0xFF252525)
+val BLUE300 = Color(0xFF2563EB)
+val RED300 = Color(0xFFE1392C)
 
 object ViolationColors {
     // 배경색

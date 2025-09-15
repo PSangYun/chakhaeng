@@ -5,10 +5,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sos.chakhaeng.presentation.navigation.bottomNavItems
+import com.sos.chakhaeng.presentation.theme.NEUTRAL400
+import com.sos.chakhaeng.presentation.theme.primaryLight
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -16,15 +19,15 @@ fun BottomNavigationBar(navController: NavController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.height(84.dp)
+        containerColor = Color.White,
+        contentColor = NEUTRAL400,
+        modifier = Modifier
     ) {
         bottomNavItems.forEach { item ->
             NavigationBarItem(
                 icon = {
                     Icon(
-                        imageVector = item.icon,
+                        painter = painterResource(item.icon),
                         contentDescription = item.label
                     )
                 },
@@ -48,10 +51,10 @@ fun BottomNavigationBar(navController: NavController) {
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    selectedIconColor = primaryLight,
+                    selectedTextColor = primaryLight,
+                    unselectedIconColor = NEUTRAL400,
+                    unselectedTextColor = NEUTRAL400,
                     indicatorColor = Color.Transparent
                 )
             )

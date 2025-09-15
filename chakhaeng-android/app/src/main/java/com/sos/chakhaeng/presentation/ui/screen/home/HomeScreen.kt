@@ -8,11 +8,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sos.chakhaeng.presentation.theme.neutral
 import com.sos.chakhaeng.presentation.ui.components.home.DetectionSection
-import com.sos.chakhaeng.presentation.ui.components.home.ESGScoreCard
 import com.sos.chakhaeng.presentation.ui.components.home.RecentViolationsSection
 import com.sos.chakhaeng.presentation.ui.components.home.TodayState
 import com.sos.chakhaeng.presentation.theme.primaryLight
@@ -75,7 +76,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        color = MaterialTheme.colorScheme.surface,
+                        color = Color.White,
                         shape = RoundedCornerShape(
                             topStart = 20.dp,
                             topEnd = 20.dp
@@ -85,13 +86,13 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = paddingValues
             ) {
-                // ESG 점수 카드
-                item {
-                    ESGScoreCard(
-                        score = uiState.esgScore,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+//                // ESG 점수 카드
+//                item {
+//                    ESGScoreCard(
+//                        score = uiState.esgScore,
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//                }
 
                 // 오늘의 탐지/신고 현황
                 item {
@@ -100,12 +101,17 @@ fun HomeScreen(
                         modifier = Modifier
                     )
                 }
-
+                item{
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 2.dp,
+                        color = neutral
+                    )
+                }
                 // 실시간 위반 감지 리스트
                 item {
                     RecentViolationsSection(
-                        violations = uiState.recentViolations,
-                        modifier = Modifier.fillMaxWidth()
+                        violations = uiState.recentViolations
                     )
                 }
             }
