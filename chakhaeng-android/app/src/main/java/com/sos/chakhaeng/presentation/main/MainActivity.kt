@@ -11,10 +11,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -22,7 +21,9 @@ import androidx.navigation.compose.rememberNavController
 import com.sos.chakhaeng.core.session.AuthState
 import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.presentation.navigation.ChakhaengNavigation
+import com.sos.chakhaeng.presentation.navigation.NoBottomRoute
 import com.sos.chakhaeng.presentation.navigation.Routes
+import com.sos.chakhaeng.presentation.navigation.shouldShowBottomBar
 import com.sos.chakhaeng.presentation.theme.ChakHaengTheme
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
 import dagger.hilt.android.AndroidEntryPoint
@@ -65,19 +66,15 @@ fun ChakhaengApp(
     val authState by appEntryViewModel.authState.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    var isBottomBarVisible by rememberSaveable { mutableStateOf(true) }
 
-    val showBottomBar by remember(currentRoute) {
+    val isBottomBarVisible by remember(currentRoute) {
         derivedStateOf {
-            currentRoute != Routes.Login.route &&
-            (currentRoute?.startsWith("report_detail/") != true)
+            currentRoute.shouldShowBottomBar()
         }
-    LaunchedEffect(Unit) {
-        appEntryViewModel.init(activity)
     }
 
-    LaunchedEffect(currentRoute) {
-        isBottomBarVisible = (currentRoute != Routes.Login.route)
+    LaunchedEffect(Unit) {
+        appEntryViewModel.init(activity)
     }
 
     Scaffold(
@@ -95,7 +92,7 @@ fun ChakhaengApp(
             is AuthState.Authenticated, AuthState.Unauthenticated -> {
                 val startDestination =
                     if (authState is AuthState.Authenticated) Routes.Home.route
-                    else Routes.Login.route
+                    else NoBottomRoute.Login.route
 
                 ChakhaengNavigation(
                     navController = navController,
