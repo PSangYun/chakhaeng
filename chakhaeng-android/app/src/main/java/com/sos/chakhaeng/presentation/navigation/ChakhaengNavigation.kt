@@ -64,7 +64,7 @@ fun ChakhaengNavigation(
         },
         modifier = modifier
     ) {
-        composable(Routes.Login.route) {
+        composable(NoBottomRoute.Login.route) {
             LoginScreen(
                 navigateToHome = {
                     navController.navigate(Routes.Home.route) {
@@ -91,10 +91,10 @@ fun ChakhaengNavigation(
         composable(Routes.Detection.route) {
             DetectionScreen(
                 onCreateNewViolation = {
-                    navController.navigate(Routes.ViolationDetail.route)
+                    navController.navigate(NoBottomRoute.ViolationDetail.route)
                 },
                 onViolationClick = {
-                    navController.navigate(Routes.ViolationDetail.route)
+                    navController.navigate(NoBottomRoute.ViolationDetail.route)
                 },
                 paddingValues = paddingValues,
                 appEntryViewModel = appEntryViewModel
@@ -104,12 +104,12 @@ fun ChakhaengNavigation(
             ReportScreen(
                 paddingValues = paddingValues,
                 onReportItemClick = { reportItem ->
-                    navController.navigate(Routes.reportDetail(reportItem.id))
+                    navController.navigate(NoBottomRoute.reportDetail(reportItem.id))
                 }
             )
         }
         composable(
-            route = Routes.ReportDetail.route,
+            route = NoBottomRoute.ReportDetail.route,
             arguments = listOf(navArgument("reportId") { type = NavType.StringType })
         ) { backStackEntry ->
             val reportId = backStackEntry.arguments?.getString("reportId") ?: ""
@@ -130,7 +130,7 @@ fun ChakhaengNavigation(
             )
         }
         composable(
-            route = Routes.ViolationDetail.route,
+            route = NoBottomRoute.ViolationDetail.route,
             arguments = listOf(navArgument("id"){type = NavType.StringType; nullable = true})) {
             ViolationDetailScreen(
                 onBack = { navController.popBackStack() },
@@ -154,8 +154,8 @@ fun ChakhaengNavigation(
             }
 
             AuthState.Unauthenticated -> {
-                if (navController.currentDestination?.route != Routes.Login.route) {
-                    navController.navigate(Routes.Login.route) {
+                if (navController.currentDestination?.route != NoBottomRoute.Login.route) {
+                    navController.navigate(NoBottomRoute.Login.route) {
                         popUpTo(0)
                         launchSingleTop = true
                     }
