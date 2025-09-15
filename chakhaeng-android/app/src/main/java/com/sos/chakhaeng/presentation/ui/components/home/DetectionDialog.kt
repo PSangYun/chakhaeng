@@ -15,6 +15,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sos.chakhaeng.presentation.theme.NEUTRAL400
+import com.sos.chakhaeng.presentation.theme.NEUTRAL800
+import com.sos.chakhaeng.presentation.theme.RED300
+import com.sos.chakhaeng.presentation.theme.errorContainerLightMediumContrast
+import com.sos.chakhaeng.presentation.theme.errorLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
 
 @Composable
@@ -31,9 +36,9 @@ fun DetectionDialog(
                     .size(64.dp)
                     .background(
                         color = if (isDetectionActive) {
-                            MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                            errorLight.copy(alpha = 0.1f)
                         } else {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            primaryLight.copy(alpha = 0.1f)
                         },
                         shape = CircleShape
                     ),
@@ -47,9 +52,9 @@ fun DetectionDialog(
                     },
                     contentDescription = null,
                     tint = if (isDetectionActive) {
-                        MaterialTheme.colorScheme.error
+                        errorLight
                     } else {
-                        MaterialTheme.colorScheme.primary
+                        primaryLight
                     },
                     modifier = Modifier.size(32.dp)
                 )
@@ -65,6 +70,7 @@ fun DetectionDialog(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
+                color = NEUTRAL800,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
@@ -81,6 +87,7 @@ fun DetectionDialog(
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
+                    color = NEUTRAL400,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -106,7 +113,7 @@ fun DetectionDialog(
                         .height(48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isDetectionActive) {
-                            MaterialTheme.colorScheme.error
+                            RED300
                         } else {
                             primaryLight
                         }

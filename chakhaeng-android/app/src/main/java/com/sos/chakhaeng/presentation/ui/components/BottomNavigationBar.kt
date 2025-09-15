@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -20,13 +21,13 @@ fun BottomNavigationBar(navController: NavController) {
     NavigationBar(
         containerColor = Color.White,
         contentColor = NEUTRAL400,
-        modifier = Modifier.height(84.dp)
+        modifier = Modifier
     ) {
         bottomNavItems.forEach { item ->
             NavigationBarItem(
                 icon = {
                     Icon(
-                        imageVector = item.icon,
+                        painter = painterResource(item.icon),
                         contentDescription = item.label
                     )
                 },
