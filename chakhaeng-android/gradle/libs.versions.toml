@@ -39,7 +39,10 @@ coilNetworkOkhttp = "3.2.0"
 core = "1.3.0"
 calendar = "1.3.0"
 clock = "1.3.0"
+lottieCompose = "6.6.6"
 coilVideo = "2.7.0"
+lifecycleService = "2.9.3"
+protoliteWellKnownTypes = "18.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -97,7 +100,10 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 core = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "core", version.ref = "core" }
 calendar = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "calendar", version.ref = "calendar" }
 clock = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "clock", version.ref = "clock" }
+lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottieCompose" }
 coil-video = { group = "io.coil-kt", name = "coil-video", version.ref = "coilVideo" }
+androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycleService" }
+protolite-well-known-types = { group = "com.google.firebase", name = "protolite-well-known-types", version.ref = "protoliteWellKnownTypes" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

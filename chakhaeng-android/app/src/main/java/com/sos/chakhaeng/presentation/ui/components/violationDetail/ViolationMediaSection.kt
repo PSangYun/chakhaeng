@@ -79,7 +79,7 @@ fun ViolationMediaSection(
             }
             Spacer(Modifier.height(12.dp))
 
-            if (!videoUrl.isNullOrBlank()) {
+            if (videoUrl.isNotBlank()) {
                 val mime = remember(videoUrl) {
                     when {
                         videoUrl.endsWith(".m3u8", true) -> MimeTypes.APPLICATION_M3U8

@@ -81,9 +81,12 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
-    implementation(libs.androidx.media3.exoplayer.hls)
-    implementation(libs.androidx.media3.exoplayer.dash)
+
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.lottie.compose)
+    implementation(libs.androidx.lifecycle.service)
+    implementation(libs.protolite.well.known.types)
+
     ksp(libs.hilt.compiler)
 
     implementation(libs.core)

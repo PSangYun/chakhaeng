@@ -223,8 +223,10 @@ val naverGreen = Color(0xFF06BE34)
 
 val lightGray = Color(0xFFE5E7EB)
 val BackgroundGray = Color(0xFFF3F4F6)
-val NEUTRAL400 = Color(0xFF181823)
+val NEUTRAL400 = Color(0xFF727272)
+val NEUTRAL800 = Color(0xFF252525)
 val BLUE300 = Color(0xFF2563EB)
+val RED300 = Color(0xFFE1392C)
 
 object ViolationColors {
     // 배경색
