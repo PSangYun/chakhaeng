@@ -39,7 +39,9 @@ fun ReportItemCard(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
@@ -53,8 +55,7 @@ fun ReportItemCard(
             // 메인 콘텐츠 영역1
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onClick() },
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // 위반 유형 아이콘

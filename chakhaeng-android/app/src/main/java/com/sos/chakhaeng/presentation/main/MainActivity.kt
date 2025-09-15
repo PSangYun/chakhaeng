@@ -67,6 +67,11 @@ fun ChakhaengApp(
     val currentRoute = navBackStackEntry?.destination?.route
     var isBottomBarVisible by rememberSaveable { mutableStateOf(true) }
 
+    val showBottomBar by remember(currentRoute) {
+        derivedStateOf {
+            currentRoute != Routes.Login.route &&
+            (currentRoute?.startsWith("report_detail/") != true)
+        }
     LaunchedEffect(Unit) {
         appEntryViewModel.init(activity)
     }
