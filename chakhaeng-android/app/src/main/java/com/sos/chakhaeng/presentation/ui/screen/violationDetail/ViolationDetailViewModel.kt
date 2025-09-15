@@ -2,8 +2,12 @@ package com.sos.chakhaeng.presentation.ui.screen.violationDetail
 
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.data.manager.VideoUploadManager
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
 import com.sos.chakhaeng.domain.usecase.violation.SubmitViolationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,18 +21,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ViolationDetailViewModel @Inject constructor(
-    private val submitViolationUseCase: SubmitViolationUseCase
+    private val submitViolationUseCase: SubmitViolationUseCase,
+    private val videoUploadManager: VideoUploadManager
 ): ViewModel() {
 
     private val _uiState = MutableStateFlow(ViolationDetailUiState())
-    val uiState: StateFlow<ViolationDetailUiState> = _uiState
+    var uiState by mutableStateOf(ViolationDetailUiState())
+        private set
 
     private val _event = MutableSharedFlow<String>()
     val event = _event.asSharedFlow()
 
     fun onSubmit() {
         Log.d("TAG", "onSubmit: 버튼 클릭")
-        val entity = uiState.value.violationDetail
+        val entity = uiState.violationDetail
         viewModelScope.launch {
             Log.d("TAG", "onSubmit: 버튼 클릭22")
             submitViolationUseCase(entity)
@@ -66,15 +72,21 @@ class ViolationDetailViewModel @Inject constructor(
 
     fun onVideoSelected(uri: Uri) {
         viewModelScope.launch {
-//            // TODO: 업로드 진행 표시 (로딩 상태)
-//            repository.uploadViolationVideo(uri)
-//                .onSuccess { newUrl ->
-//                    // TODO: 상태 갱신
-//                    // uiState = uiState.copy(videoUrl = newUrl, …)
-//                }
-//                .onFailure { e ->
-//                    // TODO: 에러 처리(토스트/스낵바/상태)
-//                }
+            uiState = uiState.copy(isUploading = true, uploadProgress = 0f)
+            videoUploadManager.uploadVideo(uri) { sent, total ->
+                val p = if (total != null && total > 0) sent.toFloat() / total else Float.NaN
+                uiState = uiState.copy(uploadProgress = p)
+            }.onSuccess { data ->
+                uiState = uiState.copy(
+                    isUploading = false,
+                    uploadProgress = 1f,
+                    lastUploaded = data,
+                    violationDetail = uiState.violationDetail.copy(videoUrl = data.downloadUrl)
+                )
+            }.onFailure {
+                uiState = uiState.copy(isUploading = false)
+                _event.emit("동영상 업로드 중 오류가 발생했습니다.")
+            }
         }
     }
 
