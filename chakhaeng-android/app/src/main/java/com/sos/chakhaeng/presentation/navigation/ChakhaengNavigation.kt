@@ -23,6 +23,7 @@ import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.presentation.main.AppEntryViewModel
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
 import com.sos.chakhaeng.presentation.ui.screen.violationDetail.ViolationDetailScreen
+import com.sos.chakhaeng.presentation.ui.screen.report.ReportDetailScreen
 
 @Composable
 fun ChakhaengNavigation(
@@ -101,6 +102,20 @@ fun ChakhaengNavigation(
         }
         composable(Routes.Report.route) {
             ReportScreen(
+                paddingValues = paddingValues,
+                onReportItemClick = { reportItem ->
+                    navController.navigate(Routes.reportDetail(reportItem.id))
+                }
+            )
+        }
+        composable(
+            route = Routes.ReportDetail.route,
+            arguments = listOf(navArgument("reportId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val reportId = backStackEntry.arguments?.getString("reportId") ?: ""
+            ReportDetailScreen(
+                reportId = reportId,
+                onBackClick = { navController.popBackStack() },
                 paddingValues = paddingValues
             )
         }
