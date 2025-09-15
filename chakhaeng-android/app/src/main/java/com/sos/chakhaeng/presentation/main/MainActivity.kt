@@ -60,22 +60,19 @@ fun ChakhaengApp(
     googleAuthManager: GoogleAuthManager,
     appEntryViewModel: AppEntryViewModel,
     activity: MainActivity
-) {
+){
     val navController = rememberNavController()
-
-//    val vm: AppEntryViewModel = hiltViewModel()
     val authState by appEntryViewModel.authState.collectAsState()
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
     var isBottomBarVisible by rememberSaveable { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         appEntryViewModel.init(activity)
     }
+
     LaunchedEffect(currentRoute) {
-        isBottomBarVisible = ( currentRoute != Routes.Detection.route)
+        isBottomBarVisible = (currentRoute != Routes.Login.route)
     }
 
     Scaffold(
