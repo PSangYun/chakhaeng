@@ -31,6 +31,11 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.ChakHaeng">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBTD3t5vHZ41QjVbDYkND7uWrOhMFVCyFg"/>
+
         <activity
             android:name=".presentation.main.MainActivity"
             android:exported="true"

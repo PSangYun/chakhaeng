@@ -1,6 +1,5 @@
 package com.sos.chakhaeng.presentation.ui.screen.report
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,9 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sos.chakhaeng.domain.model.report.ReportItem
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.ui.components.report.EmptySection
 import com.sos.chakhaeng.presentation.ui.components.report.LoadingSection
@@ -22,7 +21,8 @@ import com.sos.chakhaeng.presentation.ui.components.report.ReportTabSection
 @Composable
 fun ReportScreen(
     reportViewModel: ReportViewModel = hiltViewModel(),
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    onReportItemClick: (ReportItem) -> Unit = {}
 ) {
     val uiState by reportViewModel.uiState.collectAsStateWithLifecycle()
     val filteredReportList by reportViewModel.filteredReportList.collectAsStateWithLifecycle()
@@ -73,9 +73,7 @@ fun ReportScreen(
                 reportList = filteredReportList,
                 modifier = Modifier
                     .fillMaxSize(),
-                onItemClick = { reportItem ->
-                    // TODO: 상세 화면으로 이동
-                },
+                onItemClick = onReportItemClick,
                 onDelete = { reportItem ->
                     reportViewModel.deleteReportItem(reportItem)
                 }

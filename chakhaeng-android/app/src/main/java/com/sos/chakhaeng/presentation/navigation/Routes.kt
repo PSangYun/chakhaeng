@@ -9,4 +9,9 @@ sealed class Routes(val route: String) {
     object Profile : Routes("profile")
     object Streaming : Routes("streaming")
     object ViolationDetail : Routes("violation_detail")
+    object ReportDetail : Routes("report_detail/{reportId}")
+    
+    companion object {
+        fun reportDetail(reportId: String) = "report_detail/$reportId"
+    }
 }

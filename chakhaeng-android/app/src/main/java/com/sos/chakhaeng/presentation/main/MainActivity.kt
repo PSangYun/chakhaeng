@@ -67,7 +67,8 @@ fun ChakhaengApp(
 
     val showBottomBar by remember(currentRoute) {
         derivedStateOf {
-            currentRoute != Routes.Login.route
+            currentRoute != Routes.Login.route &&
+            (currentRoute?.startsWith("report_detail/") != true)
         }
     }
 
