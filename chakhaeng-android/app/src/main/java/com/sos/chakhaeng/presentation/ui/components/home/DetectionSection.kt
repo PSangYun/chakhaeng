@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.R
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.primaryLight
 
 @Composable
@@ -61,7 +62,7 @@ private fun DetectionContent(
         onClick = onDetectionAction,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 36.dp, horizontal = 16.dp),
+            .padding(horizontal = 16.dp).padding(top = 36.dp, bottom = 32.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isDetectionActive) {
                 MaterialTheme.colorScheme.error
@@ -85,9 +86,9 @@ private fun DetectionContent(
                 )
             } else {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_eye_unfilled),
+                    painter = painterResource(id = R.drawable.camera_shutter),
                     contentDescription = null,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(68.dp),
                     colorFilter = ColorFilter.tint(Color.White)
                 )
             }

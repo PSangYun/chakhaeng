@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.screen.home
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,7 +9,10 @@ import com.sos.chakhaeng.domain.model.home.RecentViolation
 import com.sos.chakhaeng.domain.model.home.TodayStats
 import com.sos.chakhaeng.domain.usecase.home.GetRecentViolationUseCase
 import com.sos.chakhaeng.domain.usecase.home.GetTodayStatsUseCase
+import com.sos.chakhaeng.recording.startCameraFgService
+import com.sos.chakhaeng.recording.stopCameraFgService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,6 +21,7 @@ private const val TAG = "HomeViewModel"
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @ApplicationContext private val app: Context,
     private val detectionStateManager: DetectionStateManager,
     private val getTodayStatsUseCase: GetTodayStatsUseCase,
     private val getRecentViolationUseCase: GetRecentViolationUseCase
@@ -58,6 +63,7 @@ class HomeViewModel @Inject constructor(
     // 탐지 시작
     fun startDetection() {
         detectionStateManager.startDetection()
+        app.startCameraFgService()
         Log.d(TAG, "탐지 시작됨")
     }
 
@@ -76,6 +82,7 @@ class HomeViewModel @Inject constructor(
         detectionStateManager.stopDetection()
         _uiState.value = _uiState.value.copy(showStopDetectionDialog = false)
         Log.d(TAG, "탐지 정지됨")
+        app.stopCameraFgService()
     }
 
     fun loadTodayStats() {
