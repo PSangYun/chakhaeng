@@ -9,5 +9,5 @@ data class ViolationEntity (
     val date: String = "",         // 발생 일자 (yyyy-MM-dd)
     val time: String = "",         // 발생 시각 (HH:mm:ss)
 //    val videoThumbnailUrl: String? = null,
-    val videoUrl: String = "814717a6-5f1d-4fe2-8937-4582560658a6"   // ✅ 재생용 동영상 URL
+    val videoUrl: String = ""
 )
