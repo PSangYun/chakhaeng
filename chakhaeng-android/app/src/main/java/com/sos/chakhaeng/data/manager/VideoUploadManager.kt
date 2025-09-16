@@ -6,13 +6,12 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
-import androidx.compose.ui.autofill.ContentType
 import com.sos.chakhaeng.data.network.api.VideoApi
 import com.sos.chakhaeng.data.network.dto.getOrThrow
 import com.sos.chakhaeng.data.network.dto.request.violation.CompleteUploadRequest
 import com.sos.chakhaeng.data.network.dto.request.violation.CreateUploadUrlRequest
-import com.sos.chakhaeng.data.network.dto.request.violation.UploadResult
-import com.sos.chakhaeng.data.network.dto.response.violation.CompleteUploadResponse
+import com.sos.chakhaeng.data.network.dto.response.violation.UploadResult
+import com.sos.chakhaeng.data.network.dto.response.violation.UploadUrl
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -76,7 +75,7 @@ class VideoUploadManager @Inject constructor(
 
                 Log.d("TAG", "uploadVideo: ${playUrl.downloadUrl}")
 
-                UploadResult(playUrl.downloadUrl)
+                UploadResult(playUrl, complete)
             }
     }
 

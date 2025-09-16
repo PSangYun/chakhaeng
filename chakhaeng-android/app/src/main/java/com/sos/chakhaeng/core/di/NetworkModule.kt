@@ -45,7 +45,7 @@ object NetworkModule {
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.HEADERS
+            level = HttpLoggingInterceptor.Level.BODY
 //            redactHeader("Authorization")
         }
 
