@@ -3,7 +3,7 @@ package com.sos.chakhaeng.data.network.api
 import com.sos.chakhaeng.data.network.dto.ApiResponse
 import com.sos.chakhaeng.data.network.dto.request.violation.CompleteUploadRequest
 import com.sos.chakhaeng.data.network.dto.request.violation.CreateUploadUrlRequest
-import com.sos.chakhaeng.data.network.dto.request.violation.UploadResult
+import com.sos.chakhaeng.data.network.dto.response.violation.UploadUrl
 import com.sos.chakhaeng.data.network.dto.response.violation.CompleteUploadResponse
 import com.sos.chakhaeng.data.network.dto.response.violation.CreateUploadUrlResponse
 import retrofit2.http.Body
@@ -27,10 +27,10 @@ interface VideoApi {
     @GET("videos/{videoKey}/play-url")
     suspend fun getPlayUrl(
         @Path("videoKey") videoKey: String
-    ) : UploadResult
+    ) : UploadUrl
 
     @GET("videos/download-url")
     suspend fun downloadUrl(
     @Query("objectKey") objectKey : String
-    ) : UploadResult
+    ) : UploadUrl
 }

@@ -21,6 +21,9 @@ android {
 
         buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${getProperty("GOOGLE_CLIENT_ID")}\"")
         buildConfigField("String", "BASE_URL", "\"${getProperty("BASE_URL")}\"")
+        buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"${getProperty("GOOGLE_MAPS_API_KEY")}\"")
+
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = getProperty("GOOGLE_MAPS_API_KEY")
     }
 
     buildTypes {
@@ -139,6 +142,11 @@ dependencies {
 
     // 사진
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Google Map
+    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation("com.google.android.gms:play-services-maps:18.1.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 
     // Test dependencies
     testImplementation(libs.junit)
