@@ -49,7 +49,7 @@ fun ViolationDetailScreen(
     onBack: () -> Unit,
     paddingVaules: PaddingValues
 ) {
-    val state = viewModel.uiState
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val entity = state.violationDetail
     val snackbarHostState = remember { SnackbarHostState() }
     var videoDialogVisible by remember { mutableStateOf(false) }
@@ -138,7 +138,7 @@ fun ViolationDetailScreen(
 
                 ViolationMediaSection(
 //                    videoUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-                    videoUrl = entity.videoUrl.orEmpty(),
+                    videoUrl = state.lastUploaded?.downloadUrl.orEmpty(),
                     onRequestUpload = { openVideoPicker() },
                     onRequestEdit = { openVideoPicker() },
                     onRequestDelete = { viewModel.deleteVideo() }
