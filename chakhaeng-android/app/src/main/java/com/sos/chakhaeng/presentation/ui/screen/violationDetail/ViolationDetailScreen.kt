@@ -1,18 +1,40 @@
 package com.sos.chakhaeng.presentation.ui.screen.violationDetail
 
-import android.content.Intent
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,15 +45,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sos.chakhaeng.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sos.chakhaeng.R
 import com.sos.chakhaeng.core.utils.rememberVideoPicker
+import com.sos.chakhaeng.core.utils.showToast
 import com.sos.chakhaeng.presentation.theme.BLUE50
 import com.sos.chakhaeng.presentation.theme.NEUTRAL800
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.theme.onPrimaryContainerLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
 import com.sos.chakhaeng.presentation.ui.components.UploadingOverlay
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.DatePickerField
@@ -49,9 +70,11 @@ fun ViolationDetailScreen(
     onBack: () -> Unit,
     paddingVaules: PaddingValues
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
     val entity = state.violationDetail
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     var videoDialogVisible by remember { mutableStateOf(false) }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -59,7 +82,11 @@ fun ViolationDetailScreen(
     val openVideoPicker = rememberVideoPicker { uri ->
         viewModel.onVideoSelected(uri)     // 업로드/교체 로직으로 연결
     }
-
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { message ->
+            context.showToast(message)
+        }
+    }
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -72,7 +99,7 @@ fun ViolationDetailScreen(
                 onToggleEdit = { viewModel.toggleEdit(onSave = { /* TODO */ }) }
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { innerPadding ->
         val ld = LocalLayoutDirection.current
         val start = paddingVaules.calculateStartPadding(ld)
@@ -141,7 +168,7 @@ fun ViolationDetailScreen(
                     videoUrl = state.lastUploaded?.downloadUrl.orEmpty(),
                     onRequestUpload = { openVideoPicker() },
                     onRequestEdit = { openVideoPicker() },
-                    onRequestDelete = { viewModel.deleteVideo() }
+                    onRequestDelete = { }
                 )
 
                 // 이하 공통 카드들
@@ -215,20 +242,16 @@ fun ViolationDetailScreen(
             }
         }
 
-        // ✅ 업로드 오버레이
         UploadingOverlay(
             visible = state.isUploading,
             progress = state.uploadProgress.takeIf { !it.isNaN() },
-            lottieUrl = "https://lottie.host/3828abb2-6b0d-40c4-9878-435899ab26fa/q4i8TQV1qV.json" // 예시 URL (원하는 걸로 교체)
-            // lottieRawRes = R.raw.uploading   // 오프라인 파일 쓰려면 요걸로
+            lottieUrl = "https://lottie.host/3828abb2-6b0d-40c4-9878-435899ab26fa/q4i8TQV1qV.json"
         )
     }
 
-
-    // ✅ 동영상 재생 다이얼로그
-    if (videoDialogVisible && !entity.videoUrl.isNullOrBlank()) {
+    if (videoDialogVisible && entity.videoUrl.isNotBlank()) {
         ViolationVideoPlayerDialog(
-            url = entity.videoUrl!!,
+            url = entity.videoUrl,
             onDismiss = { videoDialogVisible = false }
         )
     }
