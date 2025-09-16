@@ -43,6 +43,8 @@ lottieCompose = "6.6.6"
 coilVideo = "2.7.0"
 lifecycleService = "2.9.3"
 protoliteWellKnownTypes = "18.0.1"
+playServicesLocation = "21.3.0"
+mapsCompose = "6.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -104,6 +106,8 @@ lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", versio
 coil-video = { group = "io.coil-kt", name = "coil-video", version.ref = "coilVideo" }
 androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycleService" }
 protolite-well-known-types = { group = "com.google.firebase", name = "protolite-well-known-types", version.ref = "protoliteWellKnownTypes" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

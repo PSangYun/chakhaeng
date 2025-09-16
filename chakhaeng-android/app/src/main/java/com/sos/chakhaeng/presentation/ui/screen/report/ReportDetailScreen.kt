@@ -2,11 +2,9 @@ package com.sos.chakhaeng.presentation.ui.screen.report
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -32,6 +30,10 @@ fun ReportDetailScreen(
     reportDetailViewModel: ReportDetailViewModel = hiltViewModel()
 ) {
     val uiState by reportDetailViewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        reportDetailViewModel.loadReportDetailItem(reportId)
+    }
 
     uiState.error?.let { error ->
         LaunchedEffect(error) {

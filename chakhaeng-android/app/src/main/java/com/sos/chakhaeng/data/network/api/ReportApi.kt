@@ -1,6 +1,7 @@
 package com.sos.chakhaeng.data.network.api
 
 import com.sos.chakhaeng.data.network.dto.ApiResponse
+import com.sos.chakhaeng.data.network.dto.response.reoprt.ReportDetailItemDTO
 import com.sos.chakhaeng.data.network.dto.response.reoprt.ReportItemDTO
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -14,4 +15,9 @@ interface ReportApi {
     suspend fun deleteReportItem(
         @Path("reportId") reportId: String
     ) : ApiResponse<Unit>
+
+    @GET("report/{reportId}")
+    suspend fun getReportDetailItem(
+        @Path("reportId") reportId: String
+    ): ApiResponse<ReportDetailItemDTO>
 }

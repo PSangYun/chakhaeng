@@ -2,9 +2,8 @@ package com.sos.chakhaeng.data.repository
 
 import com.sos.chakhaeng.data.mapper.ReportDataMapper.toEntity
 import com.sos.chakhaeng.data.network.api.ReportApi
-import com.sos.chakhaeng.domain.model.ViolationType
+import com.sos.chakhaeng.domain.model.report.ReportDetailItem
 import com.sos.chakhaeng.domain.model.report.ReportItem
-import com.sos.chakhaeng.domain.model.report.ReportStatus
 import com.sos.chakhaeng.domain.repository.ReportRepository
 import javax.inject.Inject
 
@@ -38,5 +37,19 @@ class ReportRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
         return Result.success(Unit)
+    }
+
+    override suspend fun getReportDetailItem(reportId: String): Result<ReportDetailItem> {
+        return try{
+            val response = reportApi.getReportDetailItem(reportId)
+            if (response.success) {
+                val reportDetailItem = response.data!!.toEntity()
+                Result.success(reportDetailItem)
+            } else {
+                Result.failure(RuntimeException("신고 상세 아이템 불러오기 실패"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

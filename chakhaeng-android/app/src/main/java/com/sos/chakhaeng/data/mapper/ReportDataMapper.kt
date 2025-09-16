@@ -1,7 +1,9 @@
 package com.sos.chakhaeng.data.mapper
 
+import com.sos.chakhaeng.data.network.dto.response.reoprt.ReportDetailItemDTO
 import com.sos.chakhaeng.data.network.dto.response.reoprt.ReportItemDTO
 import com.sos.chakhaeng.domain.model.ViolationType
+import com.sos.chakhaeng.domain.model.report.ReportDetailItem
 import com.sos.chakhaeng.domain.model.report.ReportItem
 import com.sos.chakhaeng.domain.model.report.ReportStatus
 import java.time.Instant
@@ -18,6 +20,19 @@ object ReportDataMapper {
             occurredAt = Instant.parse(occurredAt).toEpochMilli(),
             status = status.toReportStatus(),
             createdAt = Instant.parse(createdAt).toEpochMilli(),
+        )
+
+    fun ReportDetailItemDTO.toEntity(): ReportDetailItem =
+        ReportDetailItem(
+            id = id,
+            videoUrl = violationType,
+            reportState = status.toReportStatus(),
+            violationType = title.toViolationType(),
+            plateNumber = plateNumber,
+            occurredAt = Instant.parse(occurredAt).toEpochMilli(),
+            location = location,
+            createdAt = Instant.parse(createdAt).toEpochMilli(),
+            reportContent = description
         )
     
     private fun String.toViolationType(): ViolationType = when (this.uppercase()) {
