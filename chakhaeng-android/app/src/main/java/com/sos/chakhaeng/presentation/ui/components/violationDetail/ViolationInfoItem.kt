@@ -1,13 +1,18 @@
 package com.sos.chakhaeng.presentation.ui.components.violationDetail
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.sos.chakhaeng.presentation.theme.NEUTRAL100
+import com.sos.chakhaeng.presentation.theme.NEUTRAL200
+import com.sos.chakhaeng.presentation.theme.NEUTRAL800
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.onSurfaceLight
 import com.sos.chakhaeng.presentation.theme.outlineVariantLight
@@ -34,17 +39,23 @@ fun ViolationInfoItem(
     trailingContent: (@Composable () -> Unit)? = null, // 필요시 오른쪽 보조 UI
 ) {
     val fieldColors = TextFieldDefaults.colors(
-        focusedContainerColor = if(isEditing)  surfaceLight else surfaceVariantLight,
-        unfocusedContainerColor = if(isEditing)  surfaceLight else surfaceVariantLight,
-        disabledContainerColor = if(isEditing)  surfaceLight else surfaceVariantLight,
-        focusedIndicatorColor = primaryLight,
-        unfocusedIndicatorColor = outlineVariantLight,
-//        disabledIndicatorColor = primaryLight,
-        disabledTextColor = onSurfaceLight,
-        disabledPlaceholderColor = onSurfaceLight,
-//        cursorColor = MaterialTheme.colorScheme.primary
+        focusedContainerColor = if (isEditing) NEUTRAL100 else Color.White,
+        unfocusedContainerColor = if (isEditing) NEUTRAL100 else Color.White,
+        disabledContainerColor = if (isEditing) NEUTRAL100 else Color.White,
+        focusedIndicatorColor = NEUTRAL200,
+        unfocusedIndicatorColor = NEUTRAL200,
+        disabledTextColor = NEUTRAL800,
+        disabledPlaceholderColor = NEUTRAL200,
+        focusedLabelColor = NEUTRAL800,
+        unfocusedLabelColor = NEUTRAL800
     )
-    ElevatedCard(modifier = modifier.fillMaxWidth()) {
+
+    ElevatedCard(
+        modifier = modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
