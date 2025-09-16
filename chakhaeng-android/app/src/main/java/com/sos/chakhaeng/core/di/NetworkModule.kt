@@ -25,7 +25,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun proivdeBaseUrl(): HttpUrl = BuildConfig.BASE_URL.toHttpUrl()
+    fun provideBaseUrl(): HttpUrl = BuildConfig.BASE_URL.toHttpUrl()
 
     @Provides
     @Singleton
