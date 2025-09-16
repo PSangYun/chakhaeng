@@ -19,13 +19,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocalPolice
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VideoFile
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Color
 import androidx.media3.common.MimeTypes
+import com.sos.chakhaeng.presentation.theme.BLUE50
+import com.sos.chakhaeng.presentation.theme.NEUTRAL200
+import com.sos.chakhaeng.presentation.theme.NEUTRAL800
 import com.sos.chakhaeng.presentation.theme.ViolationColors.HighIcon
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.errorLight
@@ -50,18 +56,32 @@ fun ViolationMediaSection(
     var openSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ElevatedCard(modifier = modifier.fillMaxWidth(), shape = cardShape) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+    ElevatedCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = cardShape,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = Color.White
+        ),
+    ) {
+        Column(Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "동영상",
-                    style = chakhaengTypography().bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = onSurfaceVariantLight
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "동영상",
+                            style = chakhaengTypography().titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = NEUTRAL800
+                        )
+                    }
+                }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { openSheet = true }) {
                     Icon(
@@ -83,8 +103,8 @@ fun ViolationMediaSection(
                 val mime = remember(videoUrl) {
                     when {
                         videoUrl.endsWith(".m3u8", true) -> MimeTypes.APPLICATION_M3U8
-                        videoUrl.endsWith(".mpd", true)  -> MimeTypes.APPLICATION_MPD
-                        videoUrl.endsWith(".mp4", true)  -> MimeTypes.VIDEO_MP4
+                        videoUrl.endsWith(".mpd", true) -> MimeTypes.APPLICATION_MPD
+                        videoUrl.endsWith(".mp4", true) -> MimeTypes.VIDEO_MP4
                         else -> null                     // VideoPlayer 내부 기본 탐지 사용
                     }
                 }
@@ -111,8 +131,7 @@ fun ViolationMediaSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(16f / 9f)
-                        .clip(cardShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                        .clip(cardShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -138,10 +157,12 @@ fun ViolationMediaSection(
         ModalBottomSheet(
             onDismissRequest = { openSheet = false },
             sheetState = sheetState,
+            containerColor = Color.White,
+            contentColor = Color.White
         ) {
             if (videoUrl.isNotBlank()) {
                 ActionItem(
-                    icon = { Icon(Icons.Default.Edit, contentDescription = null)},
+                    icon = { Icon(Icons.Default.Edit, contentDescription = null) },
                     title = "동영상 수정",
                     onClick = {
                         openSheet = false
@@ -149,7 +170,7 @@ fun ViolationMediaSection(
                     }
                 )
                 ActionItem(
-                    icon = { Icon(Icons.Default.Delete, contentDescription = null)},
+                    icon = { Icon(Icons.Default.Delete, contentDescription = null) },
                     title = "동영상 삭제",
                     isDelete = true,
                     onClick = {
@@ -159,7 +180,7 @@ fun ViolationMediaSection(
                 )
             } else {
                 ActionItem(
-                    icon = { Icon(Icons.Outlined.CloudUpload, contentDescription = null)},
+                    icon = { Icon(Icons.Outlined.CloudUpload, contentDescription = null) },
                     title = "동영상 업로드",
                     onClick = {
                         openSheet = false
@@ -182,10 +203,13 @@ private fun ActionItem(
     val colors = if (isDelete) {
         ListItemDefaults.colors(
             headlineColor = HighIcon,
-            leadingIconColor = HighIcon
+            leadingIconColor = HighIcon,
+            containerColor = Color.White
         )
     } else {
-        ListItemDefaults.colors()
+        ListItemDefaults.colors(
+            containerColor = Color.White
+        )
     }
     ListItem(
         leadingContent = icon,
