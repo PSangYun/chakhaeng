@@ -25,7 +25,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun proivdeBaseUrl(): HttpUrl = BuildConfig.BASE_URL.toHttpUrl()
+    fun provideBaseUrl(): HttpUrl = BuildConfig.BASE_URL.toHttpUrl()
 
     @Provides
     @Singleton
@@ -45,7 +45,7 @@ object NetworkModule {
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.HEADERS
+            level = HttpLoggingInterceptor.Level.BODY
 //            redactHeader("Authorization")
         }
 
