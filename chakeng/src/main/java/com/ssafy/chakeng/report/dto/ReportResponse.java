@@ -11,6 +11,8 @@ import java.util.UUID;
 @Builder
 public class ReportResponse {
     UUID id;
+    UUID videoId;
+    String objectKey;
     String violationType;
     String location;
     String title;

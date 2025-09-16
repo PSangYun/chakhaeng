@@ -5,12 +5,15 @@ import com.ssafy.chakeng.report.domain.ReportStatus;
 import com.ssafy.chakeng.report.dto.ReportCreateRequest;
 import com.ssafy.chakeng.report.dto.ReportResponse;
 import com.ssafy.chakeng.report.dto.ReportsResponse;
+import com.ssafy.chakeng.video.VideoRepository;
+import com.ssafy.chakeng.video.domain.Video;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -18,6 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReportService {
     private final ReportRepository reportRepository;
+    private final VideoRepository videoRepository;
 
     @Transactional
     public Report createFromRequest(ReportCreateRequest req, UUID userId) {
@@ -61,21 +65,30 @@ public class ReportService {
                         .build())
                 .collect(Collectors.toList());
     }
+
     public ReportResponse getReportsById(UUID reportId) {
-        return reportRepository.findById(reportId)
-                .map(r -> ReportResponse.builder()
-                        .id(r.getId())
-                        .violationType(r.getViolationType())
-                        .location(r.getLocation())
-                        .title(r.getTitle())
-                        .plateNumber(r.getPlateNumber())
-                        .occurredAt(r.getOccurredAt())
-                        .status(r.getStatus())
-                        .description(r.getDescription())
-                        .createdAt(r.getCreatedAt())
-                        .build())
-                .orElseThrow(() -> new IllegalArgumentException("해당 ID로 신고가 존재하지 않습니다"));
+        Optional<Report> report = reportRepository.findById(reportId);
+        if (report.isEmpty()) {
+            throw new IllegalArgumentException("해당 ID로 신고가 존재하지 않습니다");
+        }
+        Report r = report.get();
+        Video video = videoRepository.findById(r.getVideoId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 VIDEO ID로 영상이 존재하지 않습니다."));
+        return ReportResponse.builder()
+                .id(r.getId())
+                .violationType(r.getViolationType())
+                .location(r.getLocation())
+                .title(r.getTitle())
+                .plateNumber(r.getPlateNumber())
+                .occurredAt(r.getOccurredAt())
+                .status(r.getStatus())
+                .description(r.getDescription())
+                .createdAt(r.getCreatedAt())
+                .objectKey(video.getObjectKey())
+                .videoId(video.getId())
+                .build();
     }
+
     @Transactional
     public void cancelReport(UUID ownerId, UUID reportId) {
         Report report = reportRepository.findByIdAndOwnerId(reportId, ownerId)
