@@ -4,7 +4,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -25,6 +28,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sos.chakhaeng.core.utils.rememberVideoPicker
+import com.sos.chakhaeng.presentation.theme.BLUE50
+import com.sos.chakhaeng.presentation.theme.NEUTRAL800
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.onPrimaryContainerLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
@@ -58,6 +63,7 @@ fun ViolationDetailScreen(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
+            .background(color = Color.White)
             .nestedScroll(scrollBehavior.nestedScrollConnection), // 옵션
         topBar = {
             ViolationDetailTopBar(
@@ -82,49 +88,51 @@ fun ViolationDetailScreen(
 
             Column(
                 Modifier
+                    .background(color = Color.White)
                     .fillMaxWidth()
-//                    .padding(horizontal = 16.dp),
-                        ,
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
 
                 ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.elevatedCardColors(
-                        containerColor = primaryLight.copy(alpha = 0.1f) // 은은한 배경 틴트
+                        containerColor = BLUE50
                     ),
                     elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_ai),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .size(40.dp)            // 배지 크기
-                                .padding(8.dp)          // 내부 여백
-                        )
+                        Row(Modifier,
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_ai),
+                                contentDescription = null,
+                                tint = primaryLight,
+                                modifier = Modifier
+                                    .size(40.dp)            // 배지 크기
+                                    .padding(8.dp)          // 내부 여백
+                            )
 
-                        Spacer(Modifier.width(12.dp))
-
-                        Column(Modifier.weight(1f)) {
+                            Spacer(Modifier.width(4.dp))
                             Text(
                                 text = "AI 자동 생성 완료",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = onPrimaryContainerLight
+                                color = NEUTRAL800
                             )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "AI가 위반 상황을 분석하여 신고서를 자동 작성했습니다. 각 항목을 확인하고 필요시 수정하세요.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = onPrimaryContainerLight.copy(alpha = 0.8f),
-                                lineHeight = 20.sp
-                            )
+
                         }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "AI가 위반 상황을 분석하여 신고서를 자동 작성했습니다. 각 항목을 확인하고 필요시 수정하세요.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = NEUTRAL800.copy(alpha = 0.8f),
+                            lineHeight = 20.sp
+                        )
                     }
                 }
 
@@ -132,7 +140,7 @@ fun ViolationDetailScreen(
 //                    videoUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
                     videoUrl = entity.videoUrl.orEmpty(),
                     onRequestUpload = { openVideoPicker() },
-                    onRequestEdit   = { openVideoPicker() },
+                    onRequestEdit = { openVideoPicker() },
                     onRequestDelete = { viewModel.deleteVideo() }
                 )
 
@@ -142,11 +150,31 @@ fun ViolationDetailScreen(
                     isEditing = state.isEditing,
                     onValueChange = viewModel::updateViolationType
                 )
-                ViolationInfoItem("신고 발생 지역", entity.location, state.isEditing, viewModel::updateLocation, placeholder = "도로명 주소 또는 지점 설명")
-                ViolationInfoItem("제목", entity.title, state.isEditing, viewModel::updateTitle, placeholder = "예: 강남대로 522에서 신호위반")
-                ViolationInfoItem("신고 내용", entity.description, state.isEditing, viewModel::updateDescription,
-                    placeholder = "상세한 상황 설명을 입력하세요", singleLine = false, minLines = 5)
-                ViolationInfoItem("차량 번호", entity.plateNumber, state.isEditing, viewModel::updatePlateNumber, placeholder = "예: 12가1234")
+                ViolationInfoItem(
+                    "신고 발생 지역",
+                    entity.location,
+                    state.isEditing,
+                    viewModel::updateLocation,
+                    placeholder = "도로명 주소 또는 지점 설명"
+                )
+                ViolationInfoItem(
+                    "제목",
+                    entity.title,
+                    state.isEditing,
+                    viewModel::updateTitle,
+                    placeholder = "예: 강남대로 522에서 신호위반"
+                )
+                ViolationInfoItem(
+                    "신고 내용", entity.description, state.isEditing, viewModel::updateDescription,
+                    placeholder = "상세한 상황 설명을 입력하세요", singleLine = false, minLines = 5
+                )
+                ViolationInfoItem(
+                    "차량 번호",
+                    entity.plateNumber,
+                    state.isEditing,
+                    viewModel::updatePlateNumber,
+                    placeholder = "예: 12가1234"
+                )
                 DatePickerField(
                     value = entity.date,
                     isEditing = state.isEditing,
@@ -161,7 +189,9 @@ fun ViolationDetailScreen(
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = { viewModel.onSubmit() },
-                    modifier = Modifier.fillMaxWidth().height(64.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
@@ -175,10 +205,11 @@ fun ViolationDetailScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                    text = "국민안전신문고 신고하기",
-                    style = chakhaengTypography().titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                ) }
+                        text = "국민안전신문고 신고하기",
+                        style = chakhaengTypography().titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
 
             }
@@ -192,7 +223,6 @@ fun ViolationDetailScreen(
             // lottieRawRes = R.raw.uploading   // 오프라인 파일 쓰려면 요걸로
         )
     }
-
 
 
     // ✅ 동영상 재생 다이얼로그
