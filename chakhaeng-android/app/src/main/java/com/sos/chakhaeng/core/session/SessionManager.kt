@@ -18,7 +18,6 @@ import javax.inject.Named
 
 class SessionManager @Inject constructor(
     private val tokenStore: TokenStore,
-    private val googleAuthManager: GoogleAuthManager,
     @Named("noauth") private val authApi: AuthApi,
 ) {
 
@@ -33,24 +32,21 @@ class SessionManager @Inject constructor(
     @Volatile private var cachedAccessToken: String? = null
     @Volatile private var accessTokenExpiresAt: Long = 0L
 
-    init {
-        scope.launch {
-            combine(tokenStore.tokenFlow, tokenStore.userFlow) { t, u -> t to u }
-                .collect { (t, u) ->
-                    cachedAccessToken = t?.accessToken
-                    accessTokenExpiresAt = t?.accessTokenExpiresAt ?: 0L
+    suspend fun autoLogin(): Boolean {
+        val (t, u) = tokenStore.snapshot()
 
-                    val now = System.currentTimeMillis()
-                    val tokenValid = t != null && !isAccessExpired(now)
+        cachedAccessToken = t?.accessToken
+        accessTokenExpiresAt = t?.accessTokenExpiresAt ?: 0L
 
-                    _authState.value = if (tokenValid) {
-                        AuthState.Authenticated(u)
-                    } else {
-                        AuthState.Unauthenticated
-                    }
-                }
+        val now = System.currentTimeMillis()
+        val tokenValid = t != null && !isAccessExpired(now)
 
+        _authState.value = if (tokenValid) {
+            AuthState.Authenticated(u)
+        } else {
+            AuthState.Unauthenticated
         }
+        return tokenValid
     }
 
     private fun isAccessExpired(now: Long): Boolean = now + skewMs >= accessTokenExpiresAt

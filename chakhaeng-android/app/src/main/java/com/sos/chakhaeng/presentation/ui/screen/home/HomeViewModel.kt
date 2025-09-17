@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.core.navigation.BottomTabRoute
+import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.utils.DetectionStateManager
 import com.sos.chakhaeng.domain.model.home.RecentViolation
 import com.sos.chakhaeng.domain.model.home.TodayStats
@@ -22,6 +24,7 @@ private const val TAG = "HomeViewModel"
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @ApplicationContext private val app: Context,
+    private val navigator: Navigator,
     private val detectionStateManager: DetectionStateManager,
     private val getTodayStatsUseCase: GetTodayStatsUseCase,
     private val getRecentViolationUseCase: GetRecentViolationUseCase
@@ -41,6 +44,11 @@ class HomeViewModel @Inject constructor(
         initialValue = HomeUiState()
     )
 
+    fun navigateDetection(){
+        viewModelScope.launch {
+            navigator.navigate(BottomTabRoute.Detect)
+        }
+    }
     fun loadHomeData() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
