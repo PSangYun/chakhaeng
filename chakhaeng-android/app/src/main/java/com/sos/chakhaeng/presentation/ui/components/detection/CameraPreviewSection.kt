@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.components.detection
 
+import android.view.TextureView
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,12 +13,14 @@ fun CameraPreviewSection(
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
-    controller: LifecycleCameraController
+    controller: LifecycleCameraController,
+    textureView: TextureView
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         CameraPreview(
             modifier = Modifier.fillMaxSize(),
-            controller = controller
+            controller = controller,
+            textureView = textureView
         )
 
         CameraStatusOverlay(

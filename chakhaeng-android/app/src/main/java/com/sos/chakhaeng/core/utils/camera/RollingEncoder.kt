@@ -8,6 +8,7 @@ import android.media.MediaMuxer
 import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 import android.view.Surface
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
@@ -85,6 +86,7 @@ class RollingEncoder(
         }, cbHandler)
         codec.configure(fmt, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         inputSurface = codec.createInputSurface()
+        Log.d("RollingEncoder", "start: $codec")
         codec.start()
     }
 

@@ -14,5 +14,10 @@ data class DetectionUiState(
     // 위반 탐지 관련 상태
     val violationDetections: List<ViolationDetectionUiModel> = emptyList(),
     val selectedViolationFilter: ViolationType = ViolationType.ALL,
-    val filteredViolations: List<ViolationDetectionUiModel> = emptyList()
+    val filteredViolations: List<ViolationDetectionUiModel> = emptyList(),
+
+    // ✅ 업로드 관련 (Lottie/진행률에 사용)
+    val isUploading: Boolean = false,
+    val uploadProgress: Float = Float.NaN, // 알 수 없으면 NaN
+    val lastPlayUrl: String? = null
 )

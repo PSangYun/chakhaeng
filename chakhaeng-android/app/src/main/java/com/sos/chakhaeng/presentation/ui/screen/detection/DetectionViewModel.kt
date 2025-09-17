@@ -1,11 +1,13 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
+import android.net.Uri
 import android.util.Log
 import androidx.camera.core.Camera
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.usecase.DetectionUseCase
+import com.sos.chakhaeng.domain.usecase.video.UploadVideoUseCase
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DetectionViewModel @Inject constructor(
-    private val detectionUseCase: DetectionUseCase
+    private val detectionUseCase: DetectionUseCase,
+    private val uploadVideoUseCase: UploadVideoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetectionUiState())
@@ -162,5 +165,26 @@ class DetectionViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         camera = null
+    }
+
+    fun uploadClip(uri: Uri) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUploading = true, uploadProgress = 0f) }
+
+            uploadVideoUseCase(uri) { sent, total ->
+                val p = if (total != null && total > 0) sent.toFloat() / total else Float.NaN
+                _uiState.update { s -> s.copy(uploadProgress = p) }
+            }.onSuccess { result ->
+                _uiState.update {
+                    it.copy(
+                        isUploading = false,
+                        uploadProgress = 1f,
+                        lastPlayUrl = result.uploadUrl.downloadUrl // 재생할 URL
+                    )
+                }
+            }.onFailure { e ->
+                _uiState.update { it.copy(isUploading = false, error = e.message ?: "업로드 실패") }
+            }
+        }
     }
 }

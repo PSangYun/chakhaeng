@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.components.detection
 
+import android.view.TextureView
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.Composable
@@ -10,18 +11,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 @Composable
 fun CameraPreview(
     modifier: Modifier = Modifier,
-    controller: LifecycleCameraController
+    controller: LifecycleCameraController,
+    textureView: TextureView
 ) {
     val context = LocalContext.current
     AndroidView(
-        factory = {
-            PreviewView(context).apply {
-                scaleType = PreviewView.ScaleType.FILL_CENTER
-                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                this.controller = controller
-            }
-        },
+        factory = { textureView },
         modifier = modifier,
-        update = { it.controller = controller }
     )
 }
