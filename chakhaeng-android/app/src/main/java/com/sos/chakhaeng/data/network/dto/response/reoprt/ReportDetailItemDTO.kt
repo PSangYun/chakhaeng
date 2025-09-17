@@ -6,6 +6,12 @@ data class ReportDetailItemDTO(
     @SerializedName("id")
     val id: String,
 
+    @SerializedName("videoId")
+    val videoId: String,
+
+    @SerializedName("objectKey")
+    val objectKey: String,
+
     @SerializedName("violationType")
     val violationType: String,
 
@@ -30,6 +36,4 @@ data class ReportDetailItemDTO(
     @SerializedName("createdAt")
     val createdAt: String,
 
-//    @SerializedName("videoUrl")
-//    val videoUrl: String
 )
