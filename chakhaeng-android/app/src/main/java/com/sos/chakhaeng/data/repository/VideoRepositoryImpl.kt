@@ -3,13 +3,12 @@ package com.sos.chakhaeng.data.repository
 import android.net.Uri
 import com.sos.chakhaeng.data.manager.VideoUploadManager
 import com.sos.chakhaeng.data.network.api.VideoApi
-import com.sos.chakhaeng.data.network.dto.ApiResponse
 import com.sos.chakhaeng.data.network.dto.getOrThrow
 import com.sos.chakhaeng.data.network.dto.request.violation.CompleteUploadRequest
 import com.sos.chakhaeng.data.network.dto.request.violation.CreateUploadUrlRequest
-import com.sos.chakhaeng.data.network.dto.response.violation.CreateUploadUrlResponse
 import com.sos.chakhaeng.data.network.dto.response.violation.UploadResult
 import com.sos.chakhaeng.data.network.dto.response.violation.UploadUrl
+import com.sos.chakhaeng.domain.model.StreamingUrl
 import com.sos.chakhaeng.domain.repository.VideoRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -70,5 +69,5 @@ class VideoRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getStreamingVideoUrl(objectKey: String) = videoApi.downloadUrl(objectKey)
+    override suspend fun getStreamingVideoUrl(objectKey: String) = StreamingUrl(videoApi.downloadUrl(objectKey).downloadUrl)
 }

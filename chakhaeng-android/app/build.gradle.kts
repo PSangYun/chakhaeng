@@ -95,6 +95,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.kotlinx.serialization.json)
 
+
+
     ksp(libs.hilt.compiler)
 
     implementation(libs.core)
@@ -143,7 +145,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     // 위치
-    implementation("com.google.android.gms:play-services-location:21.0.1")
 
     // 권한
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
@@ -152,9 +153,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
 
     // Google Map
-    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation(libs.maps.compose)
     implementation("com.google.android.gms:play-services-maps:18.1.0")
-    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation(libs.play.services.location)
 
     // Test dependencies
     testImplementation(libs.junit)

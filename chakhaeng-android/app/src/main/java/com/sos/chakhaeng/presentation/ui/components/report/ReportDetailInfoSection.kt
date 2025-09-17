@@ -54,7 +54,7 @@ fun ReportDetailInfoSection(
                     style = chakhaengTypography().bodyMedium,
                 )
                 Text(
-                    text = reportDetailItem.violationType,
+                    text = reportDetailItem.violationType.displayName,
                     style = chakhaengTypography().bodySmall,
                     fontWeight = FontWeight.Bold,
                     color = errorLight

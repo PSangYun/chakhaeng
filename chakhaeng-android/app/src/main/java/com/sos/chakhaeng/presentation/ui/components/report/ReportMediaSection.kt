@@ -28,7 +28,7 @@ import com.sos.chakhaeng.presentation.ui.screen.streaming.component.VideoPlayer
 @OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun ReportMediaSection(
-    videoUrl: String,
+    videoUrl: String?,
     modifier: Modifier = Modifier,
     cardShape: Shape = RoundedCornerShape(16.dp),
     autoPlay: Boolean = false,
