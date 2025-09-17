@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.camera.core.Camera
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.core.navigation.Navigator
+import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.usecase.DetectionUseCase
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
@@ -16,6 +18,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DetectionViewModel @Inject constructor(
+    private val navigator: Navigator,
     private val detectionUseCase: DetectionUseCase
 ) : ViewModel() {
 
@@ -75,6 +78,12 @@ class DetectionViewModel @Inject constructor(
         }
     }
 
+    fun navigateViolationDetail(violationId : String?){
+        viewModelScope.launch {
+            navigator.navigate(Route.ViolationDetail(violationId))
+        }
+    }
+
     fun onCameraReady(camera: Camera) {
         this.camera = camera
         Log.d("DetectionViewModel", "카메라 준비 완료")
@@ -119,7 +128,7 @@ class DetectionViewModel @Inject constructor(
     private fun generateSampleViolationData() {
         val sampleViolations = listOf(
             ViolationUiMapper.mapToUiModel(
-                id = 1,
+                id = "1",
                 type = ViolationType.WRONG_WAY,
                 licenseNumber = "12가1234",
                 location = "강남구 테헤란로 123",
@@ -128,7 +137,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id = 2,
+                id ="1",
                 type = ViolationType.SIGNAL,
                 licenseNumber = "34나5678",
                 location = "서초구 서초대로 456",
@@ -137,7 +146,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id = 3,
+                id ="1",
                 type = ViolationType.LANE,
                 licenseNumber = "56다9012",
                 location = "마포구 월드컵로 789",
@@ -146,7 +155,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id = 4,
+                id = "1",
                 type = ViolationType.NO_PLATE,
                 licenseNumber = "78라3456",
                 location = "용산구 한강대로 321",
