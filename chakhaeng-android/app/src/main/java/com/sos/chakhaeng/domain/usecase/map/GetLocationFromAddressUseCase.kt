@@ -1,4 +1,4 @@
-package com.sos.chakhaeng.domain.usecase.location
+package com.sos.chakhaeng.domain.usecase.map
 
 import com.sos.chakhaeng.domain.model.location.Address
 import com.sos.chakhaeng.domain.model.location.Location
@@ -14,9 +14,9 @@ class GetLocationFromAddressUseCase @Inject constructor(
         val address = Address.fromString(addressString)
 
         return try {
-            locationRepository.getLocationFromAddress(address) ?: Location.DEFAULT
+            locationRepository.getLocationFromAddress(address)
         } catch (e: Exception) {
-            Location.DEFAULT
+            null
         }
     }
 }
