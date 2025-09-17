@@ -13,7 +13,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun ProfileScreen(
-    navigateToStreaming: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -28,9 +27,6 @@ fun ProfileScreen(
         Text(
             text = "프로필",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.clickable{
-                navigateToStreaming()
-            }
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(

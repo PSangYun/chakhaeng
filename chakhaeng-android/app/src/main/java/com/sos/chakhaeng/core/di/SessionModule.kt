@@ -21,5 +21,5 @@ object SessionModule {
         tokenStore: TokenStore,
         googleAuthManager: GoogleAuthManager,
         @Named("noauth") authApi: AuthApi
-    ): SessionManager = SessionManager(tokenStore, googleAuthManager, authApi)
+    ): SessionManager = SessionManager(tokenStore, authApi)
 }
