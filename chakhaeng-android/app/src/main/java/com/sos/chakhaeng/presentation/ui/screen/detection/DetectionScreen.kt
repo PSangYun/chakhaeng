@@ -84,8 +84,7 @@ fun DetectionScreen(
                                 isFullscreen = uiState.isFullscreen,
                                 onToggleFullscreen = {
                                     viewModel.toggleFullscreen()
-                                },
-                                controller = appEntryViewModel.controller
+                                }
                             )
                         }
 

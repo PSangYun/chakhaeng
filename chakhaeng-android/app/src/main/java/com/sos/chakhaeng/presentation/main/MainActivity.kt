@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -47,8 +46,7 @@ class MainActivity : ComponentActivity() {
             ChakHaengTheme {
                 ChakhaengApp(
                     googleAuthManager,
-                    appEntryViewModel = appEntryViewModel,
-                    this
+                    appEntryViewModel = appEntryViewModel
                 )
             }
         }
@@ -60,7 +58,6 @@ class MainActivity : ComponentActivity() {
 fun ChakhaengApp(
     googleAuthManager: GoogleAuthManager,
     appEntryViewModel: AppEntryViewModel,
-    activity: MainActivity
 ){
     val navController = rememberNavController()
     val authState by appEntryViewModel.authState.collectAsState()
@@ -71,10 +68,6 @@ fun ChakhaengApp(
         derivedStateOf {
             currentRoute.shouldShowBottomBar()
         }
-    }
-
-    LaunchedEffect(Unit) {
-        appEntryViewModel.init(activity)
     }
 
     Scaffold(
