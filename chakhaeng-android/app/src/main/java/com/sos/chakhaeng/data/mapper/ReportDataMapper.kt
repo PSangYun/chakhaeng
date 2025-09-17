@@ -25,23 +25,25 @@ object ReportDataMapper {
     fun ReportDetailItemDTO.toEntity(): ReportDetailItem =
         ReportDetailItem(
             id = id,
-            videoUrl = violationType,
+            videoId = videoId,
+            objectKey = objectKey,
             reportState = status.toReportStatus(),
-            violationType = title.toViolationType(),
+            violationType = violationType.toViolationType(),
+            location = location,
+            title = title,
             plateNumber = plateNumber,
             occurredAt = Instant.parse(occurredAt).toEpochMilli(),
-            location = location,
             createdAt = Instant.parse(createdAt).toEpochMilli(),
             reportContent = description
         )
     
     private fun String.toViolationType(): ViolationType = when (this.uppercase()) {
-        "역주행" -> ViolationType.WRONG_WAY
-        "신호위반" -> ViolationType.SIGNAL
-        "차선침범" -> ViolationType.LANE
-        "무번호판" -> ViolationType.NO_PLATE
-        "헬멧 미착용" -> ViolationType.NO_HELMET
-        "기타" -> ViolationType.OTHERS
+        "WRONG_WAY" -> ViolationType.WRONG_WAY
+        "SIGNAL" -> ViolationType.SIGNAL
+        "LANE" -> ViolationType.LANE
+        "NO_PLATE" -> ViolationType.NO_PLATE
+        "NO_HELMET" -> ViolationType.NO_HELMET
+        "OTHERS" -> ViolationType.OTHERS
         else -> ViolationType.OTHERS
     }
     

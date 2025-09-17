@@ -4,7 +4,7 @@ import com.sos.chakhaeng.domain.model.report.ReportDetailItem
 import com.sos.chakhaeng.domain.repository.ReportRepository
 import javax.inject.Inject
 
-class GetReportDetailItem @Inject constructor(
+class GetReportDetailItemUseCase @Inject constructor(
     private val reportRepository: ReportRepository
 ){
     suspend operator fun invoke(reportId: String): Result<ReportDetailItem> {
