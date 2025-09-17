@@ -4,7 +4,7 @@ import com.sos.chakhaeng.domain.model.ViolationType
 import java.time.LocalDateTime
 
 data class ViolationDetectionUiModel(
-    val id: Long,
+    val id: String,
     val type: ViolationType,
     val licenseNumber: String,
     val location: String,

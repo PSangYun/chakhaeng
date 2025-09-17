@@ -191,7 +191,7 @@ private fun EmptyViolationList(
 
         Text(
             text = "AI가 위반 사항을 탐지하면 여기에 표시됩니다",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
     }
