@@ -3,6 +3,8 @@ package com.sos.chakhaeng.presentation.ui.screen.report
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.core.navigation.Navigator
+import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.domain.model.report.ReportItem
 import com.sos.chakhaeng.domain.model.report.ReportStatus
 import com.sos.chakhaeng.domain.model.report.ReportTab
@@ -20,6 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReportViewModel @Inject constructor(
+    private val navigator: Navigator,
     private val getReportItemUseCase: GetReportItemUseCase,
     private val deleteReportItemUseCase: DeleteReportItemUseCase
 ) : ViewModel() {
@@ -66,6 +69,12 @@ class ReportViewModel @Inject constructor(
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(error = "삭제에 실패했습니다: ${error.message}")
                 }
+        }
+    }
+
+    fun navigateReportDetail(reportId : String){
+        viewModelScope.launch {
+            navigator.navigate(Route.ReportDetail(reportId))
         }
     }
 

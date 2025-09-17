@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -14,11 +13,6 @@ import com.sos.chakhaeng.presentation.theme.NEUTRAL100
 import com.sos.chakhaeng.presentation.theme.NEUTRAL200
 import com.sos.chakhaeng.presentation.theme.NEUTRAL800
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.theme.onSurfaceLight
-import com.sos.chakhaeng.presentation.theme.outlineVariantLight
-import com.sos.chakhaeng.presentation.theme.primaryLight
-import com.sos.chakhaeng.presentation.theme.surfaceLight
-import com.sos.chakhaeng.presentation.theme.surfaceVariantLight
 
 /**
  * 텍스트성 항목을 모두 커버하는 공통 카드.
@@ -36,15 +30,14 @@ fun ViolationInfoItem(
     singleLine: Boolean = true,
     minLines: Int = 1,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    trailingContent: (@Composable () -> Unit)? = null, // 필요시 오른쪽 보조 UI
 ) {
     val fieldColors = TextFieldDefaults.colors(
-        focusedContainerColor = if (isEditing) NEUTRAL100 else Color.White,
-        unfocusedContainerColor = if (isEditing) NEUTRAL100 else Color.White,
-        disabledContainerColor = if (isEditing) NEUTRAL100 else Color.White,
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        disabledContainerColor =  Color.White,
         focusedIndicatorColor = NEUTRAL200,
         unfocusedIndicatorColor = NEUTRAL200,
-        disabledTextColor = NEUTRAL800,
+        disabledTextColor = NEUTRAL200,
         disabledPlaceholderColor = NEUTRAL200,
         focusedLabelColor = NEUTRAL800,
         unfocusedLabelColor = NEUTRAL800
@@ -61,13 +54,12 @@ fun ViolationInfoItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(
-                text = label,
-                style = chakhaengTypography().bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
+                Text(
+                    text = label,
+                    style = chakhaengTypography().bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = NEUTRAL800
+                )
 
             Spacer(Modifier.height(8.dp))
 

@@ -3,30 +3,41 @@
 package com.sos.chakhaeng.presentation.ui.components.violationDetail
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
-import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.CalendarView
-import com.sos.chakhaeng.R
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import com.sos.chakhaeng.R
+import com.sos.chakhaeng.presentation.theme.NEUTRAL200
+import com.sos.chakhaeng.presentation.theme.NEUTRAL800
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.theme.onSurfaceLight
-import com.sos.chakhaeng.presentation.theme.onSurfaceVariantLight
-import com.sos.chakhaeng.presentation.theme.outlineVariantLight
-import com.sos.chakhaeng.presentation.theme.primaryLight
-import com.sos.chakhaeng.presentation.theme.surfaceLight
-import com.sos.chakhaeng.presentation.theme.surfaceVariantLight
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -38,15 +49,15 @@ fun DatePickerField(
     modifier: Modifier = Modifier,
 ) {
     val fieldColors = TextFieldDefaults.colors(
-        focusedContainerColor = if(isEditing)  surfaceLight else surfaceVariantLight,
-        unfocusedContainerColor = if(isEditing)  surfaceLight else surfaceVariantLight,
-        disabledContainerColor = if(isEditing)  surfaceLight else surfaceVariantLight,
-        focusedIndicatorColor = primaryLight,
-        unfocusedIndicatorColor = outlineVariantLight,
-//        disabledIndicatorColor = primaryLight,
-        disabledTextColor = onSurfaceLight,
-        disabledPlaceholderColor = onSurfaceLight,
-//        cursorColor = MaterialTheme.colorScheme.primary
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        disabledContainerColor = Color.White,
+        focusedIndicatorColor = NEUTRAL200,
+        unfocusedIndicatorColor = NEUTRAL200,
+        disabledTextColor = NEUTRAL800,
+        disabledPlaceholderColor = NEUTRAL200,
+        focusedLabelColor = NEUTRAL800,
+        unfocusedLabelColor = NEUTRAL800
     )
 
     // 날짜 파싱/포맷터
@@ -66,12 +77,24 @@ fun DatePickerField(
     )
 
     // 입력 상자 (읽기 전용)
-    ElevatedCard(modifier = modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            Text(label, style = chakhaengTypography().bodyMedium,
+    ElevatedCard(
+        modifier = modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = label,
+                style = chakhaengTypography().bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = onSurfaceVariantLight
+                color = NEUTRAL800
             )
+
             Spacer(Modifier.height(8.dp))
 
             Box {
@@ -81,7 +104,7 @@ fun DatePickerField(
                     readOnly = true,
                     enabled = isEditing,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { if (!isEditing && value.isBlank()) Text("—") },
+                    placeholder = { if (!isEditing && value.isBlank()) Text("발생 날짜를 알려주세요") },
                     trailingIcon = {
                         IconButton(enabled = isEditing, onClick = { openSheet = true }) {
                             Icon(painterResource(R.drawable.ic_calendar), contentDescription = null)
@@ -90,7 +113,9 @@ fun DatePickerField(
                     colors = fieldColors
                 )
                 if (isEditing) Box(
-                    Modifier.matchParentSize().clickable { openSheet = true }
+                    Modifier
+                        .matchParentSize()
+                        .clickable { openSheet = true }
                 )
             }
         }
