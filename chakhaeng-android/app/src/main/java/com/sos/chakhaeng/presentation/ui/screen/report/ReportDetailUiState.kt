@@ -8,9 +8,10 @@ data class ReportDetailUiState(
     val error: String? = null,
 
     val reportDetailItem: ReportDetailItem = ReportDetailItem(),
+    val streamingUrl: String? = null,
 
     // 지도 관련 상태
     val mapLocation: Location = Location.DEFAULT,
     val isMapLoading: Boolean = false,
-    val mapError: String? = null
+    val mapError: String? = null,
 )
