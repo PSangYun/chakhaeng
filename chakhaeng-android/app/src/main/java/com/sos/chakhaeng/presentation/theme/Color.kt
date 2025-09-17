@@ -14,7 +14,7 @@ val tertiaryLight = Color(0xFF7C4E7F)
 val onTertiaryLight = Color(0xFFFFFFFF)
 val tertiaryContainerLight = Color(0xFFFFD6FD)
 val onTertiaryContainerLight = Color(0xFF623765)
-val errorLight = Color(0xFF904A43)
+val errorLight = Color(0xFFFF5722)
 val onErrorLight = Color(0xFFFFFFFF)
 val errorContainerLight = Color(0xFFFFDAD6)
 val onErrorContainerLight = Color(0xFF73332E)
@@ -230,7 +230,7 @@ val NEUTRAL800 = Color(0xFF252525)
 val BLUE50 = Color(0xFFEFF6FF)
 val BLUE300 = Color(0xFF2563EB)
 val RED300 = Color(0xFFE1392C)
-
+val LIGHTRED = Color(0xFFFF5858)
 object ViolationColors {
     // 배경색
     val All = Color(0xFFD2CFCC)

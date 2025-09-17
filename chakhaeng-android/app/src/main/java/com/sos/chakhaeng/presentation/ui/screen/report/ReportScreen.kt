@@ -22,7 +22,6 @@ import com.sos.chakhaeng.presentation.ui.components.report.ReportTabSection
 fun ReportScreen(
     reportViewModel: ReportViewModel = hiltViewModel(),
     paddingValues: PaddingValues,
-    onReportItemClick: (ReportItem) -> Unit = {}
 ) {
     val uiState by reportViewModel.uiState.collectAsStateWithLifecycle()
     val filteredReportList by reportViewModel.filteredReportList.collectAsStateWithLifecycle()
@@ -73,7 +72,9 @@ fun ReportScreen(
                 reportList = filteredReportList,
                 modifier = Modifier
                     .fillMaxSize(),
-                onItemClick = onReportItemClick,
+                onItemClick = { reportItem ->
+                    reportViewModel.navigateReportDetail(reportItem.id)
+                },
                 onDelete = { reportItem ->
                     reportViewModel.deleteReportItem(reportItem)
                 }

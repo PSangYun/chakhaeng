@@ -58,7 +58,6 @@ import kotlin.math.sin
 
 @Composable
 fun LoginScreen(
-    navigateToHome: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel(),
     googleAuthManager: GoogleAuthManager
 ) {
@@ -67,7 +66,6 @@ fun LoginScreen(
 
     LaunchedEffect(state) {
         if (state.value is LoginUiState.Success) {
-            navigateToHome()
             viewModel.consumeSuccess()
         }
     }

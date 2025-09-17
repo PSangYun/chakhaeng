@@ -1,5 +1,10 @@
 package com.sos.chakhaeng.presentation.ui.screen.violationDetail
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -51,6 +56,7 @@ import com.sos.chakhaeng.R
 import com.sos.chakhaeng.core.utils.rememberVideoPicker
 import com.sos.chakhaeng.core.utils.showToast
 import com.sos.chakhaeng.presentation.theme.BLUE50
+import com.sos.chakhaeng.presentation.theme.LIGHTRED
 import com.sos.chakhaeng.presentation.theme.NEUTRAL800
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.primaryLight
@@ -67,8 +73,8 @@ import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationVid
 @Composable
 fun ViolationDetailScreen(
     viewModel: ViolationDetailViewModel = hiltViewModel(),
-    onBack: () -> Unit,
-    paddingVaules: PaddingValues
+    paddingValues: PaddingValues,
+    violationId: String?
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,6 +87,17 @@ fun ViolationDetailScreen(
 
     val openVideoPicker = rememberVideoPicker { uri ->
         viewModel.onVideoSelected(uri)     // 업로드/교체 로직으로 연결
+    }
+    val isFormFilled = remember(state.violationDetail) {
+        listOf(
+            entity.violationType,
+            entity.location,
+            entity.title,
+            entity.description,
+            entity.plateNumber,
+            entity.date,
+            entity.time
+        ).all { it.isNotBlank() }
     }
     LaunchedEffect(Unit) {
         viewModel.event.collect { message ->
@@ -95,20 +112,21 @@ fun ViolationDetailScreen(
         topBar = {
             ViolationDetailTopBar(
                 isEditing = state.isEditing,
-                onBackClick = onBack,
+                onBackClick = {
+                    viewModel.popBackStack()
+                },
                 onToggleEdit = { viewModel.toggleEdit(onSave = { /* TODO */ }) }
             )
         },
         snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { innerPadding ->
         val ld = LocalLayoutDirection.current
-        val start = paddingVaules.calculateStartPadding(ld)
-        val end = paddingVaules.calculateEndPadding(ld)
-        val bottom = paddingVaules.calculateBottomPadding()
+        val start = paddingValues.calculateStartPadding(ld)
+        val end = paddingValues.calculateEndPadding(ld)
 
         Column(
             Modifier
-                .padding(start = start, end = end, bottom = bottom)
+                .padding(start = start, end = end, bottom = 0.dp)
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -131,11 +149,15 @@ fun ViolationDetailScreen(
                     elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Row(Modifier,
-                            verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_ai),
                                 contentDescription = null,
@@ -156,7 +178,7 @@ fun ViolationDetailScreen(
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = "AI가 위반 상황을 분석하여 신고서를 자동 작성했습니다. 각 항목을 확인하고 필요시 수정하세요.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.labelLarge,
                             color = NEUTRAL800.copy(alpha = 0.8f),
                             lineHeight = 20.sp
                         )
@@ -189,18 +211,23 @@ fun ViolationDetailScreen(
                     entity.title,
                     state.isEditing,
                     viewModel::updateTitle,
-                    placeholder = "예: 강남대로 522에서 신호위반"
+                    placeholder = "예시 : 강남대로 522에서 신호위반"
                 )
                 ViolationInfoItem(
-                    "신고 내용", entity.description, state.isEditing, viewModel::updateDescription,
-                    placeholder = "상세한 상황 설명을 입력하세요", singleLine = false, minLines = 5
+                    "신고 내용",
+                    entity.description,
+                    state.isEditing,
+                    viewModel::updateDescription,
+                    placeholder = "상세한 상황 설명을 입력하세요",
+                    singleLine = false,
+                    minLines = 5
                 )
                 ViolationInfoItem(
                     "차량 번호",
                     entity.plateNumber,
                     state.isEditing,
                     viewModel::updatePlateNumber,
-                    placeholder = "예: 12가1234"
+                    placeholder = "예시 : 12가1234"
                 )
                 DatePickerField(
                     value = entity.date,
@@ -214,30 +241,38 @@ fun ViolationDetailScreen(
                 )
 
                 Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = { viewModel.onSubmit() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    )
+                AnimatedVisibility(
+                    visible = isFormFilled && !state.isUploading,
+                    enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut()
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_siren),
-                        contentDescription = "국민안전신문고 신고하기",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = "국민안전신문고 신고하기",
-                        style = chakhaengTypography().titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Column {
+                        Button(
+                            onClick = { viewModel.onSubmit() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = LIGHTRED,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_siren),
+                                contentDescription = "국민안전신문고 신고하기",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "국민안전신문고 신고하기",
+                                style = chakhaengTypography().titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                 }
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
 
             }
         }
