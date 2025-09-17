@@ -43,6 +43,8 @@ lottieCompose = "6.6.6"
 coilVideo = "2.7.0"
 lifecycleService = "2.9.3"
 protoliteWellKnownTypes = "18.0.1"
+playServicesLocation = "21.3.0"
+mapsCompose = "6.2.0"
 navigation3Runtime = "1.0.0-alpha06"
 navigation3Ui = "1.0.0-alpha09"
 adaptive = "1.1.0"
@@ -116,6 +118,8 @@ androidx-adaptive = { group = "androidx.compose.material3.adaptive", name = "ada
 androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNavigation3" }
 kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -126,4 +130,3 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

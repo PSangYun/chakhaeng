@@ -26,11 +26,15 @@ class LocationRepositoryImpl @Inject constructor(
         try {
             val geocoder = Geocoder(context, Locale.getDefault())
 
+            if (!Geocoder.isPresent()) {
+                return@withContext null
+            }
+
             // Android API 33 이상에서는 새로운 API 사용
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                return@withContext getLocationFromAddressNew(geocoder, address.fullAddress)
+            return@withContext if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                getLocationFromAddressNew(geocoder, address.fullAddress)
             } else {
-                return@withContext getLocationFromAddressLegacy(geocoder, address.fullAddress)
+                getLocationFromAddressLegacy(geocoder, address.fullAddress)
             }
         } catch (e: IOException) {
             e.printStackTrace()

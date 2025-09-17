@@ -20,6 +20,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.*
 import com.sos.chakhaeng.R
 import com.sos.chakhaeng.data.mapper.LocationMapper
+import com.sos.chakhaeng.domain.model.location.Location
 import com.sos.chakhaeng.domain.model.report.ReportDetailItem
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.ui.screen.report.ReportDetailUiState
@@ -33,7 +34,16 @@ fun MapComponent(
 ) {
     val context = LocalContext.current
     val mapPosition = LocationMapper.toLatLng(uiState.mapLocation)
-    var customMarkerIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
+    var markerIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
+
+    // 마커 아이콘 초기화
+    LaunchedEffect(Unit) {
+        markerIcon = try {
+            createSizedMarker(context, 80) ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+        } catch (e: Exception) {
+            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+        }
+    }
 
     LaunchedEffect(reportDetailItem.location) {
         if (reportDetailItem.location.isNotEmpty()) {
@@ -45,12 +55,14 @@ fun MapComponent(
         position = CameraPosition.fromLatLngZoom(mapPosition, 15f)
     }
 
-    // 마커 위치가 변경되면 카메라도 이동
+    // 마커 위치가 변경되면 카메라도 이동 (DEFAULT 위치가 아닌 경우에만)
     LaunchedEffect(uiState.mapLocation) {
-        val newPosition = LocationMapper.toLatLng(uiState.mapLocation)
-        cameraPositionState.move(
-            com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(newPosition, 15f)
-        )
+        if (!uiState.mapLocation.isDefault()) {
+            val newPosition = LocationMapper.toLatLng(uiState.mapLocation)
+            cameraPositionState.move(
+                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(newPosition, 15f)
+            )
+        }
     }
 
     Column(
@@ -83,19 +95,10 @@ fun MapComponent(
                         tiltGesturesEnabled = false,
                         compassEnabled = true,
                         mapToolbarEnabled = false
-                    ),
-                    onMapLoaded = {
-                        // 지도 로드 완료 후에 색상이 적용된 마커 아이콘 초기화
-                        try {
-                            customMarkerIcon = createSizedMarker(context, 80)
-                                ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                        } catch (e: Exception) {
-                            customMarkerIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                        }
-                    }
+                    )
                 ) {
                     // 마커 아이콘이 준비된 후에만 마커 표시
-                    customMarkerIcon?.let { icon ->
+                    markerIcon?.let { icon ->
                         Marker(
                             state = MarkerState(position = mapPosition),
                             title = "🚨 위반 발생 지점",

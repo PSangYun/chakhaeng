@@ -1,7 +1,9 @@
 package com.sos.chakhaeng.data.mapper
 
+import com.sos.chakhaeng.data.network.dto.response.reoprt.ReportDetailItemDTO
 import com.sos.chakhaeng.data.network.dto.response.reoprt.ReportItemDTO
 import com.sos.chakhaeng.domain.model.ViolationType
+import com.sos.chakhaeng.domain.model.report.ReportDetailItem
 import com.sos.chakhaeng.domain.model.report.ReportItem
 import com.sos.chakhaeng.domain.model.report.ReportStatus
 import java.time.Instant
@@ -19,14 +21,29 @@ object ReportDataMapper {
             status = status.toReportStatus(),
             createdAt = Instant.parse(createdAt).toEpochMilli(),
         )
+
+    fun ReportDetailItemDTO.toEntity(): ReportDetailItem =
+        ReportDetailItem(
+            id = id,
+            videoId = videoId,
+            objectKey = objectKey,
+            reportState = status.toReportStatus(),
+            violationType = violationType.toViolationType(),
+            location = location,
+            title = title,
+            plateNumber = plateNumber,
+            occurredAt = Instant.parse(occurredAt).toEpochMilli(),
+            createdAt = Instant.parse(createdAt).toEpochMilli(),
+            reportContent = description
+        )
     
     private fun String.toViolationType(): ViolationType = when (this.uppercase()) {
-        "역주행" -> ViolationType.WRONG_WAY
-        "신호위반" -> ViolationType.SIGNAL
-        "차선침범" -> ViolationType.LANE
-        "무번호판" -> ViolationType.NO_PLATE
-        "헬멧 미착용" -> ViolationType.NO_HELMET
-        "기타" -> ViolationType.OTHERS
+        "WRONG_WAY" -> ViolationType.WRONG_WAY
+        "SIGNAL" -> ViolationType.SIGNAL
+        "LANE" -> ViolationType.LANE
+        "NO_PLATE" -> ViolationType.NO_PLATE
+        "NO_HELMET" -> ViolationType.NO_HELMET
+        "OTHERS" -> ViolationType.OTHERS
         else -> ViolationType.OTHERS
     }
     
