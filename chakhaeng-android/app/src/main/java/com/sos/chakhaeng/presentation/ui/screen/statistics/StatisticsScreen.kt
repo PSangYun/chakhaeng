@@ -1,39 +1,55 @@
 package com.sos.chakhaeng.presentation.ui.screen.statistics
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
+import com.sos.chakhaeng.presentation.ui.components.statistics.StatisticsTabSection
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
-    viewModel: StatisticsViewModel = hiltViewModel()
+    statisticsViewModel: StatisticsViewModel= hiltViewModel(),
+    paddingValues: PaddingValues
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by statisticsViewModel.uiState.collectAsStateWithLifecycle()
+
+    uiState.error?.let { error ->
+        LaunchedEffect(error) {
+            statisticsViewModel.clearError()
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(Color.White)
+            .padding(paddingValues),
     ) {
-        Text(
-            text = "통계",
-            style = MaterialTheme.typography.headlineMedium
+        CenterAlignedTopAppBar(
+            title = {
+                Text(
+                    "통계 현황",
+                    style = chakhaengTypography().titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.White
+            )
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "총 탐지: ${uiState.totalDetections}회",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Text(
-            text = "정확도: ${uiState.accuracy}%",
-            style = MaterialTheme.typography.bodyLarge
+
+        StatisticsTabSection(
+            selectedTab = uiState.selectedTab,
+            onTabSelected = statisticsViewModel::selectTab,
+            modifier = Modifier
+                .fillMaxWidth()
         )
     }
 }

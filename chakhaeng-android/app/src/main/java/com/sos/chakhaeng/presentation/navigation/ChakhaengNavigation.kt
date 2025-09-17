@@ -120,7 +120,9 @@ fun ChakhaengNavigation(
             )
         }
         composable(Routes.Statistics.route) {
-            StatisticsScreen()
+            StatisticsScreen(
+                paddingValues = paddingValues
+            )
         }
         composable(Routes.Profile.route) {
             ProfileScreen(
