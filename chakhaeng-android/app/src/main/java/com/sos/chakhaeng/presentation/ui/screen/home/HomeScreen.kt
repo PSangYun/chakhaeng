@@ -21,7 +21,6 @@ import com.sos.chakhaeng.presentation.theme.primaryLight
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToDetection: () -> Unit = {},
     paddingValues: PaddingValues
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,9 +49,9 @@ fun HomeScreen(
                 if (uiState.isDetectionActive) {
                     viewModel.confirmStopDetection()
                 } else {
+                    viewModel.navigateDetection()
                     viewModel.dismissDetectionDialog()
                     viewModel.startDetection()
-                    onNavigateToDetection()
                 }
             },
             onDialogDismiss = {
@@ -82,18 +81,10 @@ fun HomeScreen(
                             topEnd = 20.dp
                         )
                     )
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = paddingValues
             ) {
-//                // ESG 점수 카드
-//                item {
-//                    ESGScoreCard(
-//                        score = uiState.esgScore,
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//                }
-
                 // 오늘의 탐지/신고 현황
                 item {
                     TodayState(

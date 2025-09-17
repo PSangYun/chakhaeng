@@ -1,9 +1,9 @@
 package com.sos.chakhaeng.presentation.ui.screen.login
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sos.chakhaeng.core.session.GoogleAuthManager
+import com.sos.chakhaeng.core.navigation.BottomTabRoute
+import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.domain.usecase.auth.GoogleLoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,15 +14,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
+    private val navigator: Navigator,
     private val googleLoginUseCase: GoogleLoginUseCase,
-    private val googleAuthManager: GoogleAuthManager,
-    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-
+    fun navigateHome() = viewModelScope.launch {
+        navigator.navigateAndClearBackStack(route = BottomTabRoute.Home)
+    }
     fun googleLogin(idToken: String?) {
         viewModelScope.launch {
             if (idToken.isNullOrBlank()) {
@@ -35,6 +36,7 @@ class LoginViewModel @Inject constructor(
                 .onSuccess {
                     user ->
                     _uiState.value = LoginUiState.Success
+                    navigateHome()
                 }
                 .onFailure { e ->
                     _uiState.value = LoginUiState.Error(e.message ?: "로그인 실패")
@@ -45,6 +47,7 @@ class LoginViewModel @Inject constructor(
     fun consumeSuccess() {
         if (_uiState.value is LoginUiState.Success) {
             _uiState.value = LoginUiState.Idle
+
         }
     }
 }

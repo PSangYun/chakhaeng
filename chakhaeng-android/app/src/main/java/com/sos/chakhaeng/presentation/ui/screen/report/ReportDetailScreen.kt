@@ -25,7 +25,6 @@ import com.sos.chakhaeng.presentation.ui.components.report.ReportDetailInfoSecti
 @Composable
 fun ReportDetailScreen(
     reportId: String,
-    onBackClick: () -> Unit,
     paddingValues: PaddingValues,
     reportDetailViewModel: ReportDetailViewModel = hiltViewModel()
 ) {
