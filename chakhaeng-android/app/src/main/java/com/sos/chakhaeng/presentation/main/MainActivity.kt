@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -33,6 +34,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var googleAuthManager: GoogleAuthManager
 
+    @Inject
+    lateinit var sessionManager: SessionManager
+
     private val appEntryViewModel: AppEntryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,10 +48,37 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ChakHaengTheme {
-                ChakhaengApp(
-                    googleAuthManager,
-                    appEntryViewModel = appEntryViewModel
-                )
+                var startDestination: NavKey? by remember { mutableStateOf(null) }
+
+                LaunchedEffect(Unit) {
+                    appEntryViewModel.init(this@MainActivity)
+                    startDestination = if (sessionManager.autoLogin()) {
+                        BottomTabRoute.Home
+                    } else {
+                        Route.Login
+                    }
+                }
+                startDestination?.let { destination ->
+                    val navBackStack = rememberNavBackStack(destination)
+
+                    LaunchedNavigator(navBackStack)
+
+                    ChakhaengApp(
+                        navBackStack,
+                        googleAuthManager = googleAuthManager,
+                        onTabSelected = {
+                            when (it.route) {
+                                BottomTabRoute.Home -> appEntryViewModel.navigateHome()
+                                BottomTabRoute.Profile -> appEntryViewModel.navigateProfile()
+                                BottomTabRoute.Detect -> appEntryViewModel.navigateDetect()
+                                BottomTabRoute.Report -> appEntryViewModel.navigateReport()
+                                BottomTabRoute.Statistics -> appEntryViewModel.navigateStats()
+                            }
+                        },
+                        appEntryViewModel
+                    )
+                }
+
             }
         }
     }
@@ -55,20 +86,22 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChakhaengApp(
+internal fun ChakhaengApp(
+    navBackStack: NavBackStack<NavKey>,
     googleAuthManager: GoogleAuthManager,
-    appEntryViewModel: AppEntryViewModel,
-){
-    val navController = rememberNavController()
-    val authState by appEntryViewModel.authState.collectAsState()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    val isBottomBarVisible by remember(currentRoute) {
-        derivedStateOf {
-            currentRoute.shouldShowBottomBar()
-        }
+    onTabSelected: (MainTab) -> Unit,
+    appEntryViewModel: AppEntryViewModel
+) {
+    val currentRoute = navBackStack.lastOrNull()
+    val currentTab = when (currentRoute) {
+        is BottomTabRoute.Home -> MainTab.HOME
+        is BottomTabRoute.Detect -> MainTab.Detects
+        is BottomTabRoute.Report -> MainTab.Reports
+        is BottomTabRoute.Statistics -> MainTab.Statistics
+        is BottomTabRoute.Profile -> MainTab.PROFILE
+        else -> MainTab.HOME
     }
+
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

@@ -2,6 +2,8 @@ package com.sos.chakhaeng.presentation.ui.screen.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.core.navigation.Navigator
+import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val navigator: Navigator,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -20,6 +23,7 @@ class ProfileViewModel @Inject constructor(
      fun logout() {
          viewModelScope.launch {
              sessionManager.logout()
+             navigator.navigateAndClearBackStack(Route.Login)
          }
     }
 }

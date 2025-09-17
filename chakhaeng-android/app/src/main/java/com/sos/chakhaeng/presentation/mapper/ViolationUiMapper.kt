@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 object ViolationUiMapper {
 
     fun mapToUiModel(
-        id: Long,
+        id: String,
         type: ViolationType,
         licenseNumber: String,
         location: String,

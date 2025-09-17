@@ -76,7 +76,7 @@ fun ViolationMediaSection(
                     Column {
                         Text(
                             text = "동영상",
-                            style = chakhaengTypography().titleSmall,
+                            style = chakhaengTypography().bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = NEUTRAL800
                         )

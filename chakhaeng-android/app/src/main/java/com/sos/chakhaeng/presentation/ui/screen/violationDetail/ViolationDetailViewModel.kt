@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
 import com.sos.chakhaeng.domain.usecase.video.UploadVideoUseCase
 import com.sos.chakhaeng.domain.usecase.violation.SubmitViolationUseCase
@@ -18,6 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ViolationDetailViewModel @Inject constructor(
+    private val navigator: Navigator,
     private val submitViolationUseCase: SubmitViolationUseCase,
     private val uploadVideoUseCase: UploadVideoUseCase
 ): ViewModel() {
@@ -43,6 +45,11 @@ class ViolationDetailViewModel @Inject constructor(
         }
     }
 
+    fun popBackStack(){
+        viewModelScope.launch {
+            navigator.navigateBack()
+        }
+    }
     private inline fun updateEntity(block: ViolationEntity.() -> ViolationEntity) {
         _uiState.update { st -> st.copy(violationDetail = st.violationDetail.block()) }
     }

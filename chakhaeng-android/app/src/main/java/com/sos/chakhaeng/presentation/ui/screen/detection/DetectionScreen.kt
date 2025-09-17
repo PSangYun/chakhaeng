@@ -39,10 +39,6 @@ import com.sos.chakhaeng.presentation.ui.components.detection.ViolationDetection
 @Composable
 fun DetectionScreen(
     viewModel: DetectionViewModel = hiltViewModel(),
-    onCreateNewViolation: () -> Unit,
-    // id 생기면 대체
-//    onViolationClick: (Long) -> Unit,
-    onViolationClick: (ViolationDetectionUiModel) -> Unit,
     paddingValues: PaddingValues,
     appEntryViewModel: AppEntryViewModel
 ) {
@@ -104,7 +100,9 @@ fun DetectionScreen(
                     selectedFilter = uiState.selectedViolationFilter,
                     violations = uiState.filteredViolations,
                     onFilterSelected = viewModel::onViolationFilterSelected,
-                    onViolationClick = onViolationClick,
+                    onViolationClick = { violation ->
+                        viewModel.navigateViolationDetail(violation.id)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .fillMaxHeight()
@@ -112,7 +110,7 @@ fun DetectionScreen(
             }
         }
         FloatingActionButton(
-            onClick = onCreateNewViolation,
+            onClick = { viewModel.navigateViolationDetail(null) },
             containerColor = primaryLight,
             contentColor = onPrimaryLight,
             modifier = Modifier
