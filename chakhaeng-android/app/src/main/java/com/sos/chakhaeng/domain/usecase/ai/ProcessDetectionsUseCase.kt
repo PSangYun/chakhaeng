@@ -2,8 +2,9 @@ package com.sos.chakhaeng.domain.usecase.ai
 
 import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
+import javax.inject.Inject
 
-class ProcessDetectionsUseCase {
+class ProcessDetectionsUseCase @Inject constructor() {
 
     operator fun invoke(input: List<Detection>): List<ViolationEvent> {
         val out = mutableListOf<ViolationEvent>()

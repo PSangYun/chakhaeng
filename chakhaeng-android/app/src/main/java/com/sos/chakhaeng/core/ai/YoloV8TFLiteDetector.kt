@@ -25,7 +25,7 @@ class YoloV8TFLiteDetector(
             .build()
 
         // tflite 모델 넣어잇
-        ObjectDetector.createFromFileAndOptions(context, "models/yolov8s.tflite", options)
+        ObjectDetector.createFromFileAndOptions(context, "models/crnn_fp16.tflite", options)
     }
 
     override fun warmup() {
