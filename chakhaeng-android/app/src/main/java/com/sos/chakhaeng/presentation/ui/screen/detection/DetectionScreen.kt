@@ -15,11 +15,14 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -42,6 +45,9 @@ fun DetectionScreen(
     paddingValues: PaddingValues,
     appEntryViewModel: AppEntryViewModel
 ) {
+
+    val detections by viewModel.detections.collectAsState()
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
 
@@ -81,7 +87,9 @@ fun DetectionScreen(
                             onToggleFullscreen = {
                                 viewModel.toggleFullscreen()
                             },
-                            controller = appEntryViewModel.controller
+                            controller = appEntryViewModel.controller,
+                            detection = detections,
+                            onAnalyzeFrame = viewModel::onFrame
                         )
                     }
 

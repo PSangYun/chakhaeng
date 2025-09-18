@@ -1,16 +1,22 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.camera.core.Camera
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.core.ai.Detection
+import com.sos.chakhaeng.core.ai.Detector
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.domain.model.ViolationType
+import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.DetectionUseCase
+import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -19,8 +25,19 @@ import javax.inject.Inject
 @HiltViewModel
 class DetectionViewModel @Inject constructor(
     private val navigator: Navigator,
-    private val detectionUseCase: DetectionUseCase
+    private val detectionUseCase: DetectionUseCase,
+    private val detector: Detector,
+    private val processDetectionsUseCase: ProcessDetectionsUseCase
 ) : ViewModel() {
+
+    private val _detections = MutableStateFlow<List<Detection>>(emptyList())
+    val detections = _detections.asStateFlow()
+
+    private val _violations = MutableStateFlow<List<ViolationEvent>>(emptyList())
+    val violations = _violations.asStateFlow()
+
+    private var lastInferTs = 0L
+    private val minGapMs = 100L
 
     private val _uiState = MutableStateFlow(DetectionUiState())
 
@@ -47,6 +64,8 @@ class DetectionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.Default) { detector.warmup() }
+
             detectionUseCase.isDetectionActive.collect { isActive ->
                 if (isActive) {
                     initializeCamera()
@@ -55,6 +74,18 @@ class DetectionViewModel @Inject constructor(
                     pauseCamera()
                 }
             }
+        }
+    }
+
+    fun onFrame(bitmap: Bitmap, rotation: Int) {
+        val now = System.currentTimeMillis()
+        if (now - lastInferTs < minGapMs) return
+        lastInferTs = now
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val dets = detector.detect(bitmap, rotation)
+            _detections.value = dets
+            _violations.value = processDetectionsUseCase(dets)
         }
     }
 
@@ -169,6 +200,7 @@ class DetectionViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        detector.close()
         super.onCleared()
         camera = null
     }
