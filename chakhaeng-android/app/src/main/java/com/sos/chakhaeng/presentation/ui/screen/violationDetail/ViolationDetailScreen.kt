@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -73,7 +75,7 @@ import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationVid
 @Composable
 fun ViolationDetailScreen(
     viewModel: ViolationDetailViewModel = hiltViewModel(),
-    paddingValues: PaddingValues,
+    paddingValues: PaddingValues,   // 부모(바텀바 등)에서 온 인셋
     violationId: String?
 ) {
     val context = LocalContext.current
@@ -86,66 +88,61 @@ fun ViolationDetailScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val openVideoPicker = rememberVideoPicker { uri ->
-        viewModel.onVideoSelected(uri)     // 업로드/교체 로직으로 연결
+        viewModel.onVideoSelected(uri)
     }
+
     val isFormFilled = remember(state.violationDetail) {
         listOf(
-            entity.violationType,
-            entity.location,
-            entity.title,
-            entity.description,
-            entity.plateNumber,
-            entity.date,
-            entity.time
+            entity.violationType, entity.location, entity.title, entity.description,
+            entity.plateNumber, entity.date, entity.time
         ).all { it.isNotBlank() }
     }
+
     LaunchedEffect(Unit) {
-        viewModel.event.collect { message ->
-            context.showToast(message)
-        }
+        viewModel.event.collect { message -> context.showToast(message) }
     }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = Color.White)
-            .nestedScroll(scrollBehavior.nestedScrollConnection), // 옵션
+            .background(Color.White)
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             ViolationDetailTopBar(
                 isEditing = state.isEditing,
-                onBackClick = {
-                    viewModel.popBackStack()
-                },
+                onBackClick = { viewModel.popBackStack() },
                 onToggleEdit = { viewModel.toggleEdit(onSave = { /* TODO */ }) }
             )
         },
-        snackbarHost = { SnackbarHost(snackBarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) },
+        // ✅ 안쪽 Scaffold는 시스템 인셋을 처리하지 않게 해서 중복 방지
+        contentWindowInsets = WindowInsets(0)
     ) { innerPadding ->
-        val ld = LocalLayoutDirection.current
-        val start = paddingValues.calculateStartPadding(ld)
-        val end = paddingValues.calculateEndPadding(ld)
 
+        // ✅ 부모 paddingValues(바텀바 등) + 이 화면 innerPadding(탑바 높이) 한 번만 적용
         Column(
             Modifier
-                .padding(start = start, end = end, bottom = 0.dp)
-                .padding(innerPadding)
+                .fillMaxSize()
+//                .padding(paddingValues)              // 부모 인셋
+                .padding(innerPadding)               // 이 화면 탑바 인셋
+//                .consumeWindowInsets(paddingValues)  // 전파 차단
+//                .consumeWindowInsets(innerPadding)   // 전파 차단
                 .verticalScroll(rememberScrollState())
+                .background(Color.White)
         ) {
 
             Column(
                 Modifier
-                    .background(color = Color.White)
+                    .background(Color.White)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
 
                 ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = BLUE50
-                    ),
+                    colors = CardDefaults.elevatedCardColors(containerColor = BLUE50),
                     elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
@@ -163,17 +160,15 @@ fun ViolationDetailScreen(
                                 contentDescription = null,
                                 tint = primaryLight,
                                 modifier = Modifier
-                                    .size(40.dp)            // 배지 크기
-                                    .padding(8.dp)          // 내부 여백
+                                    .size(40.dp)
+                                    .padding(8.dp)
                             )
-
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = "AI 자동 생성 완료",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = NEUTRAL800
                             )
-
                         }
                         Spacer(Modifier.height(4.dp))
                         Text(
@@ -186,14 +181,12 @@ fun ViolationDetailScreen(
                 }
 
                 ViolationMediaSection(
-//                    videoUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
                     videoUrl = state.lastUploaded?.downloadUrl.orEmpty(),
                     onRequestUpload = { openVideoPicker() },
                     onRequestEdit = { openVideoPicker() },
                     onRequestDelete = { }
                 )
 
-                // 이하 공통 카드들
                 ViolationTypeField(
                     value = entity.violationType,
                     isEditing = state.isEditing,
@@ -232,7 +225,7 @@ fun ViolationDetailScreen(
                 DatePickerField(
                     value = entity.date,
                     isEditing = state.isEditing,
-                    onDateChange = viewModel::updateDate,
+                    onDateChange = viewModel::updateDate
                 )
                 TimePickerField(
                     value = entity.time,
@@ -241,6 +234,7 @@ fun ViolationDetailScreen(
                 )
 
                 Spacer(Modifier.height(8.dp))
+
                 AnimatedVisibility(
                     visible = isFormFilled && !state.isUploading,
                     enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
@@ -272,8 +266,8 @@ fun ViolationDetailScreen(
                         }
                     }
                 }
-                Spacer(Modifier.height(8.dp))
 
+                Spacer(Modifier.height(8.dp))
             }
         }
 

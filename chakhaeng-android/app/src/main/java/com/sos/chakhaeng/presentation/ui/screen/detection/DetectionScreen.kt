@@ -24,8 +24,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.sos.chakhaeng.presentation.main.AppEntryViewModel
-import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import com.sos.chakhaeng.presentation.theme.onPrimaryLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraErrorScreen
@@ -39,8 +37,7 @@ import com.sos.chakhaeng.presentation.ui.components.detection.ViolationDetection
 @Composable
 fun DetectionScreen(
     viewModel: DetectionViewModel = hiltViewModel(),
-    paddingValues: PaddingValues,
-    appEntryViewModel: AppEntryViewModel
+    paddingValues: PaddingValues
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
@@ -74,16 +71,15 @@ fun DetectionScreen(
                     }
 
                     uiState.isLoading -> CameraLoadingScreen()
-                    uiState.isDetectionActive && uiState.isCameraReady -> {
-                        CameraPreviewSection(
-                            isDetectionActive = uiState.isDetectionActive,
-                            isFullscreen = uiState.isFullscreen,
-                            onToggleFullscreen = {
-                                viewModel.toggleFullscreen()
-                            },
-                            controller = appEntryViewModel.controller
-                        )
-                    }
+                        uiState.isDetectionActive && uiState.isCameraReady -> {
+                            CameraPreviewSection(
+                                isDetectionActive = uiState.isDetectionActive,
+                                isFullscreen = uiState.isFullscreen,
+                                onToggleFullscreen = {
+                                    viewModel.toggleFullscreen()
+                                }
+                            )
+                        }
 
                     !uiState.isDetectionActive -> CameraInactiveOverlay()
                     uiState.error != null -> {

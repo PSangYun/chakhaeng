@@ -157,6 +157,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.1.0")
     implementation(libs.play.services.location)
 
+    implementation(libs.kotlinx.collections.immutable)
+
     // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
