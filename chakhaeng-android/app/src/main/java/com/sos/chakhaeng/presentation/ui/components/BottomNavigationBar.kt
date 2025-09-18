@@ -26,10 +26,11 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.presentation.main.MainTab
 import com.sos.chakhaeng.presentation.theme.primaryLight
+import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 internal fun BottomNavigationBar(
-    tabs: List<MainTab>,
+    tabs: ImmutableList<MainTab>,
     currentTab: MainTab?,
     onTabSelected: (MainTab) -> Unit,
 ) {
@@ -76,7 +77,6 @@ private fun RowScope.MainBottomBarItem(
         modifier =
             Modifier
                 .weight(1f)
-                .fillMaxHeight()
                 .selectable(
                     selected = selected,
                     indication = null,

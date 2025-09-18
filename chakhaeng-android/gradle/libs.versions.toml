@@ -1,6 +1,7 @@
 [versions]
 agp = "8.9.1"
 kotlin = "2.1.21"
+kotlinxCollectionsImmutable = "0.3.7"
 ksp = "2.1.21-2.0.2"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -46,9 +47,9 @@ protoliteWellKnownTypes = "18.0.1"
 playServicesLocation = "21.3.0"
 mapsCompose = "6.2.0"
 navigation3Runtime = "1.0.0-alpha06"
-navigation3Ui = "1.0.0-alpha09"
+navigation3Ui = "1.0.0-alpha06"
 adaptive = "1.1.0"
-lifecycleViewmodelNavigation3 = "2.10.0-alpha03"
+lifecycleViewmodelNavigation3 = "1.0.0-alpha04"
 kotlinxSerializationCore = "1.9.0"
 kotlinxSerializationJson = "1.9.0"
 
@@ -83,6 +84,7 @@ hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.r
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 
 # Network
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
