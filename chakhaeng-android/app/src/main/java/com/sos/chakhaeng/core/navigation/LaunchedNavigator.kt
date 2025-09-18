@@ -7,13 +7,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.NavKey
 import com.sos.chakhaeng.core.navigation.internal.viewmodel.NavigatorViewModel
 import com.sos.chakhaeng.core.navigation.internal.viewmodel.RouteSideEffect
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun LaunchedNavigator(navBackStack: NavBackStack<NavKey>) {
+fun LaunchedNavigator(navBackStack: NavBackStack) {
     InternalLaunchedNavigator(
         navBackStack = navBackStack,
     )
@@ -21,7 +20,7 @@ fun LaunchedNavigator(navBackStack: NavBackStack<NavKey>) {
 
 @Composable
 private fun InternalLaunchedNavigator(
-    navBackStack: NavBackStack<NavKey>,
+    navBackStack: NavBackStack,
     routerViewModel: NavigatorViewModel = hiltViewModel(),
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current

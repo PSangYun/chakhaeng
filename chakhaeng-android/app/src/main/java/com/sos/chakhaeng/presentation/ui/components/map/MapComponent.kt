@@ -20,10 +20,9 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.*
 import com.sos.chakhaeng.R
 import com.sos.chakhaeng.data.mapper.LocationMapper
-import com.sos.chakhaeng.domain.model.location.Location
 import com.sos.chakhaeng.domain.model.report.ReportDetailItem
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.ui.screen.report.ReportDetailUiState
+import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailUiState
 
 @Composable
 fun MapComponent(

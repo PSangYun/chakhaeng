@@ -62,7 +62,7 @@ private fun DetectionContent(
         onClick = onDetectionAction,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp).padding(top = 36.dp, bottom = 32.dp),
+            .padding(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isDetectionActive) {
                 MaterialTheme.colorScheme.error
