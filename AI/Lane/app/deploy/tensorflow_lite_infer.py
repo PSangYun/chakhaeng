@@ -299,11 +299,11 @@ class UFLDv2TFLite:
         ori_w: int,
         ori_h: int,
         *,
-        tau_row: float = 0.70,
-        tau_col: float = 0.70,
-        min_pts_row: int = 6,
-        min_pts_col: int = 6,
-        local_width: int = 1,
+        tau_row: float = 0.90,
+        tau_col: float = 0.90,
+        min_pts_row: int = 10,
+        min_pts_col: int = 10,
+        local_width: int = 2,
         row_lane_idx: tuple = (1, 2),
         col_lane_idx: tuple = (0, 3),
         sort_left_to_right: bool = True,
@@ -335,7 +335,7 @@ class UFLDv2TFLite:
         def longest_run(indices: np.ndarray, weights: np.ndarray | None = None) -> np.ndarray:
             if indices.size == 0:
                 return indices
-            splits = np.where(np.diff(indices) > 1)[0] + 1
+            splits = np.where(np.diff(indices) > 2)[0] + 1
             groups = np.split(indices, splits)
             if weights is None:
                 groups.sort(key=lambda g: len(g), reverse=True)

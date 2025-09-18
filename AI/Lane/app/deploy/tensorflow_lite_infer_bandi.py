@@ -27,6 +27,14 @@ def get_args():
                    help="(W,H) 강제 원본 크기. 보통은 None(자동) 권장")
     p.add_argument("--debug", action="store_true")
     p.add_argument("--threads", type=int, default=4, help="TFLite Interpreter num_threads")
+    p.add_argument("--tau_row", type=float, default=0.8, help="존재 확률 임계값")
+    p.add_argument("--tau_col", type=float, default=0.8, help="존재 확률 임계값")
+    p.add_argument("--min_pts_row", type=int, default=10, help="한 레인의 최소 포인트 수. 이보다 적으면 그 레인을 버림.")
+    p.add_argument("--min_pts_col", type=int, default=10, help="한 레인의 최소 포인트 수. 이보다 적으면 그 레인을 버림.")
+    p.add_argument("--local_width", type=int, default=1, help="argmax 주변 로컬 윈도우 반경. ±local_width 범위를 소프트맥스로 가중평균해 서브셀 보정.")
+    #pred2coords
+    p.add_argument("--gap_tol", type=int, default=1, help="연속으로 간주할 최대 anchor 갭")
+    #p.add_argument("--gap_tol_px", type=float, default=8.0, help="연속으로 간주할 최대 픽셀 갭")
     return p.parse_args()
 
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -45,7 +53,7 @@ def softmax_np(x, axis=None):
     return e / np.sum(e, axis=axis, keepdims=True)
 
 class UFLDv2TFLite:
-    def __init__(self, model_path: str, config_path: str, ori_size=None, debug=True, num_threads=4):
+    def __init__(self, model_path: str, config_path: str, args, ori_size=None, debug=True, num_threads=4):
         self.interpreter = Interpreter(model_path=model_path, num_threads=num_threads)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
@@ -60,6 +68,7 @@ class UFLDv2TFLite:
         self.crop_ratio = float(cfg.crop_ratio)      # 0.6
         self.num_cell_row = int(getattr(cfg, "num_cell_row", 200))
         self.num_cell_col = int(getattr(cfg, "num_cell_col", 100))
+        self.args = args
         if ori_size is not None:
             self.ori_img_w, self.ori_img_h = ori_size
         else:
@@ -105,7 +114,7 @@ class UFLDv2TFLite:
         print("inference_time : ", time.time() - start_time)
 
         preds = self._collect_outputs()
-        coords = self.pred2coords(preds, ori_w=self.ori_img_w, ori_h=self.ori_img_h)
+        coords = self.pred2coords(preds, ori_w=self.ori_img_w, ori_h=self.ori_img_h, tau_row=self.args.tau_row, tau_col=self.args.tau_col, min_pts_col=self.args.min_pts_col, min_pts_row=self.args.min_pts_row, local_width=self.args.local_width)
 
     def pred2coords(
         self,
@@ -141,19 +150,96 @@ class UFLDv2TFLite:
 
         lanes = {i: [] for i in range(num_lanes)}
 
-        def longest_run(indices: np.adarray, weights: np.ndarray | None = None) -> np.ndarray:
-            if indices.size == 0:
+        #띄엄띄엄 잡힌 앵커들 중 가장 길고(신뢰 높은) 연속적인 구간만 사용 → 잘못된 점/구멍 필터링.
+        def longest_run(
+                indices: np.asarray, 
+                weights: np.ndarray | None = None, 
+                gap_tol: int = 1, # 인덱스 단위 허용 갭
+                anchors: np.ndarray | None = None, # 정규화된 앵커 배열(row_anchor/col_anchor)
+                ori_size: int | None = None, # 원본 이미지 크기 (픽셀 변환용)
+                gap_tol_px: float | None = None # 픽셀 단위 허용 거리. None이면 픽셀 기준 무시
+            ) -> np.ndarray:
+            if indices.size == 0: # 빈 입력 방어
                 return indices
-            splits = np.where(np.diff(indices) > 1)[0] + 1
-            groups = np.split(indices, splits)
-            if weights is None:
-                groups.sort(key=lambda g: len(g), reverse=True)
-            else:
-                groups.sort(key=lambda g: (len(g), float(weights[g].sum())), reverse=True)
+            splits = np.where(np.diff(indices) > gap_tol)[0] + 1 #np.diff : 원소간 차이(i1 - i0...)를 계산해 반환 / np.where(조건문) 각 원소에 대해 조건을 만족할 경우 True 반환
+            groups = np.split(indices, splits) #splits 값이 True 일 경우 이전까지의 원소를 그릅화
+            if weights is None: #길이가 긴 구간을 더 신뢰, 내림차순 정렬
+                groups.sort(key=lambda g: len(g), reverse=True) 
+            else: #길이가 같을 경우에는 해당 구간의 가중치 합(존재확률 합)이 큰 걸 우선
+                groups.sort(key=lambda g: (len(g), float(weights[g].sum())), reverse=True) #weight[g]는 fancy indexing으로 그 구간에 해당하는 가중치만 반환
+            return groups[0] #정렬 후 가장 우선순위 높은 연속 구간을 반환
         
-        breakpoint()
-        coords = None
+        # ROW 기반 (y 고정, x 예측)
+        for i in row_lane_idx:
+            mask = (exist_row_prob[:, i] > tau_row) & (valid_row[0, :, i] == 1)
+            active = np.where(mask)[0]
+            if active.size < min_pts_row:
+                continue
+            active = longest_run(active, weights=exist_row_prob[:, i], gap_tol=self.args.gap_tol)
+            if active.size < min_pts_row:
+                continue
 
+            tmp = []
+            for k in active:
+                center = int(max_idx_row[0, k, i])
+                L = max(0, center - local_width)
+                R = min(grid_row - 1, center + local_width)
+                inds = np.arange(L, R + 1, dtype=np.float32) #L 부터 R 까지 1씩 증가하는 값을 원소를 가지는 np.array 생성
+                slice_logits = loc_row[0, L:R + 1, k, i].astype(np.float32)
+                probs = softmax_np(slice_logits, axis=0)
+                out = float(np.sum(probs * inds) + 0.5) #가중치를 반영한 anchor index 값
+
+                x_px = (out / (grid_row - 1)) * ori_w
+                y_px = self.row_anchor[k] * ori_h # 네트워크 출력(셀/anchor 단위)을 실제 원본 이미지 좌표계(px)로 매핑
+                tmp.append((int(x_px), int(y_px)))
+
+            if tmp:
+                tmp.sort(key=lambda p: p[1])
+                lanes[i] = tmp
+
+        # COL 기반 (x 고정, y 예측)
+        for i in col_lane_idx:
+            mask = (exist_col_prob[:, i] > tau_col) & (valid_col[0, :, i] == 1) #존재 확률과 
+            active = np.where(mask)[0]
+            if active.size < min_pts_col:
+                continue
+            active = longest_run(active, weights=exist_col_prob[:, i], gap_tol=self.args.gap_tol)
+            if active.size < min_pts_col:
+                continue
+
+            tmp = []
+            for k in active:
+                center = int(max_idx_col[0, k, i])
+                L = max(0, center - local_width)
+                R = min(grid_col - 1, center + local_width)
+                inds = np.arange(L, R + 1, dtype=np.float32)
+                slice_logits = loc_col[0, L:R + 1, k, i].astype(np.float32)
+                probs = softmax_np(slice_logits, axis=0)
+                out = float(np.sum(probs * inds) + 0.5)
+
+                y_px  = float((out / (grid_col - 1)) * ori_h)
+                x_px  = float(self.col_anchor[k] * ori_w)
+                tmp.append((int(x_px), int(y_px)))
+
+            if tmp:
+                tmp.sort(key=lambda p: p[1])
+                lanes[i] = tmp
+
+        coords = [pts for pts in lanes.values() if pts]
+        if not coords:
+            return []
+        
+        if sort_left_to_right:
+            def lane_key(pts):
+                ys = [p[1] for p in pts]
+                y_cut = np.percentile(ys, 80)
+                xs_bottom = [p[0] for p in pts if p[1] >= y_cut] or [p[0] for p in pts]
+                xs_bottom.sort()
+                return xs_bottom[len(xs_bottom) // 2]
+            coords = sorted(coords, key=lane_key)
+        else:
+            coords = [lanes[i] for i in range(num_lanes) if lanes[i]]
+                    
         return coords
     
     # 출력 텐서를 shape로 자동 매핑
@@ -187,6 +273,7 @@ def main():
     model = UFLDv2TFLite(
         model_path=args.model_path,
         config_path=args.config_path,
+        args=args,
         ori_size=args.ori_size,
         debug=args.debug,
         num_threads=args.threads,
