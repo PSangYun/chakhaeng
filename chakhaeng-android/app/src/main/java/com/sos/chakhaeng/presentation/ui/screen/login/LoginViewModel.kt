@@ -22,7 +22,7 @@ class LoginViewModel @Inject constructor(
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun navigateHome() = viewModelScope.launch {
-        navigator.navigateAndClearBackStack(route = BottomTabRoute.Home)
+        navigator.navigate(route = BottomTabRoute.Home)
     }
     fun googleLogin(idToken: String?) {
         viewModelScope.launch {

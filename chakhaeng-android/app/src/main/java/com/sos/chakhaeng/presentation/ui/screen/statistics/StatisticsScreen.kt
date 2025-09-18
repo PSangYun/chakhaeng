@@ -7,18 +7,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun StatisticsScreen(
-    viewModel: StatisticsViewModel = hiltViewModel()
-) {
-    val uiState by viewModel.uiState.collectAsState()
-
+fun StatisticsScreen(uiState: StatisticsUiState) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
