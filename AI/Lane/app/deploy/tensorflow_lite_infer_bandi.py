@@ -27,11 +27,11 @@ def get_args():
                    help="(W,H) 강제 원본 크기. 보통은 None(자동) 권장")
     p.add_argument("--debug", action="store_true")
     p.add_argument("--threads", type=int, default=4, help="TFLite Interpreter num_threads")
-    p.add_argument("--tau_row", type=float, default=0.8, help="존재 확률 임계값")
-    p.add_argument("--tau_col", type=float, default=0.8, help="존재 확률 임계값")
+    p.add_argument("--tau_row", type=float, default=0.55, help="존재 확률 임계값")
+    p.add_argument("--tau_col", type=float, default=0.55, help="존재 확률 임계값")
     p.add_argument("--min_pts_row", type=int, default=10, help="한 레인의 최소 포인트 수. 이보다 적으면 그 레인을 버림.")
     p.add_argument("--min_pts_col", type=int, default=10, help="한 레인의 최소 포인트 수. 이보다 적으면 그 레인을 버림.")
-    p.add_argument("--local_width", type=int, default=1, help="argmax 주변 로컬 윈도우 반경. ±local_width 범위를 소프트맥스로 가중평균해 서브셀 보정.")
+    p.add_argument("--local_width", type=int, default=10, help="argmax 주변 로컬 윈도우 반경. ±local_width 범위를 소프트맥스로 가중평균해 서브셀 보정.")
     #pred2coords
     p.add_argument("--gap_tol", type=int, default=1, help="연속으로 간주할 최대 anchor 갭")
     #p.add_argument("--gap_tol_px", type=float, default=8.0, help="연속으로 간주할 최대 픽셀 갭")
@@ -115,6 +115,20 @@ class UFLDv2TFLite:
 
         preds = self._collect_outputs()
         coords = self.pred2coords(preds, ori_w=self.ori_img_w, ori_h=self.ori_img_h, tau_row=self.args.tau_row, tau_col=self.args.tau_col, min_pts_col=self.args.min_pts_col, min_pts_row=self.args.min_pts_row, local_width=self.args.local_width)
+
+        # 그리기
+        drawn = img_bgr.copy()
+        lane_meta = []
+
+        # 차선 후보를 찾을 때 중심 좌표 기준으로 좌우 몇 픽셀 범위를 함께 탐색할지 결정하는, 해상도 비례 탐색 윈도우 반폭 값.
+        strip_half = max(4, int(self.ori_img_w * 0.004)) # 즉, “탐색 보정용 폭”을 정하는 값.
+
+        for lane_idx, lane in enumerate(coords[:self.num_lanes]):
+            for (x, y) in lane:
+                if 0 <= x < drawn.shape[1] and 0 <= y < drawn.shape[0]:
+                    cv2.circle(drawn, (x, y), 2, (0, 255, 0), -1)
+
+        return drawn, coords
 
     def pred2coords(
         self,
@@ -281,24 +295,70 @@ def main():
 
     path = args.input_path
     ext = os.path.splitext(path)[1].lower()
-
     # 단일 이미지
     if is_image_file(path):
         img = cv2.imread(path)
         if img is None:
             raise RuntimeError(f"이미지를 열 수 없습니다: {path}")
 
-    drawn, _ = model.forward(img)
+        drawn, _ = model.forward(img)
 
-    # 저장 경로 결정
-    if args.output_path:
-        out_img = args.output_path
+        # 저장 경로 결정
+        if args.output_path:
+            out_img = args.output_path
+        else:
+            stem = os.path.splitext(path)[0]
+            out_img = f"{stem}_lane.jpg"
+
+        ok = cv2.imwrite(out_img, drawn)
+        print(f"[SAVE] image -> {out_img} ({'OK' if ok else 'FAIL'})")
+    # 비디오
     else:
-        stem = os.path.splitext(path)[0]
-        out_img = f"{stem}_lane.jpg"
+        cap = cv2.VideoCapture(path)
+        if not cap.isOpened():
+            raise RuntimeError(f"비디오를 열 수 없습니다: {path}")
+        
+        if args.output_path: # 저장 경로/포맷
+            out_vid = args.output_path
+        else:
+            stem = os.path.splitext(path)[0]
+            out_vid = f"{stem}_lane.mp4"
 
-    ok = cv2.imwrite(out_img, drawn)
-    print(f"[SAVE] image -> {out_img} ({'OK' if ok else 'FAIL'})")
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps <= 1e-3:
+            fps = 30.0
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        writer = cv2.VideoWriter(out_vid, fourcc, fps, (width, height))
+        if not writer.isOpened(): # 코덱 가용성 문제면 프레임 시퀀스로 대체 저장
+            print(f"[WARN] VideoWriter 열기 실패 → 프레임 PNG 시퀀스로 저장합니다.")
+            seq_dir = f"{os.path.splitext(out_vid)[0]}_frames"
+            os.makedirs(seq_dir, exist_ok=True)
+            frame_idx = 0
+            while True:
+                ok, frame = cap.read()
+                if not ok:
+                    break
+                drawn, _ = model.forward(frame)
+                cv2.imwrite(os.path.join(seq_dir, f"frame_{frame_idx:06d}.png"), drawn)
+                frame_idx += 1
+            cap.release()
+            print(f"[SAVE] frames -> {seq_dir} ({frame_idx} frames)")
+            return
+        frame_idx = 0
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            drawn, _ = model.forward(frame)
+            writer.write(drawn)
+            frame_idx += 1
+
+        writer.release()
+        cap.release()
+        print(f"[SAVE]")
 
 if __name__ == "__main__":
     main()
