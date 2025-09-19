@@ -1,4 +1,4 @@
-package com.sos.chakhaeng.presentation.ui.screen.report
+package com.sos.chakhaeng.presentation.ui.screen.reportdetail
 
 import com.sos.chakhaeng.domain.model.location.Location
 import com.sos.chakhaeng.domain.model.report.ReportDetailItem
