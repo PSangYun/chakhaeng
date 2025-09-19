@@ -1,6 +1,7 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
 import android.Manifest
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,15 +72,15 @@ fun DetectionScreen(
                     }
 
                     uiState.isLoading -> CameraLoadingScreen()
-                        uiState.isDetectionActive && uiState.isCameraReady -> {
-                            CameraPreviewSection(
-                                isDetectionActive = uiState.isDetectionActive,
-                                isFullscreen = uiState.isFullscreen,
-                                onToggleFullscreen = {
-                                    viewModel.toggleFullscreen()
-                                }
-                            )
-                        }
+                    uiState.isDetectionActive && uiState.isCameraReady -> {
+                        CameraPreviewSection(
+                            isDetectionActive = uiState.isDetectionActive,
+                            isFullscreen = uiState.isFullscreen,
+                            onToggleFullscreen = {
+                                viewModel.toggleFullscreen()
+                            }
+                        )
+                    }
 
                     !uiState.isDetectionActive -> CameraInactiveOverlay()
                     uiState.error != null -> {
@@ -107,7 +108,17 @@ fun DetectionScreen(
             }
         }
         FloatingActionButton(
-            onClick = { viewModel.navigateViolationDetail(null) },
+            onClick = {
+                viewModel.navigateViolationDetail(null)
+//                context.startService(
+//                    Intent(context, CameraRecordingService::class.java).apply {
+//                        action = CameraRecordingService.ACTION_MARK_EVENT
+//                        putExtra(CameraRecordingService.EXTRA_PRE_MS, 6_000L)
+//                        putExtra(CameraRecordingService.EXTRA_POST_MS, 5_000L)
+//                    }
+//                )
+                Log.d("test", "test234")
+            },
             containerColor = primaryLight,
             contentColor = onPrimaryLight,
             modifier = Modifier
