@@ -1,11 +1,15 @@
 package com.sos.chakhaeng.recording
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.*
+import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.os.*
 import android.provider.MediaStore
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.*
 import androidx.camera.video.*
@@ -36,8 +40,21 @@ class CameraRecordingService : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED) {
+            Log.d("TAG", "onCreate: 카메라 권한보다 먼저 호출")
+            stopSelf()
+            return
+        }
         createNotificationChannel()
-        startForeground(NOTI_ID, buildNotification("준비 중…"))
+        val notif = buildNotification("준비 중…")
+
+        if (Build.VERSION.SDK_INT >= 34) {
+            val fgsType = ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+            startForeground(NOTI_ID, notif, fgsType)
+        } else {
+            startForeground(NOTI_ID, notif)
+        }
 
         // 카메라 준비
         lifecycleScope.launch {
