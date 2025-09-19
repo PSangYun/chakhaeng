@@ -41,13 +41,15 @@ enum class ColorOrder { RGB, BGR }
 class YoloV8Parser(
     private val numClasses: Int,
     private val scoreThreshold: Float = 0.30f,
-    private val iouThreshold: Float = 0.45f
+    private val iouThreshold: Float = 0.45f,
+    private val applySigmoid: Boolean = false // 로그릿일 경우 true로 켜세요
 ) {
+    private fun sigm(x: Float) = (1f / (1f + kotlin.math.exp(-x)))
     fun parseCHW(
         out: Array<Array<FloatArray>>,
         inputW: Int, inputH: Int,
         origW: Int, origH: Int,
-        labels: List<String>
+        labels: List<String>?
     ): List<Detection> {
         val ch = out[0]
         val count = ch[0].size // N
@@ -62,10 +64,11 @@ class YoloV8Parser(
             val w  = ch[2][i]
             val h  = ch[3][i]
 
-            var bestScore = 0f
-            var bestIdx = -1
+            var bestScore = Float.NEGATIVE_INFINITY
+            var bestIdx = 0
             for (c in 0 until numClasses) {
-                val s = ch[4 + c][i]
+                var s = ch[4 + c][i]
+                if (applySigmoid) s = sigm(s)
                 if (s > bestScore) { bestScore = s; bestIdx = c }
             }
             if (bestScore < scoreThreshold || bestIdx < 0) continue
@@ -76,7 +79,7 @@ class YoloV8Parser(
             val y2 = (cy + h / 2f) * sy
 
             detections += Detection(
-                label = labels.getOrNull(bestIdx) ?: bestIdx.toString(),
+                label = labels?.getOrNull(bestIdx) ?: bestIdx.toString(),
                 score = bestScore,
                 box = RectF(
                     (x1 / origW).coerceIn(0f,1f),
@@ -95,7 +98,7 @@ class YoloV8Parser(
         out: Array<Array<FloatArray>>,
         inputW: Int, inputH: Int,
         origW: Int, origH: Int,
-        labels: List<String>
+        labels: List<String>?
     ): List<Detection> {
         val arr = out[0]
         val count = arr.size // N
@@ -108,10 +111,11 @@ class YoloV8Parser(
             val p = arr[i]
             val cx = p[0]; val cy = p[1]; val w = p[2]; val h = p[3]
 
-            var bestScore = 0f
-            var bestIdx = -1
+            var bestScore = Float.NEGATIVE_INFINITY
+            var bestIdx = 0
             for (c in 0 until numClasses) {
-                val s = p[4 + c]
+                var s = p[4 + c]
+                if (applySigmoid) s = sigm(s)
                 if (s > bestScore) { bestScore = s; bestIdx = c }
             }
             if (bestScore < scoreThreshold || bestIdx < 0) continue
@@ -122,7 +126,7 @@ class YoloV8Parser(
             val y2 = (cy + h / 2f) * sy
 
             detections += Detection(
-                label = labels.getOrNull(bestIdx) ?: bestIdx.toString(),
+                label = labels?.getOrNull(bestIdx) ?: bestIdx.toString(),
                 score = bestScore,
                 box = RectF(
                     (x1 / origW).coerceIn(0f,1f),

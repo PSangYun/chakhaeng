@@ -35,7 +35,7 @@ object AIModule {
             )
         )
 
-        val backend = Backend.CPU // 필요 시 Backend.NNAPI / Backend.GPU
+        val backend = Backend.GPU // 필요 시 Backend.NNAPI / Backend.GPU
 
         return MultiModelInterpreterDetector(
             context = context,
