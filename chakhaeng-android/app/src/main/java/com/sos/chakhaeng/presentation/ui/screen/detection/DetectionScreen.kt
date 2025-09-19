@@ -89,7 +89,7 @@ fun DetectionScreen(
                             },
                             controller = appEntryViewModel.controller,
                             detection = detections,
-                            onAnalyzeFrame = viewModel::onFrame
+                            onAnalyzeFrame = { bmp, rot -> viewModel.onFrame(bmp, rot) }
                         )
                     }
 

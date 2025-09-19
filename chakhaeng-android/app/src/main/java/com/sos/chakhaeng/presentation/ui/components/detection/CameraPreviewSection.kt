@@ -25,7 +25,7 @@ fun CameraPreviewSection(
     modifier: Modifier = Modifier,
     controller: LifecycleCameraController,
     detection: List<Detection>,
-    onAnalyzeFrame: (Bitmap, Int) -> Unit
+    onAnalyzeFrame: (Bitmap, Int) -> Boolean
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -39,11 +39,26 @@ fun CameraPreviewSection(
         controller.setEnabledUseCases(CameraController.IMAGE_ANALYSIS or CameraController.VIDEO_CAPTURE)
         controller.setImageAnalysisBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
 
+
         if (isDetectionActive) {
             controller.setImageAnalysisAnalyzer(analyzerExecutor) { image ->
-                val bmp = image.toBitmap(yuv)
-                val rotation = image.imageInfo.rotationDegrees // 0,90,180,270
-                onAnalyzeFrame(bmp, rotation)
+                try {
+                    val bmp = image.toBitmap(yuv)        // YUV → Bitmap
+                    val rotation = image.imageInfo.rotationDegrees
+                    // (선택) 프레임 유입 로그
+                    android.util.Log.d("DTAG", "analyzer frame in, rot=$rotation, ${bmp.width}x${bmp.height}")
+                    val accepted = onAnalyzeFrame(bmp, rotation)
+
+                    if (!accepted) {
+                        // 스킵된 프레임은 analyzer에서 즉시 정리
+                        if (!bmp.isRecycled) bmp.recycle()
+                    }
+                } catch (t: Throwable) {
+                    android.util.Log.e("DTAG", "analyzer error: ${t.message}", t)
+                } finally {
+                    // ✅ 꼭 닫아줘야 다음 프레임이 들어옵니다
+                    image.close()
+                }
             }
         } else {
             controller.clearImageAnalysisAnalyzer()
