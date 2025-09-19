@@ -182,7 +182,9 @@ internal fun ChakhaengApp(
                     }
 
                     is BottomTabRoute.Statistics -> NavEntry(key) {
-                        StatisticsScreen()
+                        StatisticsScreen(
+                            paddingValues = paddingValues
+                        )
                     }
 
                     is BottomTabRoute.Profile -> NavEntry(key) {
@@ -194,7 +196,6 @@ internal fun ChakhaengApp(
                     is Route.ReportDetail -> NavEntry(key){
                         ReportDetailScreen(
                             reportId = key.reportId,
-                            paddingValues = paddingValues,
                         )
                     }
                     is Route.ViolationDetail -> NavEntry(key){

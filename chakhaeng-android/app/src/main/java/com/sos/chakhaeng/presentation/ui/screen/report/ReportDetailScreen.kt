@@ -25,7 +25,6 @@ import com.sos.chakhaeng.presentation.ui.components.report.ReportDetailInfoSecti
 @Composable
 fun ReportDetailScreen(
     reportId: String,
-    paddingValues: PaddingValues,
     reportDetailViewModel: ReportDetailViewModel = hiltViewModel()
 ) {
     val uiState by reportDetailViewModel.uiState.collectAsStateWithLifecycle()
@@ -43,9 +42,8 @@ fun ReportDetailScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues)
             .background(color = BackgroundGray),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {

@@ -35,17 +35,13 @@ fun ReportListSection(
                 items = reportList,
                 key = { it.id }
             ) { reportItem ->
-                AnimatedVisibility(
-                    visible = true,
-                    exit = fadeOut(animationSpec = tween(300)) +
-                            shrinkVertically(animationSpec = tween(300))
-                ) {
-                    ReportItemCard(
-                        reportItem = reportItem,
-                        onClick = { onItemClick(reportItem) },
-                        onDelete = onDelete
-                    )
-                }
+
+                ReportItemCard(
+                    reportItem = reportItem,
+                    onClick = { onItemClick(reportItem) },
+                    onDelete = onDelete
+                )
+
             }
         }
     }
