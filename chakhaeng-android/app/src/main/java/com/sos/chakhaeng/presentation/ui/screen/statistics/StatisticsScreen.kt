@@ -9,8 +9,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sos.chakhaeng.presentation.theme.BackgroundGray
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.ui.components.statistics.StatisticsTabSection
+import com.sos.chakhaeng.presentation.ui.components.statistics.section.ErrorSection
+import com.sos.chakhaeng.presentation.ui.components.statistics.section.LoadingSection
+import com.sos.chakhaeng.presentation.ui.components.statistics.StatisticsContent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,12 +28,12 @@ fun StatisticsScreen(
             statisticsViewModel.clearError()
         }
     }
-
+     val bottomPadding = paddingValues.calculateBottomPadding()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .padding(paddingValues),
+            .background(BackgroundGray)
+            .padding(bottom = bottomPadding)
     ) {
         CenterAlignedTopAppBar(
             title = {
@@ -45,11 +48,22 @@ fun StatisticsScreen(
             )
         )
 
-        StatisticsTabSection(
-            selectedTab = uiState.selectedTab,
-            onTabSelected = statisticsViewModel::selectTab,
-            modifier = Modifier
-                .fillMaxWidth()
-        )
+        when {
+            uiState.isLoading -> {
+                LoadingSection()
+            }
+            uiState.error != null -> {
+                ErrorSection(
+                    error = uiState.error!!,
+                    onRetry = { statisticsViewModel.refreshStatistics() }
+                )
+            }
+            else -> {
+                StatisticsContent(
+                    uiState = uiState,
+                    onTabSelected = statisticsViewModel::selectTab
+                )
+            }
+        }
     }
 }
