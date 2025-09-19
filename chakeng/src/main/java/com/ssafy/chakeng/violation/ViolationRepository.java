@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public interface ViolationRepository extends JpaRepository<Violation, UUID> {
@@ -20,6 +21,10 @@ public interface ViolationRepository extends JpaRepository<Violation, UUID> {
     long countToday(@Param("ownerId") UUID ownerId, @Param("start") OffsetDateTime start);
 
     Page<Violation> findByVideoOwnerIdOrderByCreatedAtDesc(UUID ownerId, Pageable pageable);
+
+    List<Violation> findAllByVideoOwnerIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+            UUID ownerId, OffsetDateTime from, OffsetDateTime to
+    );
 }
 
 

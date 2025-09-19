@@ -1,7 +1,7 @@
 package com.ssafy.chakeng.home;
 
 import com.ssafy.chakeng.common.ApiResponse;
-import com.ssafy.chakeng.violation.RecentViolationService;
+import com.ssafy.chakeng.violation.ViolationService;
 import com.ssafy.chakeng.violation.StatsService;
 import com.ssafy.chakeng.violation.dto.RecentViolationItem;
 import com.ssafy.chakeng.violation.dto.TodayStatsResponse;
@@ -18,7 +18,7 @@ import java.util.UUID;
 public class HomeController {
 
     private final StatsService statsService;
-    private final RecentViolationService recentService;
+    private final ViolationService recentService;
 
     @GetMapping("/today")
     public ResponseEntity<ApiResponse<TodayStatsResponse>> today(
