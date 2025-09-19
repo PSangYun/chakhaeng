@@ -183,7 +183,12 @@ class DetectionViewModel @Inject constructor(
                 if (persons.isNotEmpty()) {
                     Log.d("DET", "👤 persons=${persons.size}  scores=" +
                             persons.joinToString { "%.2f".format(it.score) })
-                    Log.d("DET", persons.joinToString { "%.2f".format(it.label) })
+                    val byLabel = merged.groupBy { it.label }
+                    val summary = byLabel.entries
+                        .sortedByDescending { it.value.size }
+                        .joinToString(", ") { (label, list) -> "$label x${list.size}" }
+
+                    Log.d("DET", "frame#$thisFrame classes: $summary")
                 }
 
                 if (!hadPerson && persons.isNotEmpty()) {
