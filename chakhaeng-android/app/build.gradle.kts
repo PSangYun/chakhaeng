@@ -163,6 +163,8 @@ dependencies {
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.views)
 
+    implementation(libs.kotlinx.collections.immutable)
+
     // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
