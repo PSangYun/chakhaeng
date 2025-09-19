@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,6 +22,11 @@ internal fun StatisticsRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    uiState.error?.let { error ->
+        LaunchedEffect(error) {
+            viewModel.clearError()
+        }
+    }
     Column(
         modifier =
             Modifier
@@ -30,7 +36,8 @@ internal fun StatisticsRoute(
 
     ) {
         StatisticsScreen(
-            uiState = uiState
+            uiState = uiState,
+            statisticsViewModel = viewModel
         )
     }
 }
