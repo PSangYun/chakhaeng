@@ -1,0 +1,9 @@
+[submodule "chakhaeng-android/external/ailia-sdk-jni"]
+	path = chakhaeng-android/external/ailia-sdk-jni
+	url = https://github.com/axinc-ai/ailia-sdk-jni.git
+[submodule "chakhaeng-android/external/ailia-tflite-jni"]
+	path = chakhaeng-android/external/ailia-tflite-jni
+	url = https://github.com/axinc-ai/ailia-tflite-jni.git
+[submodule "chakhaeng-android/external/ailia-tracker-jni"]
+	path = chakhaeng-android/external/ailia-tracker-jni
+	url = https://github.com/axinc-ai/ailia-tracker-jni.git

@@ -153,6 +153,11 @@ dependencies {
     // AI/ML
     implementation(libs.tensorflow.lite)
 
+    // AI/Tracking
+    implementation(project(":ailia-sdk-jni"))
+    implementation(project(":ailia-tflite-jni"))   // (TFLite 런타임 연동 시)
+    implementation(project(":ailia-tracker-jni"))  // ByteTrack (axip.ailia_tracker)
+
     // 음성 (STT/TTS)
     implementation("androidx.compose.material:material-icons-extended")
 
