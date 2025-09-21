@@ -8,10 +8,10 @@ import android.util.Log
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.time.withTimeout
 import kotlinx.coroutines.withTimeout
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.gpu.GpuDelegate
 import org.tensorflow.lite.nnapi.NnApiDelegate
 import org.tensorflow.lite.support.common.FileUtil
@@ -41,6 +41,8 @@ class MultiModelInterpreterDetector(
 
     private val specsByKey = specs.associateBy { it.key }.toMutableMap()
     private val labelCache = mutableMapOf<String, List<String>>()
+
+    private var debugLoggedOnce = false
 
     // key → lazy singletons
     private val interpreters = mutableMapOf<String, Interpreter>()
@@ -84,7 +86,7 @@ class MultiModelInterpreterDetector(
             val spec = requireNotNull(specsByKey[currentKey])
             val itp = interpreters.getOrPut(currentKey) { ensureInterpreter(spec) }
             val parser = parsers.getOrPut(currentKey) { YoloV8Parser(spec.numClasses) }
-            val labels = labelsFor(spec)
+            val labels: List<String>? = labelsFor(spec)
 
             val inW = spec.resolvedInputW.takeIf { it > 0 } ?: spec.preferInputSize ?: 640
             val inH = spec.resolvedInputH.takeIf { it > 0 } ?: spec.preferInputSize ?: 640
@@ -100,21 +102,37 @@ class MultiModelInterpreterDetector(
 
             Log.d("DTAG", "detect() in model=$currentKey")
 
+
             val outTensor = itp.getOutputTensor(0)
             val shape = outTensor.shape()
             Log.d("DTAG", "outShape=${shape.contentToString()}")
+            if (!debugLoggedOnce) {
+                Log.d("BTAG", "spec.numClasses=${spec.numClasses}")
+                // 보통 YOLOv8: shape[1]이 4+numClasses (CHW), shape[2]가 N
+                val channels = shape.getOrNull(1) ?: -1
+                val derivedClasses = if (channels >= 0) channels - 4 else -1
+                Log.d("BTAG", "derivedClasses=$derivedClasses, labels=${labels?.size ?: 0}")
+                debugLoggedOnce = true
+            }
+
             ensureOutputBuffers(shape)
+
+            val runTimeoutMs = when (backend) {
+                Backend.GPU -> 5000L   // ✅ GPU: 3~5초 권장 (첫 프레임 대비)
+                Backend.NNAPI -> 3000L
+                Backend.CPU -> 2000L
+            }
 
             val t0 = SystemClock.elapsedRealtime()
             try {
                 // 🔒 + ⏱️ 1500ms 타임아웃 (에뮬레이터면 2000ms까지도)
-                withTimeout(1500) {
+                withTimeout(runTimeoutMs) {
                     mutex.withLock {
                         itp.runForMultipleInputsOutputs(arrayOf(input), cachedOutputsMap!!)
                     }
                 }
             } catch (t: TimeoutCancellationException) {
-                Log.e("DTAG", "tflite.run timeout -> skip this frame")
+                Log.e("DTAG", "tflite.run timeout ($runTimeoutMs ms)-> skip this frame")
                 return emptyList()
             }
             val t1 = SystemClock.elapsedRealtime()
@@ -169,19 +187,7 @@ class MultiModelInterpreterDetector(
         interpreters[spec.key]?.let { return it }
 
         val model = FileUtil.loadMappedFile(context, spec.assetPath)
-        val options = Interpreter.Options().apply {
-            // 먼저 안정성 위주로. 확인되면 XNNPACK/NNAPI/GPU 차례로 켜세요.
-            setUseXNNPACK(false)
-            setNumThreads(4)
-            when (backend) {
-                Backend.CPU -> Unit
-                Backend.NNAPI -> runCatching { addDelegate(NnApiDelegate()) }
-                Backend.GPU -> {
-                    // GPU를 쓰려면 동일버전의 tensorflow-lite-gpu 의존성 추가 필수.
-                     runCatching { addDelegate(GpuDelegate()) }
-                }
-            }
-        }
+        val options = buildInterpreterOptions(backend)
         val itp = Interpreter(model, options)
 
         // 🔎 입력 메타 런타임 확인 → resolved 필드 채움
@@ -198,6 +204,48 @@ class MultiModelInterpreterDetector(
         interpreters[spec.key] = itp
         return itp
     }
+
+    // 파일 내 아무 곳 (클래스 안 private 메서드로) 추가
+    private fun buildInterpreterOptions(backend: Backend): Interpreter.Options {
+        return Interpreter.Options().apply {
+            when (backend) {
+                Backend.CPU -> {
+                    // CPU: XNNPACK 권장
+                    setUseXNNPACK(true)
+                    setNumThreads(4)
+                }
+                Backend.NNAPI -> {
+                    // NNAPI: 기기별 편차가 커서 테스트 필요
+                    runCatching { addDelegate(NnApiDelegate()) }
+                    setUseXNNPACK(false)
+                    setNumThreads(1)
+                }
+                Backend.GPU -> {
+                    // ✅ GPU delegate (호환성 체크 후 부착, 미지원이면 CPU로 폴백)
+                    val compat = CompatibilityList()
+                    if (compat.isDelegateSupportedOnThisDevice) {
+                        val opts = compat.bestOptionsForThisDevice
+                        // 필요시 성능 옵션 조정 가능:
+                        // opts.setPrecisionLossAllowed(true) // FP16 허용
+                        // opts.setInferencePreference(GpuDelegate.Options.INFERENCE_PREFERENCE_SUSTAINED_SPEED)
+                        val gpu = GpuDelegate(opts)
+                        addDelegate(gpu)
+
+                        // GPU 사용 시 XNNPACK/NNAPI는 끄는 편
+                        setUseXNNPACK(false)
+                        setNumThreads(1)
+                        Log.d("DTAG", "GPU delegate attached")
+                    } else {
+                        // 폴백: CPU + XNNPACK
+                        setUseXNNPACK(true)
+                        setNumThreads(4)
+                        Log.w("DTAG", "GPU not supported on this device -> fallback to CPU")
+                    }
+                }
+            }
+        }
+    }
+
 
 
     /** 입력 버퍼 1회 할당 후 재사용 */
