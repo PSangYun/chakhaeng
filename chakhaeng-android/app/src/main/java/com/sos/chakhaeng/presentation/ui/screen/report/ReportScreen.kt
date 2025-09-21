@@ -2,14 +2,13 @@ package com.sos.chakhaeng.presentation.ui.screen.report
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sos.chakhaeng.domain.model.report.ReportItem
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.ui.components.report.EmptySection
@@ -20,28 +19,14 @@ import com.sos.chakhaeng.presentation.ui.components.report.ReportTabSection
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportScreen(
-    reportViewModel: ReportViewModel = hiltViewModel(),
-    paddingValues: PaddingValues,
+    uiState: ReportUiState,
+    reportViewModel: ReportViewModel,
+    filteredReportList: List<ReportItem>
 ) {
-    val uiState by reportViewModel.uiState.collectAsStateWithLifecycle()
-    val filteredReportList by reportViewModel.filteredReportList.collectAsStateWithLifecycle()
-
-
-    LaunchedEffect(Unit) {
-        reportViewModel.loadReportItem()
-    }
-
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
-            reportViewModel.clearError()
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(paddingValues)
     ) {
         CenterAlignedTopAppBar(
             title = {
@@ -53,7 +38,8 @@ fun ReportScreen(
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.White
-            )
+            ),
+            windowInsets = WindowInsets(0)
         )
 
         ReportTabSection(

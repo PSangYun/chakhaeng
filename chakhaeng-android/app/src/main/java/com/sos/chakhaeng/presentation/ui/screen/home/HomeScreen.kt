@@ -10,8 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sos.chakhaeng.presentation.theme.neutral
 import com.sos.chakhaeng.presentation.ui.components.home.DetectionSection
 import com.sos.chakhaeng.presentation.ui.components.home.RecentViolationsSection
@@ -19,17 +17,7 @@ import com.sos.chakhaeng.presentation.ui.components.home.TodayState
 import com.sos.chakhaeng.presentation.theme.primaryLight
 
 @Composable
-fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel(),
-    paddingValues: PaddingValues
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(Unit) {
-        viewModel.loadHomeData()
-        viewModel.loadTodayStats()
-        viewModel.loadRecentViolation()
-    }
+fun HomeScreen(uiState: HomeUiState, viewModel: HomeViewModel) {
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -69,7 +57,6 @@ fun HomeScreen(
                 .background(
                     color = if (uiState.isDetectionActive) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else primaryLight
                 )
-                .padding(bottom = 16.dp),
         ) {
             LazyColumn(
                 modifier = Modifier
