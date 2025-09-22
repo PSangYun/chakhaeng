@@ -5,61 +5,58 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import android.view.ViewGroup
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import com.sos.chakhaeng.recording.CameraRecordingService
+import kotlinx.coroutines.delay
 
 @Composable
 fun CameraPreview(
     modifier: Modifier = Modifier,
-    onBound: ((CameraRecordingService.LocalBinder) -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val previewView = remember {
-        androidx.camera.view.PreviewView(context).apply {
-            scaleType = androidx.camera.view.PreviewView.ScaleType.FILL_CENTER
-            implementationMode = androidx.camera.view.PreviewView.ImplementationMode.COMPATIBLE
-        }
-    }
-
     var binder by remember { mutableStateOf<CameraRecordingService.LocalBinder?>(null) }
 
-    val connection = remember {
-        object : ServiceConnection {
-            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                binder = service as? CameraRecordingService.LocalBinder
-                // 바인드되면 화면에 프리뷰 "꽂기"
-                binder?.attachPreview(previewView)
-                onBound?.invoke(binder!!)
+    // 서비스 시작
+    LaunchedEffect(Unit) {
+        ContextCompat.startForegroundService(
+            context,
+            Intent(context, CameraRecordingService::class.java).apply {
+                action = CameraRecordingService.ACTION_START
             }
-            override fun onServiceDisconnected(name: ComponentName?) {
-                binder = null
-            }
-        }
+        )
     }
 
-    // 바인드/언바인드 생명주기
+    // 바인드
     DisposableEffect(Unit) {
-        val intent = Intent(context, CameraRecordingService::class.java)
-        // 서비스가 꺼져 있다면 FGS로 띄우고 싶으면 startForegroundService 먼저 호출해도 됨
-        context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-
-        onDispose {
-            runCatching { binder?.detachPreview() }
-            context.unbindService(connection)
+        val conn = object : ServiceConnection {
+            override fun onServiceConnected(n: ComponentName?, s: IBinder?) {
+                binder = s as? CameraRecordingService.LocalBinder
+            }
+            override fun onServiceDisconnected(n: ComponentName?) { binder = null }
         }
+        context.bindService(Intent(context, CameraRecordingService::class.java), conn, Context.BIND_AUTO_CREATE)
+        onDispose { runCatching { context.unbindService(conn) } }
     }
 
-    // 실제 뷰
     AndroidView(
-        factory = { previewView },
-        modifier = modifier
+        factory = { ctx ->
+            PreviewView(ctx).apply {
+                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                scaleType = PreviewView.ScaleType.FILL_CENTER
+            }
+        },
+        modifier = modifier,
+        update = { pv ->
+            // 매 프레임 호출돼도 안전: 항상 ‘재바인딩’이라 레이스가 사라짐
+            binder?.attachPreview(pv)
+        }
     )
 }
+
