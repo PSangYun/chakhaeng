@@ -11,10 +11,8 @@ import com.sos.chakhaeng.core.ai.MultiModelInterpreterDetector
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.domain.model.ViolationType
-import com.sos.chakhaeng.domain.usecase.violation.DetectionUseCase
-import com.sos.chakhaeng.domain.usecase.violation.GetViolationsInRangeUseCase
-import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
+import com.sos.chakhaeng.domain.usecase.DetectionUseCase
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
@@ -37,7 +35,6 @@ import javax.inject.Inject
 class DetectionViewModel @Inject constructor(
     private val navigator: Navigator,
     private val detectionUseCase: DetectionUseCase,
-    private val getViolationsInRangeUseCase: GetViolationsInRangeUseCase
     private val detector: Detector,
     private val processDetectionsUseCase: ProcessDetectionsUseCase
 ) : ViewModel() {
@@ -104,7 +101,6 @@ class DetectionViewModel @Inject constructor(
                 if (isActive) {
                     initializeCamera()
                     generateSampleViolationData()
-                    getViolationsInRangeUseCase("2025-09-12T05:59:21.093Z", "2025-09-22T05:59:21.093Z")
                 } else {
                     pauseCamera()
                 }
@@ -214,6 +210,8 @@ class DetectionViewModel @Inject constructor(
         return true
     }
 
+
+
     fun initializeCamera() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -263,9 +261,7 @@ class DetectionViewModel @Inject constructor(
     }
 
     fun onViolationClick(violation: ViolationDetectionUiModel) {
-        viewModelScope.launch {
-            navigator.navigate(Route.ViolationDetail(violation.id))
-        }
+        Log.d("DetectionViewModel", "위반 선택됨: ${violation.id}")
     }
 
     fun clearError() {
@@ -286,7 +282,7 @@ class DetectionViewModel @Inject constructor(
     private fun generateSampleViolationData() {
         val sampleViolations = listOf(
             ViolationUiMapper.mapToUiModel(
-                id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                id = "1",
                 type = ViolationType.WRONG_WAY,
                 licenseNumber = "12가1234",
                 location = "강남구 테헤란로 123",
@@ -295,7 +291,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id ="3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                id ="1",
                 type = ViolationType.SIGNAL,
                 licenseNumber = "34나5678",
                 location = "서초구 서초대로 456",
@@ -304,7 +300,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id ="3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                id ="1",
                 type = ViolationType.LANE,
                 licenseNumber = "56다9012",
                 location = "마포구 월드컵로 789",
@@ -313,7 +309,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                id = "1",
                 type = ViolationType.NO_PLATE,
                 licenseNumber = "78라3456",
                 location = "용산구 한강대로 321",
