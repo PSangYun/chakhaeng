@@ -109,7 +109,9 @@ class DetectionViewModel @Inject constructor(
     }
 
     fun onViolationClick(violation: ViolationDetectionUiModel) {
-        Log.d("DetectionViewModel", "위반 선택됨: ${violation.id}")
+        viewModelScope.launch {
+            navigator.navigate(Route.ViolationDetail(violation.id))
+        }
     }
 
     fun clearError() {
@@ -130,7 +132,7 @@ class DetectionViewModel @Inject constructor(
     private fun generateSampleViolationData() {
         val sampleViolations = listOf(
             ViolationUiMapper.mapToUiModel(
-                id = "1",
+                id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 type = ViolationType.WRONG_WAY,
                 licenseNumber = "12가1234",
                 location = "강남구 테헤란로 123",
@@ -139,7 +141,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id ="1",
+                id ="3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 type = ViolationType.SIGNAL,
                 licenseNumber = "34나5678",
                 location = "서초구 서초대로 456",
@@ -148,7 +150,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id ="1",
+                id ="3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 type = ViolationType.LANE,
                 licenseNumber = "56다9012",
                 location = "마포구 월드컵로 789",
@@ -157,7 +159,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id = "1",
+                id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 type = ViolationType.NO_PLATE,
                 licenseNumber = "78라3456",
                 location = "용산구 한강대로 321",

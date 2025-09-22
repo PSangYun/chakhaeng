@@ -81,3 +81,12 @@ fun lastMinutesRangeIsoZ(minutes: Long): Pair<String, String> {
 fun String.toInstantOrNull(): Instant? = runCatching {
     Instant.parse(this) // 표준 ISO-8601 파서
 }.getOrNull()
+
+// "2025-09-22T06:47:24.627Z" → ("2025-09-22", "06:47:24")
+fun String.splitIsoDateTime(): Pair<String, String> = runCatching {
+    val instant = Instant.parse(this) // 표준 ISO-8601 파서
+    val local = instant.atZone(ZoneId.systemDefault()).toLocalDateTime()
+    val date = DateTimeFormatter.ISO_LOCAL_DATE.format(local.toLocalDate())
+    val time = DateTimeFormatter.ISO_LOCAL_TIME.format(local.toLocalTime()).take(8) // HH:mm:ss
+    date to time
+}.getOrElse { "" to "" }
