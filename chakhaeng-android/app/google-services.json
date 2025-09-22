@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "731529288443",
+    "project_id": "chakhaeng-603a2",
+    "storage_bucket": "chakhaeng-603a2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:731529288443:android:db91376a999ddb1c9cee5e",
+        "android_client_info": {
+          "package_name": "com.sos.chakhaeng"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBW5oaURtgKqtK3LBjGIj8dZsS7KSvGUTM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
