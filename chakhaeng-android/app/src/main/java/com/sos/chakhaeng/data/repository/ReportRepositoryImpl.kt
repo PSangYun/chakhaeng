@@ -36,7 +36,6 @@ class ReportRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
-        return Result.success(Unit)
     }
 
     override suspend fun getReportDetailItem(reportId: String): Result<ReportDetailItem> {

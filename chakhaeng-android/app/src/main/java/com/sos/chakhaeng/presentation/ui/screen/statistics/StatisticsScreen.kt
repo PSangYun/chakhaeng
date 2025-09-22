@@ -19,8 +19,6 @@ fun StatisticsScreen(
     uiState: StatisticsUiState,
     statisticsViewModel: StatisticsViewModel
 ) {
-
-
     Column(
         modifier = Modifier
             .fillMaxSize()
