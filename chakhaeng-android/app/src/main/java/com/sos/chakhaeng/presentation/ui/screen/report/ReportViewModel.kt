@@ -74,7 +74,17 @@ class ReportViewModel @Inject constructor(
 
     fun navigateReportDetail(reportId : String){
         viewModelScope.launch {
-            navigator.navigate(Route.ReportDetail(reportId))
+            navigator.navigate(
+                Route.ReportDetail(reportId),
+                saveState = true,
+                launchSingleTop = true
+            )
+        }
+    }
+
+    fun navigateBack(){
+        viewModelScope.launch {
+            navigator.navigateBack()
         }
     }
 

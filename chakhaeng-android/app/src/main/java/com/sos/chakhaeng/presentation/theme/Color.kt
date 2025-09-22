@@ -220,7 +220,8 @@ val surfaceContainerHighestDarkHighContrast = Color(0xFF46464C)
 
 val neutral = Color(0xFFF2F2F2)
 val naverGreen = Color(0xFF06BE34)
-
+val lightGreen = Color(0xFFE8F5E8)
+val darkGreen = Color(0xFF2E7D32)
 val lightGray = Color(0xFFE5E7EB)
 val BackgroundGray = Color(0xFFF3F4F6)
 val NEUTRAL100 = Color(0xFFE7E7E7)
@@ -229,8 +230,10 @@ val NEUTRAL400 = Color(0xFF727272)
 val NEUTRAL800 = Color(0xFF252525)
 val BLUE50 = Color(0xFFEFF6FF)
 val BLUE300 = Color(0xFF2563EB)
+val PURPLE300 = Color(0xFF8B5CF6)
 val RED300 = Color(0xFFE1392C)
 val LIGHTRED = Color(0xFFFF5858)
+val ORANGE = Color(0xFFFFA500)
 object ViolationColors {
     // 배경색
     val All = Color(0xFFD2CFCC)
@@ -266,9 +269,11 @@ object ReportStatusColors {
     val PendingText = Color(0xFF3182CE)     // 파랑
 }
 
-
-
-
-
-
-
+object PieChartColors{
+    val SIGNAL = Color(0xFFFF6B6B)
+    val LANE = Color(0xFF4ECDC4)
+    val WRONG_WAY = Color(0xFFFFE66D)
+    val NO_PLATE = Color(0xFF9B59B6)
+    val NO_HELMET = Color(0xFFEF476F)
+    val OTHERS = Color(0xFF95A5A6)
+}

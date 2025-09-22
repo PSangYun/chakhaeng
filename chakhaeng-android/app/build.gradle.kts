@@ -157,6 +157,14 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.1.0")
     implementation(libs.play.services.location)
 
+    // 차트(Vico 라이브러리)
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m2)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.views)
+
+    implementation(libs.kotlinx.collections.immutable)
+
     // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

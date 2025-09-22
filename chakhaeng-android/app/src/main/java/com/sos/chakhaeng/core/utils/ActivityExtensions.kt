@@ -22,11 +22,14 @@ fun Activity.exitImmersive() {
     c.show(WindowInsetsCompat.Type.systemBars())
 }
 fun Activity.setFullscreen(enabled: Boolean) {
-    WindowCompat.setDecorFitsSystemWindows(window, !enabled)
-    val c = WindowCompat.getInsetsController(window, window.decorView)
-    c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    if (enabled) c.hide(WindowInsetsCompat.Type.systemBars())
-    else c.show(WindowInsetsCompat.Type.systemBars())
+    val controller = WindowCompat.getInsetsController(window, window.decorView)
+    if (enabled) {
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+    } else {
+        controller.show(WindowInsetsCompat.Type.systemBars())
+    }
 }
 fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
