@@ -64,21 +64,6 @@ public class PushService {
 
         BatchResponse resp = FirebaseMessaging.getInstance().sendEach(messages);
 
-        // 실패 토큰 정리
-        List<String> invalidTokens = new ArrayList<>();
-        for (int i = 0; i < resp.getResponses().size(); i++) {
-            SendResponse r = resp.getResponses().get(i);
-            if (!r.isSuccessful()) {
-                String code = Optional.ofNullable(r.getException())
-                        .map(ex -> ex.getMessagingErrorCode() != null ? ex.getMessagingErrorCode().name() : ex.getMessage())
-                        .orElse("UNKNOWN");
-                // 대표적으로: UNREGISTERED, INVALID_ARGUMENT
-                if ("UNREGISTERED".equals(code) || "INVALID_ARGUMENT".equals(code)) {
-                    invalidTokens.add(tokens.get(i).getToken());
-                }
-            }
-        }
-        deviceTokenService.deactivateTokens(invalidTokens);
     }
 }
 
