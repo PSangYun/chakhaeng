@@ -1,4 +1,4 @@
-// domain/model/ViolationType.kt
+// domain/models/ViolationType.kt
 package com.sos.chakhaeng.domain.model
 
 import androidx.compose.ui.graphics.Color

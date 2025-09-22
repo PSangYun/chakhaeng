@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.recording
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -7,6 +8,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.graphics.SurfaceTexture
 import android.media.MediaCodec
@@ -22,8 +25,12 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Surface
+import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -40,13 +47,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import java.io.File
-import java.lang.ref.WeakReference
-import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
-import java.util.ArrayDeque
-import java.util.Date
-import java.util.Locale
+import com.sos.chakhaeng.core.ai.Detector
+import com.sos.chakhaeng.core.camera.YuvToRgbConverter
+import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -57,8 +60,22 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.File
+import java.lang.ref.WeakReference
+import java.nio.ByteBuffer
+import java.text.SimpleDateFormat
+import java.util.ArrayDeque
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.Executors
+import javax.inject.Inject
+
+private const val TAG = "CamSvc"
 
 class CameraRecordingService : LifecycleService() {
+
+    @Inject lateinit var detector: Detector
+    @Inject lateinit var processDetectionsUseCase: ProcessDetectionsUseCase
 
     companion object {
         const val CHANNEL_ID = "record_cam_channel"
@@ -79,16 +96,23 @@ class CameraRecordingService : LifecycleService() {
     private val DEFAULT_PRE_MS = 6_000L
     private val DEFAULT_POST_MS = 5_000L
 
-    /* ------------------------------------
-     * CameraX & Recording state
-     * ------------------------------------ */
+    /** CameraX & Recording state */
     private var cameraProvider: ProcessCameraProvider? = null
     private var preview: Preview? = null
     private var videoCapture: VideoCapture<Recorder>? = null
+    private var imageAnalysis: ImageAnalysis? = null // TODO: 안정화 후 붙이기
 
     private var currentRecording: Recording? = null
     private var bufferingJob: Job? = null
 
+    /** Analyzer(추후 사용) */
+    private val analysisExecutor = Executors.newSingleThreadExecutor()
+    private val inferGate = kotlinx.coroutines.sync.Semaphore(1)
+    private var lastInferTs = 0L
+    private val minGapMs = 100L
+    private lateinit var yuv: YuvToRgbConverter
+
+    /** 링버퍼 */
     private data class Segment(val file: File, val startMs: Long, var endMs: Long)
     private val segmentQueue: ArrayDeque<Segment> = ArrayDeque()
     private val segMutex = Mutex()
@@ -102,74 +126,92 @@ class CameraRecordingService : LifecycleService() {
     @Volatile private var pendingCapture: CaptureRequest? = null
     private var mergingJob: Job? = null
 
-    /* ------------------------------------
-     * Preview handling
-     * ------------------------------------ */
+    /** Preview handling */
     private class HeadlessSurfaceProvider : Preview.SurfaceProvider {
         private var surfaceTexture: SurfaceTexture? = null
         private var surface: Surface? = null
-
         override fun onSurfaceRequested(request: SurfaceRequest) {
+            Log.d(TAG, "HSP.onSurfaceRequested res=${request.resolution} thread=${Thread.currentThread().name}")
             val tex = SurfaceTexture(0).apply {
                 setDefaultBufferSize(request.resolution.width, request.resolution.height)
             }
             val surf = Surface(tex)
             surfaceTexture = tex
             surface = surf
+            Log.d(TAG, "HSP.provideSurface surface=$surf")
             request.provideSurface(surf, Runnable::run) {
-                try { surf.release() } catch (_: Throwable) {}
-                try { tex.release() } catch (_: Throwable) {}
+                Log.d(TAG, "HSP.releaseCallback called -> releasing surface")
+                runCatching { surf.release() }
+                runCatching { tex.release() }
             }
         }
     }
+
     private var lastPreviewViewRef: WeakReference<PreviewView>? = null
+    @Volatile private var cameraBound = false
 
     private fun runOnMain(block: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) block()
         else Handler(Looper.getMainLooper()).post(block)
     }
 
-    /* ------------------------------------
-     * Binder for in-app control
-     * ------------------------------------ */
+    /** Binder */
     inner class LocalBinder : Binder() {
         fun attachPreview(view: PreviewView) {
             lastPreviewViewRef = WeakReference(view)
-            runOnMain { preview?.setSurfaceProvider(view.surfaceProvider) }
+            runOnMain {
+                view.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                view.scaleType = PreviewView.ScaleType.FILL_CENTER
+            }
+            // UI 붙었을 때는 UI SurfaceProvider로 "재바인딩"
+            lifecycleScope.launch { ensureCamera(view.surfaceProvider) }
         }
-        fun detachPreview() { runOnMain { preview?.setSurfaceProvider(HeadlessSurfaceProvider()) } }
+        fun detachPreview() {
+            // 화면 떠날 땐 Headless로 "재바인딩"
+            lifecycleScope.launch { ensureCamera(HeadlessSurfaceProvider()) }
+        }
         fun startDetection() { startBuffering() }
-        fun stopDetection() { stopBuffering() }
+        fun stopDetection()  { stopBuffering() }
         fun markIncident(preMs: Long, postMs: Long) { lifecycleScope.launch { markEvent(preMs, postMs) } }
     }
     private val binder = LocalBinder()
     override fun onBind(intent: Intent): IBinder { super.onBind(intent); return binder }
 
-    /* ------------------------------------
-     * Lifecycle
-     * ------------------------------------ */
+    /** Lifecycle */
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "onCreate() pid=${android.os.Process.myPid()} tid=${Thread.currentThread().name}")
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "onCreate: no CAMERA permission")
+            stopSelf(); return
+        }
+
         createNotificationChannel()
-        startForeground(
-            NOTI_ID,
-            buildNotification("준비 중…"),
-            android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA,
-        )
-        lifecycleScope.launch { initCamera() }
+        yuv = YuvToRgbConverter(this)
+        lifecycleScope.launch(Dispatchers.Default) {
+            runCatching { detector.warmup() }.onFailure { Log.e("AI", "warmup fail", it) }
+        }
+
+        val notif = buildNotification("준비 중…")
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(NOTI_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA)
+        } else {
+            startForeground(NOTI_ID, notif)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        Log.d(TAG, "onStartCommand action=${intent?.action}")
         when (intent?.action) {
             ACTION_START -> lifecycleScope.launch {
-                if (videoCapture == null) initCamera()
+                // UI가 아직 없어도 Headless로 먼저 바인딩 보장
+                if (!cameraBound) ensureCamera(HeadlessSurfaceProvider())
                 startBuffering()
             }
-            ACTION_STOP -> {
-                stopBuffering(); stopSelf()
-            }
+            ACTION_STOP -> { stopBuffering(); stopSelf() }
             ACTION_OPEN -> {
                 val launch = packageManager.getLaunchIntentForPackage(packageName)
                 launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -184,38 +226,84 @@ class CameraRecordingService : LifecycleService() {
         return START_STICKY
     }
 
-    /* ------------------------------------
-     * Camera init
-     * ------------------------------------ */
-    private suspend fun initCamera() = withContext(Dispatchers.Main) {
-        val provider = ProcessCameraProvider.getInstance(this@CameraRecordingService).get()
-        cameraProvider = provider
+    /** ✅ 한 곳에서만 바인딩: UI/Headless 공급자만 바꿔서 매번 "재바인딩" */
+    private suspend fun ensureCamera(surfaceProvider: Preview.SurfaceProvider) = withContext(Dispatchers.Main) {
+        val provider = cameraProvider ?: ProcessCameraProvider.getInstance(this@CameraRecordingService).get().also {
+            cameraProvider = it
+        }
 
+        val pv = lastPreviewViewRef?.get()
+        val rotation = pv?.display?.rotation ?: Surface.ROTATION_0
+
+        // VideoCapture: 가볍게 (SD 우선)
         val qualitySelector = QualitySelector.fromOrderedList(
-            listOf(Quality.HD, Quality.FHD, Quality.SD),
-            FallbackStrategy.lowerQualityThan(Quality.SD),
+            listOf(Quality.SD, Quality.HD),
+            FallbackStrategy.lowerQualityThan(Quality.SD)
         )
         val recorder = Recorder.Builder().setQualitySelector(qualitySelector).build()
+        videoCapture = VideoCapture.withOutput(recorder).apply { targetRotation = rotation }
 
-        videoCapture = VideoCapture.withOutput(recorder)
-        preview = Preview.Builder().build().also { it.setSurfaceProvider(HeadlessSurfaceProvider()) }
+        // Preview
+        preview = Preview.Builder()
+            .setTargetAspectRatio(androidx.camera.core.AspectRatio.RATIO_16_9)
+            .setTargetRotation(rotation)
+            .build().also { it.setSurfaceProvider(surfaceProvider) }
+
+        // (선택) ImageAnalysis는 안정화 후 추가
+        imageAnalysis = null
+        // imageAnalysis = ImageAnalysis.Builder()
+        //     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+        //     .setImageQueueDepth(1)
+        //     .setTargetRotation(rotation)
+        //     .setTargetResolution(android.util.Size(320, 180))
+        //     .build().apply { setAnalyzer(analysisExecutor, ::analyzeFrame) }
 
         provider.unbindAll()
         provider.bindToLifecycle(
             this@CameraRecordingService,
             CameraSelector.DEFAULT_BACK_CAMERA,
-            preview,
-            videoCapture,
+            preview!!,
+            videoCapture!!
+            // , imageAnalysis!!
         )
-
-        delay(350)
-        lastPreviewViewRef?.get()?.let { pv -> preview?.setSurfaceProvider(pv.surfaceProvider) }
+        cameraBound = true
+        Log.d(TAG, "ensureCamera(): bound (rotation=$rotation, provider=$surfaceProvider)")
         updateNotification("준비 완료")
     }
 
-    /* ------------------------------------
-     * Ring buffer loop
-     * ------------------------------------ */
+    @OptIn(ExperimentalGetImage::class)
+    private fun analyzeFrame(image: ImageProxy) {
+        try {
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (now - lastInferTs < minGapMs) return
+            if (!inferGate.tryAcquire()) return
+            lastInferTs = now
+
+            val bmp = yuv.yuv420ToBitmap(image)
+            val rotation = image.imageInfo.rotationDegrees
+            image.close()
+
+            lifecycleScope.launch(Dispatchers.Default) {
+                try {
+                    val dets = withTimeoutOrNull(3000) { detector.detect(bmp, rotation) } ?: emptyList()
+                    val violations = processDetectionsUseCase(dets)
+                    if (violations.isNotEmpty()) {
+                        markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
+                    }
+                } catch (t: Throwable) {
+                    Log.e("AI", "detect failed: ${t.message}", t)
+                } finally {
+                    if (!bmp.isRecycled) bmp.recycle()
+                    inferGate.release()
+                }
+            }
+        } catch (_: Throwable) {
+            runCatching { image.close() }
+            runCatching { inferGate.release() }
+        }
+    }
+
+    /** Ring buffer loop */
     private fun startBuffering() {
         if (bufferingJob?.isActive == true) return
         updateNotification("버퍼링 시작…")
@@ -245,7 +333,7 @@ class CameraRecordingService : LifecycleService() {
         }
     }
 
-    /** Records one short segment and returns its file/time info; returns null on failure. */
+    /** 녹화 세그먼트 */
     private suspend fun recordOneSegment(durationMs: Long): Segment? = withContext(Dispatchers.Main) {
         val vc = videoCapture ?: return@withContext null
         val startTs = System.currentTimeMillis()
@@ -300,9 +388,7 @@ class CameraRecordingService : LifecycleService() {
         }
     }
 
-    /* ------------------------------------
-     * Incident handling & merge
-     * ------------------------------------ */
+    /** Incident handling & merge */
     private fun markEvent(preMs: Long, postMs: Long) {
         val now = System.currentTimeMillis()
         val name = "incident_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(now))}.mp4"
@@ -414,9 +500,7 @@ class CameraRecordingService : LifecycleService() {
         return outUri
     }
 
-    /* ------------------------------------
-     * Notifications
-     * ------------------------------------ */
+    /** Notifications */
     private fun notifyIncidentSaved(uri: Uri) {
         val open = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "video/mp4")
