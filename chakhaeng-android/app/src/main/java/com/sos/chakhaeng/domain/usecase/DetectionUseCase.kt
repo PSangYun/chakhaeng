@@ -1,4 +1,4 @@
-package com.sos.chakhaeng.domain.usecase.violation
+package com.sos.chakhaeng.domain.usecase
 
 import com.sos.chakhaeng.core.utils.DetectionStateManager
 import kotlinx.coroutines.flow.StateFlow

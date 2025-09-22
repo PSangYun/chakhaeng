@@ -7,9 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
 import com.sos.chakhaeng.domain.usecase.video.UploadVideoUseCase
-import com.sos.chakhaeng.domain.usecase.violation.GetViolationDetailUseCase
 import com.sos.chakhaeng.domain.usecase.violation.SubmitViolationUseCase
-import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper.mergeWith
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,8 +21,7 @@ import javax.inject.Inject
 class ViolationDetailViewModel @Inject constructor(
     private val navigator: Navigator,
     private val submitViolationUseCase: SubmitViolationUseCase,
-    private val uploadVideoUseCase: UploadVideoUseCase,
-    private val getViolationDetailUseCase: GetViolationDetailUseCase
+    private val uploadVideoUseCase: UploadVideoUseCase
 ): ViewModel() {
 
     private val _uiState = MutableStateFlow(ViolationDetailUiState())
@@ -44,25 +41,6 @@ class ViolationDetailViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     _event.emit(e.message ?: "신고 접수 중 오류가 발생했습니다.")
-                }
-        }
-    }
-
-    fun load(violationId: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            getViolationDetailUseCase(violationId)
-                .onSuccess { detail ->
-                    _uiState.update { s ->
-                        s.copy(
-                            isLoading = false,
-                            violationDetail = s.violationDetail.mergeWith(detail)
-                        )
-                    }
-                }
-                .onFailure { e ->
-                    _uiState.update { s -> s.copy(isLoading = false) }
-                    _event.emit(e.message ?: "상세 정보를 불러오지 못했습니다.")
                 }
         }
     }
