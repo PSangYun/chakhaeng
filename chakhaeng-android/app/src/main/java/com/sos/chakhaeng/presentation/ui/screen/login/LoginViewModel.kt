@@ -2,20 +2,24 @@ package com.sos.chakhaeng.presentation.ui.screen.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging
 import com.sos.chakhaeng.core.navigation.BottomTabRoute
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.domain.usecase.auth.GoogleLoginUseCase
+import com.sos.chakhaeng.domain.usecase.auth.SendFcmTokenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val navigator: Navigator,
     private val googleLoginUseCase: GoogleLoginUseCase,
+    private val sendFcmTokenUseCase: SendFcmTokenUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
@@ -43,7 +47,12 @@ class LoginViewModel @Inject constructor(
                 }
         }
     }
-
+    fun sendFcmToken(){
+        viewModelScope.launch {
+            val fcmToken = FirebaseMessaging.getInstance().token.await()
+            sendFcmTokenUseCase(fcmToken)
+        }
+    }
     fun consumeSuccess() {
         if (_uiState.value is LoginUiState.Success) {
             _uiState.value = LoginUiState.Idle

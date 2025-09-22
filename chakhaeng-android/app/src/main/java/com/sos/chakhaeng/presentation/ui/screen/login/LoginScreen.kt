@@ -99,6 +99,7 @@ fun LoginScreen(
                     scope.launch {
                         val idToken = googleAuthManager.signInWithGoogle()
                         viewModel.googleLogin(idToken)
+                        viewModel.sendFcmToken()
                     }
                 })
                 NaverSignInButton(onClick ={
