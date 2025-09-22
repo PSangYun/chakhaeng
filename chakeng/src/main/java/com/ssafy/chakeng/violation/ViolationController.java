@@ -1,5 +1,6 @@
 package com.ssafy.chakeng.violation;
 
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.ssafy.chakeng.common.ApiResponse;
 import com.ssafy.chakeng.violation.dto.ViolationCreateRequest;
 import com.ssafy.chakeng.violation.dto.ViolationDetailResponse;
@@ -23,7 +24,7 @@ public class ViolationController {
     public ResponseEntity<ApiResponse<ViolationResponse>> createViolation(
             @Valid @RequestBody ViolationCreateRequest req,
             @RequestAttribute("userId") UUID ownerId
-    ) {
+    ) throws FirebaseMessagingException {
         ViolationResponse res = violationService.create(ownerId, req);
         return ResponseEntity.ok(ApiResponse.ok("생성 완료", res));
     }

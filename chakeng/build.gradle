@@ -36,6 +36,7 @@ dependencies {
 	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.767'
 	implementation 'software.amazon.awssdk:s3:2.31.63'
 	compileOnly 'org.projectlombok:lombok'
+	implementation 'com.google.firebase:firebase-admin:9.3.0'
 
 
 	runtimeOnly 'org.postgresql:postgresql'

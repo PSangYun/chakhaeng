@@ -1,5 +1,7 @@
 package com.ssafy.chakeng.violation;
 
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.ssafy.chakeng.fcm.PushService;
 import com.ssafy.chakeng.video.VideoRepository;
 import com.ssafy.chakeng.video.domain.Video;
 import com.ssafy.chakeng.violation.domain.Violation;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 public class ViolationService {
     private final ViolationRepository violationRepo;
     private final VideoRepository videoRepository;
+    private final PushService pushService;
 
     public List<RecentViolationItem> getRecent(UUID ownerId, int limit) {
         Page<Violation> page = violationRepo.findByVideoOwnerIdOrderByCreatedAtDesc(
@@ -39,7 +42,7 @@ public class ViolationService {
     }
 
     @Transactional
-    public ViolationResponse create(UUID ownerId, ViolationCreateRequest req) {
+    public ViolationResponse create(UUID ownerId, ViolationCreateRequest req) throws FirebaseMessagingException {
         Video video = videoRepository.findById(req.getVideoId())
                 .orElseThrow(() -> new IllegalArgumentException("Video not found: " + req.getVideoId()));
 
@@ -57,6 +60,14 @@ public class ViolationService {
         v.setCreatedAt(occur);
 
         Violation saved = violationRepo.save(v);
+
+        pushService.sendViolationDetected(
+                v.getVideo().getOwnerId(),
+                v.getId(),
+                v.getVideo().getId(),
+                v.getType(),
+                v.getCreatedAt()
+        );
         return toDto(saved);
     }
 
