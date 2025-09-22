@@ -1,7 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
 import android.graphics.Bitmap
-import android.os.SystemClock
 import android.util.Log
 import androidx.camera.core.Camera
 import androidx.lifecycle.ViewModel
@@ -15,14 +14,18 @@ import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.DetectionUseCase
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
-import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
+import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.LocalDateTime
@@ -94,14 +97,6 @@ class DetectionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // 1) warmup을 먼저 끝낸다 (동기적으로 기다리기)
-            withContext(Dispatchers.Default) {
-                detector.warmup()
-            }
-            detectorReady.value = true
-            Log.d("DetectionVM", "detector warmup done")
-
-            // 2) 그 다음에 detectionActive를 구독/시작
             detectionUseCase.isDetectionActive.collect { isActive ->
                 if (isActive) {
                     initializeCamera()

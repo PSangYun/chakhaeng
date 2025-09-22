@@ -18,15 +18,9 @@ fun CameraPreviewSection(
     modifier: Modifier = Modifier
 ) {
 
-    var serviceBinder by remember { mutableStateOf<CameraRecordingService.LocalBinder?>(null) }
     Box(modifier = modifier.fillMaxSize()) {
         CameraPreview(
-            modifier = Modifier.fillMaxSize(),
-            onBound = { b ->
-                serviceBinder = b
-                // 원하면 여기서 링버퍼 시작
-                b.startDetection()
-            }
+            modifier = Modifier.fillMaxSize()
         )
 
         CameraStatusOverlay(
