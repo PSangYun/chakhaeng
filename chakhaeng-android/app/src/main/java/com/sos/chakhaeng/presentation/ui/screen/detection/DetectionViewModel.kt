@@ -7,7 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.domain.model.ViolationType
-import com.sos.chakhaeng.domain.usecase.DetectionUseCase
+import com.sos.chakhaeng.domain.usecase.violation.DetectionUseCase
+import com.sos.chakhaeng.domain.usecase.violation.GetViolationsInRangeUseCase
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DetectionViewModel @Inject constructor(
     private val navigator: Navigator,
-    private val detectionUseCase: DetectionUseCase
+    private val detectionUseCase: DetectionUseCase,
+    private val getViolationsInRangeUseCase: GetViolationsInRangeUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetectionUiState())
@@ -51,13 +53,13 @@ class DetectionViewModel @Inject constructor(
                 if (isActive) {
                     initializeCamera()
                     generateSampleViolationData()
+                    getViolationsInRangeUseCase("2025-09-12T05:59:21.093Z", "2025-09-22T05:59:21.093Z")
                 } else {
                     pauseCamera()
                 }
             }
         }
     }
-
     fun initializeCamera() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)

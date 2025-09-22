@@ -1,8 +1,10 @@
 package com.sos.chakhaeng.data.mapper
 
 import com.sos.chakhaeng.data.network.dto.request.violation.ViolationRequest
+import com.sos.chakhaeng.data.network.dto.response.violation.ViolationDto
 import com.sos.chakhaeng.data.network.dto.response.violation.ViolationSubmitResponse
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
+import com.sos.chakhaeng.domain.model.violation.ViolationInRangeEntity
 import com.sos.chakhaeng.domain.model.violation.ViolationSubmit
 
 object ViolationDataMapper {
@@ -21,5 +23,15 @@ object ViolationDataMapper {
     fun ViolationSubmitResponse.toDomain() = ViolationSubmit(
         id = id,
         status = status
+    )
+
+    fun ViolationDto.toDomain() = ViolationInRangeEntity(
+        id = id,
+        videoId = videoId,
+        violationType = type,
+        plate = plate,
+        locationText = locationText,
+        occurredAt = occurredAt,
+        createdAt = createdAt
     )
 }
