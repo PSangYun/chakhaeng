@@ -27,7 +27,7 @@ fun ReportTabSection(
             modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            ReportTab.values().forEach { tab ->
+            ReportTab.entries.forEach { tab ->
                 FilterChip(
                     onClick = { onTabSelected(tab) },
                     label = {
