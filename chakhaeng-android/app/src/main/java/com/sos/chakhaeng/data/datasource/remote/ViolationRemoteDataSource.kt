@@ -6,6 +6,7 @@ import com.sos.chakhaeng.data.network.api.ViolationApi
 import com.sos.chakhaeng.data.network.dto.ApiResponse
 import com.sos.chakhaeng.data.network.dto.request.violation.ViolationRangeRequest
 import com.sos.chakhaeng.data.network.dto.request.violation.ViolationRequest
+import com.sos.chakhaeng.data.network.dto.response.violation.GetViolationDetailDto
 import com.sos.chakhaeng.data.network.dto.response.violation.ViolationDto
 import com.sos.chakhaeng.data.network.dto.response.violation.ViolationSubmitResponse
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
@@ -21,5 +22,9 @@ class ViolationRemoteDataSource @Inject constructor(
 
     suspend fun getViolationsInRange(request: ViolationRangeRequest): ApiResponse<List<ViolationDto>> {
         return service.getViolationsInRange(request)
+    }
+
+    suspend fun getViolationDetail(violationId: String): ApiResponse<GetViolationDetailDto> {
+        return service.getViolationDetail(violationId)
     }
 }

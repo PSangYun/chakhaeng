@@ -102,7 +102,7 @@ fun DetectionScreen(
                     violations = uiState.filteredViolations,
                     onFilterSelected = viewModel::onViolationFilterSelected,
                     onViolationClick = { violation ->
-                        viewModel.navigateViolationDetail(violation.id)
+                        viewModel.onViolationClick(violation)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

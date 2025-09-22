@@ -1,6 +1,9 @@
 package com.sos.chakhaeng.presentation.mapper
 
+import com.sos.chakhaeng.core.utils.splitIsoDateTime
 import com.sos.chakhaeng.domain.model.ViolationType
+import com.sos.chakhaeng.domain.model.violation.GetViolationDetail
+import com.sos.chakhaeng.domain.model.violation.ViolationEntity
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import java.time.Duration
 import java.time.LocalDateTime
@@ -48,5 +51,17 @@ object ViolationUiMapper {
 
     private fun hasImage(thumbnailUrl: String?): Boolean {
         return !thumbnailUrl.isNullOrEmpty()
+    }
+
+    fun ViolationEntity.mergeWith(d: GetViolationDetail): ViolationEntity {
+        val (date, time) = d.occurredAt.splitIsoDateTime()
+        return this.copy(
+            violationType = d.type.ifBlank { this.violationType },
+            plateNumber = d.plate,
+            location = d.locationText,
+            date = if (date.isNotEmpty()) date else this.date,
+            time = if (time.isNotEmpty()) time else this.time,
+            videoUrl = d.objectKey.ifBlank { this.videoUrl }
+        )
     }
 }

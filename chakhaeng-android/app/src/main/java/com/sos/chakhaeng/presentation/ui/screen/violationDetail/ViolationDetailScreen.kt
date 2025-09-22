@@ -104,6 +104,12 @@ fun ViolationDetailScreen(
             context.showToast(message)
         }
     }
+
+    LaunchedEffect(violationId) {
+        if (violationId != null) {
+            viewModel.load(violationId)
+        }
+    }
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
