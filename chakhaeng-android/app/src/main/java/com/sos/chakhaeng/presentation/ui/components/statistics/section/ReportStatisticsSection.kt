@@ -1,6 +1,5 @@
 package com.sos.chakhaeng.presentation.ui.components.statistics.section
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import com.sos.chakhaeng.R
 import com.sos.chakhaeng.domain.model.statistics.ReportStatistics
 import com.sos.chakhaeng.presentation.ui.components.statistics.StatCard
-import androidx.core.graphics.toColorInt
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.naverGreen
 
@@ -113,7 +111,6 @@ fun ReportStatisticsSection(
                                 modifier = Modifier
                                     .size(12.dp)
                                     .clip(RoundedCornerShape(2.dp))
-                                    .background(Color(status.color.toColorInt()))
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
