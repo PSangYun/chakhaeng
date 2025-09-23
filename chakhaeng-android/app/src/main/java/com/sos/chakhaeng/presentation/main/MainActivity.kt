@@ -39,10 +39,9 @@ import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
 import com.sos.chakhaeng.presentation.ui.screen.detection.DetectionScreen
 import com.sos.chakhaeng.presentation.ui.screen.home.HomeRoute
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
-import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileScreen
+import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileRoute
 import com.sos.chakhaeng.presentation.ui.screen.report.ReportRoute
 import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailRoute
-import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailScreen
 import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsRoute
 import com.sos.chakhaeng.presentation.ui.screen.violationDetail.ViolationDetailScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -187,7 +186,7 @@ internal fun ChakhaengApp(
                     }
 
                     is BottomTabRoute.Profile -> NavEntry(key) {
-                        ProfileScreen()
+                        ProfileRoute(padding = paddingValues)
                     }
                     is Route.Login -> NavEntry(key){
                         LoginScreen(googleAuthManager = googleAuthManager)
