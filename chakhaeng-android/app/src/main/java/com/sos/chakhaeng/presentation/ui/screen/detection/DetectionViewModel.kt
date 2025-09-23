@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.Detector
 import com.sos.chakhaeng.core.ai.MultiModelInterpreterDetector
+import com.sos.chakhaeng.core.ai.TrafficFrameResult
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.domain.model.ViolationType
@@ -72,10 +73,11 @@ class DetectionViewModel @Inject constructor(
 
     private var camera: Camera? = null
 
-    private val activeModelKeys = listOf("yolov8s")
+    private val activeModelKeys = listOf("yolo11s")
 
     private val cadence = mapOf(
-        "yolov8s" to 1
+        "yolo11s" to 1,
+
     )
 
     private var frameIndex = 0L
@@ -199,9 +201,28 @@ class DetectionViewModel @Inject constructor(
                     hadPerson = false
                 }
 
+                val trafficResult = when (detector) {
+                    is MultiModelInterpreterDetector -> detector.detectWithTraffic(bitmap, rotation)
+                    else -> {
+                        // 폴백: 옛 방식 유지
+                        val merged = detector.detect(bitmap, rotation)
+                        TrafficFrameResult(merged, emptyList(), emptyList())
+                    }
+                }
+
                 withContext(Dispatchers.Main) {
-                    _detections.value = merged
-                    _violations.value = processDetectionsUseCase(merged)
+//                    _detections.value = merged
+//                    _violations.value = processDetectionsUseCase(merged)
+                    _detections.value = trafficResult.detections
+                    // UI 쪽 ViolationEvent로 매핑
+                    _violations.value = trafficResult.violations.map { ai ->
+                        com.sos.chakhaeng.domain.model.violation.ViolationEvent(
+                            id = "sig-${ai.trackId}-${ai.whenMs}",
+                            type = com.sos.chakhaeng.domain.model.ViolationType.SIGNAL,
+                            detectedAt = System.currentTimeMillis()
+                        )
+
+                    }
                 }
             } finally {
                 // ✅ 수명은 여기서 정리

@@ -14,7 +14,7 @@ class ProcessDetectionsUseCase @Inject constructor() {
 
         for (c in cars) for (x in crosswalks) {
             val iou = iou(c.box, x.box)
-            if (iou > 0.3f) out += ViolationEvent("CROSSWALK_INVADE", ((c.score + x.score)/2f))
+//            if (iou > 0.3f) out += ViolationEvent("CROSSWALK_INVADE", ((c.score + x.score)/2f))
         }
 
         return out

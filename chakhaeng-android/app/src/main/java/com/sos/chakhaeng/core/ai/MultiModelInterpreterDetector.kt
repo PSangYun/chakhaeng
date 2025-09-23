@@ -56,6 +56,20 @@ class MultiModelInterpreterDetector(
         // 필요 시 이 타이밍에 ensureInterpreter()로 선 로딩도 가능
     }
 
+    private val byteTrack = ByteTrackEngine(
+        scoreThresh = 0.20f,
+        nmsThresh   = 0.70f,
+        trackThresh = 0.50f,
+        trackBuffer = 45,      // 도로 환경 권장치(30~60 사이 튜닝)
+        matchThresh = 0.80f
+    )
+    private val signalLogic = SignalViolationDetection(
+        vehicleLabels = setOf("car","motorcycle","bicycle","kickboard","lovebug"),
+        crosswalkLabel = "crosswalk",
+        vehicularSignalPrefix = "vehicular_signal_",
+        crossingTol = 0.012f
+    )
+
     // ---------------- Detector ----------------
 
     override suspend fun warmup() {
@@ -165,13 +179,54 @@ class MultiModelInterpreterDetector(
             running.set(false)
         }
     }
+    /** 새 메서드: 탐지 + 추적 + 신호위반까지 한 번에 */
+    suspend fun detectWithTraffic(bitmap: Bitmap, rotation: Int): TrafficFrameResult {
+        // 1) 탐지 (기존 detect() 재사용)
+        val dets = detect(bitmap, rotation) // Detection(bbox=픽셀 좌표)
 
-    private fun labelsFor(spec: ModelSpec): List<String> =
-        labelCache.getOrPut(spec.key) {
-            spec.labelMap ?: runCatching {
-                FileUtil.loadLabels(context, "labels/${spec.key}.txt")
-            }.getOrElse { emptyList() }
+        // 2) 라벨 목록 확보 (ByteTrack 카테고리 인덱스에 사용)
+        val spec = requireNotNull(specsByKey[currentKey])
+        val labels: List<String> = labelsFor(spec) // 자동 로드(/assets/labels/<key>.txt)
+
+        // 3) ByteTrack 입력(차량 계열만 추적)
+        val btInputs: List<ByteTrackEngine.Det> = dets.mapNotNull { d ->
+            val idx = labels.indexOf(d.label)
+            if (idx !in TrafficLabels.VEH_IDX) return@mapNotNull null
+            ByteTrackEngine.Det(
+                category = idx,
+                conf = d.score,
+                x = d.box.left, y = d.box.top,
+                w = d.box.width(), h = d.box.height()
+            )
         }
+
+        // 4) compute() → 트랙 결과([0,1] 좌표)
+        val tracksRaw = byteTrack.update(
+            btInputs,
+            normW = bitmap.width.toFloat(),
+            normH = bitmap.height.toFloat()
+        )
+        val trackObjs: List<TrackObj> = tracksRaw.map { it.toTrackObj() }
+
+        // 5) 신호/횡단보도/차량 판정용으로 YOLO 검출을 정규화
+        val detObjs: List<DetObj> = dets.map { it.toNormalizedDetObj(bitmap.width, bitmap.height) }
+
+        // 6) 신호위반 계산
+        val hits: List<com.sos.chakhaeng.core.ai.ViolationEvent> =
+            signalLogic.updateAndDetectViolations(detObjs, trackObjs, System.currentTimeMillis())
+
+        return TrafficFrameResult(
+            detections = dets,
+            tracks = trackObjs,
+            violations = hits
+        )
+    }
+    private fun labelsFor(spec: ModelSpec): List<String> =
+    labelCache.getOrPut(spec.key) {
+        spec.labelMap ?: runCatching {
+            FileUtil.loadLabels(context, "labels/${spec.key}.txt")
+        }.getOrElse { emptyList() }
+    }
 
 
     override fun close() {
