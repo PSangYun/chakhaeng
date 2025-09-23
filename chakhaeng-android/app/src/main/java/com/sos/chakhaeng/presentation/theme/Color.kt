@@ -235,6 +235,31 @@ val PURPLE300 = Color(0xFF8B5CF6)
 val RED300 = Color(0xFFE1392C)
 val LIGHTRED = Color(0xFFFF5858)
 val ORANGE = Color(0xFFFFA500)
+
+// AllBadges 화면용 색상 추가
+object BadgeColors {
+    val UnlockedBackground = lightGreen
+    val LockedBackground = Color(0xFFF8F9FA)
+    val UnlockedChip = naverGreen
+    val LockedChip = Color(0xFFF1F3F4)
+    val DialogUnlockedBackground = Color(0xFFE3F2FD)
+    val DialogLockedBackground = Color(0xFFF5F5F5)
+    val DialogSuccessBackground = Color(0xFFE8F5E8)
+    val DialogSuccessText = darkGreen
+    val DialogGuideBackground = Color(0xFFFFF3E0)
+    val DialogGuideTitle = Color(0xFFE65100)
+    val DialogGuideText = Color(0xFF6D4C41)
+    val UnlockedButton = BLUE300
+    val LockedButton = NEUTRAL400
+}
+
+// AllBadges 그라데이션 색상
+object BadgeGradientColors {
+    val Pink = Color(0xFFfff0f5)
+    val Mint = Color(0xFFe8f4f8)
+    val Sky = Color(0xFFf0f8ff)
+}
+
 object ViolationColors {
     // 배경색
     val All = Color(0xFFD2CFCC)
@@ -254,7 +279,6 @@ object ViolationColors {
     val LowPurpleIcon = Color(0xFF7B1FA2)
     val OthersIcon = Color(0xFF718096)
 }
-
 
 object ReportStatusColors {
     // 배경색 (Background Colors)
