@@ -62,6 +62,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.test.LaneTestActivity"
+            android:exported="true"
+            android:label="Lane Detection Test"
+            android:theme="@style/Theme.LaneTest">
+        </activity>
+
     </application>
 
 </manifest>
