@@ -96,7 +96,7 @@ fun BadgeAcquisitionDialog(
                         text = badge.description,
                         style = chakhaengTypography().bodyMedium,
                         color = onSurfaceVariantLight,
-                        textAlign = TextAlign.Left,
+                        textAlign = TextAlign.Center,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         lineHeight = chakhaengTypography().bodyMedium.lineHeight * 1.2,
