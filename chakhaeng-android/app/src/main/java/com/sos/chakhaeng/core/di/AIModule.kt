@@ -8,6 +8,7 @@ import com.sos.chakhaeng.core.ai.InputRange
 import com.sos.chakhaeng.core.ai.ModelSpec
 import com.sos.chakhaeng.core.ai.MultiModelInterpreterDetector
 import com.sos.chakhaeng.core.ai.Normalization
+import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,4 +45,8 @@ object AIModule {
             specs = specs
         )
     }
+
+    @Provides
+    @Singleton
+    fun provideYuv(@ApplicationContext context: Context): YuvToRgbConverter = YuvToRgbConverter(context)
 }

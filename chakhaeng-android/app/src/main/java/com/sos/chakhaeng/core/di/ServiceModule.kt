@@ -1,8 +1,10 @@
 package com.sos.chakhaeng.core.di
 
 import com.sos.chakhaeng.data.network.api.AuthApi
+import com.sos.chakhaeng.data.network.api.FcmApi
 import com.sos.chakhaeng.data.network.api.HomeApi
 import com.sos.chakhaeng.data.network.api.ReportApi
+import com.sos.chakhaeng.data.network.api.StatisticsApi
 import com.sos.chakhaeng.data.network.api.UserApi
 import com.sos.chakhaeng.data.network.api.VideoApi
 import com.sos.chakhaeng.data.network.api.ViolationApi
@@ -60,4 +62,16 @@ object ServiceModule {
     fun provideVideoApi(
         @Named("auth") retrofit: Retrofit
     ): VideoApi = retrofit.create(VideoApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideStatisticsApi(@Named("auth") retrofit: Retrofit): StatisticsApi {
+        return retrofit.create(StatisticsApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFcmApi(
+        @Named("auth") retrofit: Retrofit
+    ): FcmApi = retrofit.create(FcmApi::class.java)
 }

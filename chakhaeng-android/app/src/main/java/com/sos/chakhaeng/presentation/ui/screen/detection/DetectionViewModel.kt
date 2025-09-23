@@ -1,7 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
 import android.graphics.Bitmap
-import android.os.SystemClock
 import android.util.Log
 import androidx.camera.core.Camera
 import androidx.lifecycle.ViewModel
@@ -13,17 +12,22 @@ import com.sos.chakhaeng.core.ai.TrafficFrameResult
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.domain.model.ViolationType
-import com.sos.chakhaeng.domain.model.violation.ViolationEvent
-import com.sos.chakhaeng.domain.usecase.DetectionUseCase
-import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
+import com.sos.chakhaeng.domain.usecase.violation.DetectionUseCase
+import com.sos.chakhaeng.domain.usecase.violation.GetViolationsInRangeUseCase
 import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
+import com.sos.chakhaeng.domain.model.violation.ViolationEvent
+import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.LocalDateTime
@@ -33,6 +37,7 @@ import javax.inject.Inject
 class DetectionViewModel @Inject constructor(
     private val navigator: Navigator,
     private val detectionUseCase: DetectionUseCase,
+    private val getViolationsInRangeUseCase: GetViolationsInRangeUseCase,
     private val detector: Detector,
     private val processDetectionsUseCase: ProcessDetectionsUseCase
 ) : ViewModel() {
@@ -96,18 +101,11 @@ class DetectionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // 1) warmup을 먼저 끝낸다 (동기적으로 기다리기)
-            withContext(Dispatchers.Default) {
-                detector.warmup()
-            }
-            detectorReady.value = true
-            Log.d("DetectionVM", "detector warmup done")
-
-            // 2) 그 다음에 detectionActive를 구독/시작
             detectionUseCase.isDetectionActive.collect { isActive ->
                 if (isActive) {
                     initializeCamera()
                     generateSampleViolationData()
+                    getViolationsInRangeUseCase("2025-09-12T05:59:21.093Z", "2025-09-22T05:59:21.093Z")
                 } else {
                     pauseCamera()
                 }
@@ -251,8 +249,6 @@ class DetectionViewModel @Inject constructor(
         return true
     }
 
-
-
     fun initializeCamera() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -302,7 +298,9 @@ class DetectionViewModel @Inject constructor(
     }
 
     fun onViolationClick(violation: ViolationDetectionUiModel) {
-        Log.d("DetectionViewModel", "위반 선택됨: ${violation.id}")
+        viewModelScope.launch {
+            navigator.navigate(Route.ViolationDetail(violation.id))
+        }
     }
 
     fun clearError() {
@@ -323,7 +321,7 @@ class DetectionViewModel @Inject constructor(
     private fun generateSampleViolationData() {
         val sampleViolations = listOf(
             ViolationUiMapper.mapToUiModel(
-                id = "1",
+                id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 type = ViolationType.WRONG_WAY,
                 licenseNumber = "12가1234",
                 location = "강남구 테헤란로 123",
@@ -332,7 +330,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id ="1",
+                id ="3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 type = ViolationType.SIGNAL,
                 licenseNumber = "34나5678",
                 location = "서초구 서초대로 456",
@@ -341,7 +339,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id ="1",
+                id ="3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 type = ViolationType.LANE,
                 licenseNumber = "56다9012",
                 location = "마포구 월드컵로 789",
@@ -350,7 +348,7 @@ class DetectionViewModel @Inject constructor(
                 thumbnailUrl = null
             ),
             ViolationUiMapper.mapToUiModel(
-                id = "1",
+                id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 type = ViolationType.NO_PLATE,
                 licenseNumber = "78라3456",
                 location = "용산구 한강대로 321",

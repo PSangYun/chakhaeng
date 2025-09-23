@@ -1,8 +1,9 @@
-package com.sos.chakhaeng.presentation.ui.screen.report
+package com.sos.chakhaeng.presentation.ui.screen.reportdetail
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.domain.usecase.map.GetLocationFromAddressUseCase
 import com.sos.chakhaeng.domain.usecase.report.GetReportDetailItemUseCase
 import com.sos.chakhaeng.domain.usecase.video.GetStreamingVideoUrlUseCase
@@ -15,6 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReportDetailViewModel @Inject constructor(
+    private val navigator: Navigator,
     private val getLocationFromAddressUseCase: GetLocationFromAddressUseCase,
     private val getReportDetailItemUseCase: GetReportDetailItemUseCase,
     private val getStreamingVideoUrlUseCase: GetStreamingVideoUrlUseCase
@@ -84,6 +86,12 @@ class ReportDetailViewModel @Inject constructor(
         viewModelScope.launch {
             val url = getStreamingVideoUrlUseCase(objectKey)
             _uiState.value = _uiState.value.copy(streamingUrl = url.url)
+        }
+    }
+
+    fun navigateBack(){
+        viewModelScope.launch {
+            navigator.navigateBack()
         }
     }
 }

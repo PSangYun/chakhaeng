@@ -10,7 +10,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -33,38 +32,44 @@ import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.sos.chakhaeng.core.navigation.BottomTabRoute
 import com.sos.chakhaeng.core.navigation.LaunchedNavigator
 import com.sos.chakhaeng.core.navigation.Route
-import com.sos.chakhaeng.core.session.AuthState
 import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.core.session.SessionManager
 import com.sos.chakhaeng.presentation.theme.ChakHaengTheme
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
 import com.sos.chakhaeng.presentation.ui.screen.detection.DetectionScreen
-import com.sos.chakhaeng.presentation.ui.screen.home.HomeScreen
+import com.sos.chakhaeng.presentation.ui.screen.home.HomeRoute
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
-import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileScreen
-import com.sos.chakhaeng.presentation.ui.screen.report.ReportDetailScreen
-import com.sos.chakhaeng.presentation.ui.screen.report.ReportScreen
-import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsScreen
+import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileRoute
+import com.sos.chakhaeng.presentation.ui.screen.report.ReportRoute
+import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailRoute
+import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsRoute
 import com.sos.chakhaeng.presentation.ui.screen.violationDetail.ViolationDetailScreen
 import dagger.hilt.android.AndroidEntryPoint
-import okhttp3.internal.toImmutableList
+import kotlinx. collections.immutable.toImmutableList
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: MainViewModel by viewModels()
+
     @Inject
     lateinit var googleAuthManager: GoogleAuthManager
 
     @Inject
     lateinit var sessionManager: SessionManager
 
-    private val appEntryViewModel: AppEntryViewModel by viewModels()
+    private var isLoading by mutableStateOf(true)
 
+    private fun performInitialization() {
+        isLoading = false
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        performInitialization()
         splashScreen.setKeepOnScreenCondition {
-            appEntryViewModel.authState.value is AuthState.Loading
+            isLoading
         }
         enableEdgeToEdge()
         setContent {
@@ -72,7 +77,6 @@ class MainActivity : ComponentActivity() {
                 var startDestination: NavKey? by remember { mutableStateOf(null) }
 
                 LaunchedEffect(Unit) {
-                    appEntryViewModel.init(this@MainActivity)
                     startDestination = if (sessionManager.autoLogin()) {
                         BottomTabRoute.Home
                     } else {
@@ -83,21 +87,21 @@ class MainActivity : ComponentActivity() {
                     val navBackStack = rememberNavBackStack(destination)
 
                     LaunchedNavigator(navBackStack)
-
-                    ChakhaengApp(
-                        navBackStack,
-                        googleAuthManager = googleAuthManager,
-                        onTabSelected = {
-                            when (it.route) {
-                                BottomTabRoute.Home -> appEntryViewModel.navigateHome()
-                                BottomTabRoute.Profile -> appEntryViewModel.navigateProfile()
-                                BottomTabRoute.Detect -> appEntryViewModel.navigateDetect()
-                                BottomTabRoute.Report -> appEntryViewModel.navigateReport()
-                                BottomTabRoute.Statistics -> appEntryViewModel.navigateStats()
+                    if (!isLoading) {
+                        ChakhaengApp(
+                            navBackStack,
+                            googleAuthManager = googleAuthManager,
+                            onTabSelected = {
+                                when (it.route) {
+                                    BottomTabRoute.Home -> viewModel.navigateHome()
+                                    BottomTabRoute.Profile -> viewModel.navigateProfile()
+                                    BottomTabRoute.Detect -> viewModel.navigateDetect()
+                                    BottomTabRoute.Report -> viewModel.navigateReport()
+                                    BottomTabRoute.Statistics -> viewModel.navigateStats()
+                                }
                             }
-                        },
-                        appEntryViewModel
-                    )
+                        )
+                    }
                 }
 
             }
@@ -108,10 +112,9 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ChakhaengApp(
-    navBackStack: NavBackStack<NavKey>,
+    navBackStack: NavBackStack,
     googleAuthManager: GoogleAuthManager,
-    onTabSelected: (MainTab) -> Unit,
-    appEntryViewModel: AppEntryViewModel
+    onTabSelected: (MainTab) -> Unit
 ) {
     val currentRoute = navBackStack.lastOrNull()
     val currentTab = when (currentRoute) {
@@ -122,10 +125,7 @@ internal fun ChakhaengApp(
         is BottomTabRoute.Profile -> MainTab.PROFILE
         else -> MainTab.HOME
     }
-
-
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (
                 currentRoute !is Route
@@ -139,6 +139,8 @@ internal fun ChakhaengApp(
         }
     ) { paddingValues ->
         NavDisplay(
+            modifier = Modifier
+                .background(Color.White),
             entryDecorators = listOf(
                 // Add the default decorators for managing scenes and saving state
                 rememberSceneSetupNavEntryDecorator(),
@@ -146,7 +148,6 @@ internal fun ChakhaengApp(
                 rememberViewModelStoreNavEntryDecorator()
             ),
             backStack = navBackStack,
-            onBack = { navBackStack.removeLastOrNull() },
             transitionSpec = {
                 ContentTransform(
                     fadeIn(animationSpec = tween(0)),
@@ -159,42 +160,41 @@ internal fun ChakhaengApp(
                     fadeOut(animationSpec = tween(0)),
                 )
             },
-            modifier = Modifier.background(Color.White),
+            onBack = { navBackStack.removeLastOrNull() },
             entryProvider = { key ->
                 when (key) {
                     is BottomTabRoute.Home -> NavEntry(key) {
-                        HomeScreen(
-                            paddingValues = paddingValues,
+                        HomeRoute(
+                            padding = paddingValues
                         )
                     }
 
                     is BottomTabRoute.Detect -> NavEntry(key) {
                         DetectionScreen(
-                            paddingValues = paddingValues,
-                            appEntryViewModel = appEntryViewModel
-                        )
-                    }
-
-                    is BottomTabRoute.Report -> NavEntry(key) {
-                        ReportScreen(
                             paddingValues = paddingValues
                         )
                     }
 
+                    is BottomTabRoute.Report -> NavEntry(key) {
+                        ReportRoute(
+                            padding = paddingValues
+                        )
+                    }
+
                     is BottomTabRoute.Statistics -> NavEntry(key) {
-                        StatisticsScreen()
+                        StatisticsRoute(padding = paddingValues)
                     }
 
                     is BottomTabRoute.Profile -> NavEntry(key) {
-                        ProfileScreen()
+                        ProfileRoute(padding = paddingValues)
                     }
                     is Route.Login -> NavEntry(key){
                         LoginScreen(googleAuthManager = googleAuthManager)
                     }
                     is Route.ReportDetail -> NavEntry(key){
-                        ReportDetailScreen(
+                        ReportDetailRoute(
+                            padding = paddingValues,
                             reportId = key.reportId,
-                            paddingValues = paddingValues,
                         )
                     }
                     is Route.ViolationDetail -> NavEntry(key){
