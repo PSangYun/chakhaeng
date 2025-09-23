@@ -3,19 +3,16 @@ package com.sos.chakhaeng.core.fcm
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
-import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.sos.chakhaeng.ChakHaengApplication
 import com.sos.chakhaeng.R
 import com.sos.chakhaeng.presentation.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -29,33 +26,52 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var fcmTokenManager: FcmTokenManager
 
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+    }
+
+
     override fun onMessageReceived(message: RemoteMessage) {
         if (message.data.isNotEmpty()) {
-            sendNotificationWithDeepLink(message)
+            sendNotification(message)
+
+            val title = message.notification?.title ?: "착행 알림"
+            val body = message.notification?.body ?: ""
+            val trimmedBody = if (body.length > 2) body.dropLast(2) else body
+            val textToRead = "$trimmedBody 감지되었습니다."
+
+            if (ChakHaengApplication.ttsReady) {
+                ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
+            } else {
+                Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
+            }
         }
     }
 
-    private fun sendNotificationWithDeepLink(remoteMessage: RemoteMessage) {
+    private fun sendNotification(remoteMessage: RemoteMessage) {
         val data = remoteMessage.data
-        Log.d("test2134",data.toString())
+        Log.d("test2134", data.toString())
+
         val intent = Intent(this, MainActivity::class.java).apply {
             flags =
                 Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
             putExtra("title", remoteMessage.notification?.title)
         }
         val pending = PendingIntent.getActivity(
-            this, (System.currentTimeMillis() / 7).toInt(),
+            this,
+            (System.currentTimeMillis() / 7).toInt(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val channelId = "Notice_Notification"
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(
             NotificationChannel(channelId, "Notice", NotificationManager.IMPORTANCE_DEFAULT)
         )
@@ -90,4 +106,5 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
+
 }
