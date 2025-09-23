@@ -10,6 +10,7 @@ import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileUiState
 @Composable
 fun ProfileContent(
     uiState: ProfileUiState,
+    onAllBadgesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -28,7 +29,8 @@ fun ProfileContent(
         // 배지 정보 섹션
         item {
             BadgeInfoSection(
-                badges = uiState.badges
+                badges = uiState.badges,
+                onAllBadgesClick = onAllBadgesClick
             )
         }
 
