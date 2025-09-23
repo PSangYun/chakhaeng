@@ -6,11 +6,11 @@ import com.sos.chakhaeng.data.network.dto.request.RefreshTokenRequest
 import com.sos.chakhaeng.data.network.api.AuthApi
 import com.sos.chakhaeng.data.datastore.TokenStore
 import com.sos.chakhaeng.domain.model.TokenBundle
+import com.sos.chakhaeng.domain.model.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
@@ -110,7 +110,7 @@ class SessionManager @Inject constructor(
         }
     }
 
-    suspend fun onLogin(signInData: SignInData, nowMs: Long = System.currentTimeMillis()) {
+    suspend fun onLogin(signInData: SignInData, user: User? = null, nowMs: Long = System.currentTimeMillis()) {
         fun toExpiresAt(inSeconds: Long?): Long? {
             if (inSeconds == null) return null
             val totalMs = inSeconds * 1000L
@@ -128,8 +128,11 @@ class SessionManager @Inject constructor(
             refreshTokenExpiresAt = refreshAt
         )
 
-        // 지금은 프로필 없음: TokenStore.save(token, user = null)
-        tokenStore.save(bundle, null)
+        // User 정보와 함께 저장
+        tokenStore.save(bundle, user)
+
+        // AuthState 업데이트
+        _authState.value = AuthState.Authenticated(user)
     }
 
     suspend fun logout() {

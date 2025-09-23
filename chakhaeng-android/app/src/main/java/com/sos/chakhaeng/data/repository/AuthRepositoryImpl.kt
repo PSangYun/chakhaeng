@@ -1,27 +1,48 @@
 package com.sos.chakhaeng.data.repository
 
+import com.sos.chakhaeng.core.session.AuthState
 import com.google.firebase.messaging.FirebaseMessaging
 import com.sos.chakhaeng.data.datasource.remote.AuthRemoteDataSource
-import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.domain.repository.AuthRepository
 import com.sos.chakhaeng.core.session.SessionManager
+import com.sos.chakhaeng.domain.model.User
 import com.sos.chakhaeng.data.network.api.FcmApi
 import com.sos.chakhaeng.data.network.dto.fcm.FcmRequest
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
-    private val googleAuthManager: GoogleAuthManager,
     private val remote: AuthRemoteDataSource,
     private val session: SessionManager,
     private val fcmApi: FcmApi
 ): AuthRepository {
+
+    // Google 사용자 정보를 저장하기 위한 임시 변수
+    private var currentGoogleUser: User? = null
+
     override suspend fun signInWithGoogle(idToken: String): Result<Boolean>  = runCatching {
         val res = remote.loginWithGoogle(idToken)
-        require(res.success && res.data != null) { res.message ?: "Login failed" }
+        require(res.success && res.data != null) { res.message }
 
-        session.onLogin(res.data)               // 토큰/유저 저장 + 상태 전파
-        res.data.firstLogin            // User 반환
+        // Google 사용자 정보와 함께 세션 저장
+        session.onLogin(res.data, currentGoogleUser)
+        res.data.firstLogin
+    }
+
+    // Google 사용자 정보를 설정하는 메서드 추가
+    override suspend fun setGoogleUser(user: User?) {
+        currentGoogleUser = user
+    }
+
+    override suspend fun getCurrentUser(): User? {
+        return when (val authState = session.authState.value) {
+            is AuthState.Authenticated -> authState.user
+            else -> null
+        }
+    }
+
+    override suspend fun getCurrentAuthState(): AuthState {
+        return session.authState.value
     }
 
     override suspend fun sendFcmToken(newToken: String): Result<Unit> = runCatching {

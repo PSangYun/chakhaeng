@@ -97,15 +97,15 @@ fun LoginScreen(
             ) {
                 GoogleSignInButton(onClick = {
                     scope.launch {
-                        val idToken = googleAuthManager.signInWithGoogle()
-                        viewModel.googleLogin(idToken)
+                        val (idToken, user) = googleAuthManager.signInWithGoogle()
+                        viewModel.googleLogin(idToken, user)
                         viewModel.sendFcmToken()
                     }
                 })
                 NaverSignInButton(onClick ={
                     scope.launch {
-                        val idToken = googleAuthManager.signInWithGoogle()
-                        viewModel.googleLogin(idToken)
+                        val (idToken, user) = googleAuthManager.signInWithGoogle()
+                        viewModel.googleLogin(idToken, user)
                     }
                 })
 //                TermsText(Modifier.padding(bottom = 24.dp))
