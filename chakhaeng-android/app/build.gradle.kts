@@ -1,3 +1,7 @@
+@file:OptIn(KspExperimental::class)
+
+import com.google.devtools.ksp.KspExperimental
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,11 +9,16 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
 }
 
 android {
     namespace = "com.sos.chakhaeng"
     compileSdk = 36
+
+    ksp {
+        useKsp2 = false
+    }
 
     defaultConfig {
         applicationId = "com.sos.chakhaeng"
@@ -46,6 +55,9 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    androidResources {
+        noCompress += "tflite"
     }
 }
 
@@ -94,8 +106,14 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.tensorflow.lite.task.vision)
+    implementation(libs.tensorflow.lite.select.tf.ops)
+    implementation(libs.tensorflow.lite.gpu)
+    implementation(libs.tensorflow.lite.gpu.api)
 
-
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
 
     ksp(libs.hilt.compiler)
 
@@ -131,15 +149,13 @@ dependencies {
     implementation(libs.rxandroid)
 
     // 카메라
-    implementation("androidx.camera:camera-core:1.3.1")
-    implementation("androidx.camera:camera-camera2:1.3.1")
-    implementation("androidx.camera:camera-lifecycle:1.3.1")
-    implementation("androidx.camera:camera-view:1.3.1")
+    implementation(libs.androidx.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
 
     // AI/ML
-    implementation("org.tensorflow:tensorflow-lite:2.13.0")
-    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
+    implementation(libs.tensorflow.lite)
 
     // 음성 (STT/TTS)
     implementation("androidx.compose.material:material-icons-extended")

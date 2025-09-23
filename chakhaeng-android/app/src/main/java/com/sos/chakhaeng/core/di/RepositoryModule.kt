@@ -55,4 +55,5 @@ abstract class RepositoryModule {
     abstract fun bindStatisticsRepository(
         fakeStatisticsRepositoryImpl: FakeStatisticsRepositoryImpl
     ) : StatisticsRepository
+
 }

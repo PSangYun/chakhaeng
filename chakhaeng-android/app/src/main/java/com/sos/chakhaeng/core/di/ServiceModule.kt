@@ -1,6 +1,7 @@
 package com.sos.chakhaeng.core.di
 
 import com.sos.chakhaeng.data.network.api.AuthApi
+import com.sos.chakhaeng.data.network.api.FcmApi
 import com.sos.chakhaeng.data.network.api.HomeApi
 import com.sos.chakhaeng.data.network.api.ReportApi
 import com.sos.chakhaeng.data.network.api.StatisticsApi
@@ -67,4 +68,10 @@ object ServiceModule {
     fun provideStatisticsApi(@Named("auth") retrofit: Retrofit): StatisticsApi {
         return retrofit.create(StatisticsApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideFcmApi(
+        @Named("auth") retrofit: Retrofit
+    ): FcmApi = retrofit.create(FcmApi::class.java)
 }
