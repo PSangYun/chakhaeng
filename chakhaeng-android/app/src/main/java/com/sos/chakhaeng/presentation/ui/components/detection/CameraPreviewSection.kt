@@ -15,12 +15,14 @@ fun CameraPreviewSection(
     isDetectionActive: Boolean,
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onServiceConnected: (CameraRecordingService) -> Unit = {}
 ) {
 
     Box(modifier = modifier.fillMaxSize()) {
         CameraPreview(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            onServiceConnected = onServiceConnected
         )
 
         CameraStatusOverlay(
