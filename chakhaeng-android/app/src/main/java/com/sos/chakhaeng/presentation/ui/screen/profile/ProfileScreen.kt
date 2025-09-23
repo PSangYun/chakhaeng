@@ -1,51 +1,59 @@
+// presentation/ui/screen/profile/ProfileScreen.kt
 package com.sos.chakhaeng.presentation.ui.screen.profile
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.sos.chakhaeng.presentation.theme.BackgroundGray
+import com.sos.chakhaeng.presentation.ui.components.profile.*
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = hiltViewModel()
+    uiState: ProfileUiState,
+    viewModel: ProfileViewModel
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(BackgroundGray)
     ) {
-        Text(
-            text = "프로필",
-            style = MaterialTheme.typography.headlineMedium,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "${uiState.username} (Lv.${uiState.level})",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Text(
-            text = "ESG 지수: ${uiState.esgScore}점",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Text(
-            text = "가챠 포인트: ${uiState.gachaPoints}개",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Text(
-            text = "로그아웃",
-            modifier = Modifier.clickable { viewModel.logout() },
-            style = MaterialTheme.typography.bodyLarge
-        )
+        when {
+            uiState.isLoading -> {
+                LoadingSection(
+                    message = "프로필 정보를 불러오고 있습니다..."
+                )
+            }
 
+            uiState.error != null -> {
+                ErrorSection(
+                    error = uiState.error,
+                    onRetry = { viewModel.refreshProfile() }
+                )
+            }
+
+            uiState.hasData -> {
+                LogoutSection(
+                    onLogoutClick = { viewModel.showLogoutDialog() }
+                )
+
+                ProfileContent(
+                    uiState = uiState
+                )
+            }
+        }
     }
+
+    LogoutConfirmDialog(
+        isVisible = uiState.isLogoutDialogVisible,
+        onConfirm = {
+            viewModel.hideLogoutDialog()
+            viewModel.logout()
+        },
+        onDismiss = {
+            viewModel.hideLogoutDialog()
+        }
+    )
 }

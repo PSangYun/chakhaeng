@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.components.statistics.section
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +29,7 @@ import com.sos.chakhaeng.R
 import com.sos.chakhaeng.domain.model.statistics.ReportStatistics
 import com.sos.chakhaeng.presentation.ui.components.statistics.StatCard
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.theme.naverGreen
+import com.sos.chakhaeng.presentation.ui.components.angledLinearGradientBackground
 
 @Composable
 fun ReportStatisticsSection(
@@ -130,12 +131,18 @@ fun ReportStatisticsSection(
         }
 
         // 신고 성공률 카드
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = naverGreen
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .angledLinearGradientBackground(
+                    colors = listOf(
+                        Color(0xFF06BE34), // 메인 그린
+                        Color(0xFF00CED1), // 다크 터쿠아즈
+                        Color(0xFFFFB6C1).copy(alpha = 0.4f) // 라이트 핑크
+                    ),
+                    angleDeg = 45f,
+                    shape = RoundedCornerShape(20.dp)
+                )
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
