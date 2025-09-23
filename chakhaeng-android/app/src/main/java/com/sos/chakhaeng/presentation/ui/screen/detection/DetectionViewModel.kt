@@ -17,7 +17,6 @@ import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
-import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +36,7 @@ import javax.inject.Inject
 class DetectionViewModel @Inject constructor(
     private val navigator: Navigator,
     private val detectionUseCase: DetectionUseCase,
-    private val getViolationsInRangeUseCase: GetViolationsInRangeUseCase
+    private val getViolationsInRangeUseCase: GetViolationsInRangeUseCase,
     private val detector: Detector,
     private val processDetectionsUseCase: ProcessDetectionsUseCase
 ) : ViewModel() {
