@@ -25,7 +25,7 @@ import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.errorContainerLight
 import com.sos.chakhaeng.presentation.theme.errorLight
 import com.sos.chakhaeng.presentation.ui.components.map.MapComponent
-import com.sos.chakhaeng.presentation.ui.screen.report.ReportDetailUiState
+import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailUiState
 
 @Composable
 fun LocationInfoSection (

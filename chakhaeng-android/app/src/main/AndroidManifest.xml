@@ -7,7 +7,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!--    카메라 권한-->
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- 오디오 녹음 시 -->
@@ -47,7 +48,13 @@
             android:name=".recording.CameraRecordingService"
             android:exported="false"
             android:foregroundServiceType="camera" />
-
+        <service
+            android:name=".core.fcm.FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
         <activity
             android:name=".presentation.main.MainActivity"
             android:supportsPictureInPicture="true"
@@ -62,6 +69,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.test.LaneTestActivity"
+            android:exported="true"
+            android:label="Lane Detection Test"
+            android:theme="@style/Theme.LaneTest">
+        </activity>
+
     </application>
 
 </manifest>

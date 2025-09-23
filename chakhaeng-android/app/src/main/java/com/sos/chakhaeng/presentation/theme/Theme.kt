@@ -271,7 +271,7 @@ fun ChakHaengTheme(
   MaterialTheme(
     colorScheme = colorScheme,
     typography = chakhaengTypography(),
-    content = content
+    content = { content() }
   )
 }
 
