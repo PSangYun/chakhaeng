@@ -12,4 +12,15 @@
         <!-- 스플래시 스크린 이후 전환될 테마 지정 -->
         <item name="postSplashScreenTheme">@style/Theme.ChakHaeng</item>
     </style>
+
+    <!-- LaneTestActivity 전용 Theme -->
+    <style name="Theme.LaneTest" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorOnSecondary">@color/colorOnSecondary</item>
+    </style>
+
+
 </resources>
