@@ -21,7 +21,7 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val navigator: Navigator,
     private val googleLoginUseCase: GoogleLoginUseCase,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
     private val sendFcmTokenUseCase: SendFcmTokenUseCase
 ) : ViewModel() {
 
