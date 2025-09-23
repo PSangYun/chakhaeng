@@ -1,5 +1,7 @@
 package com.sos.chakhaeng.core.ai
 
+import android.util.Log
+
 class SignalViolationDetection(private val vehicleLabels: Set<String> = setOf("car","motorcycle","bicycle","kickboard","lovebug"),
                                private val crosswalkLabel: String = "crosswalk",
                                private val vehicularSignalPrefix: String = "vehicular_signal_",
@@ -60,6 +62,11 @@ class SignalViolationDetection(private val vehicleLabels: Set<String> = setOf("c
                             currBottomY <  crosswalkTopY - crossingTol
 
                 if (crossedUp && t.id !in recordedInThisPhase) {
+                    Log.w(
+                        "SignalViolation",
+                        "RED-CROSS id=${t.id} label=${t.label} ts=$nowMs " +
+                                "prevY=${"%.3f".format(prevY!!)} currY=${"%.3f".format(currBottomY)} topY=${"%.3f".format(crosswalkTopY)}"
+                    )
                     violations += ViolationEvent(
                         // TODO: 네 프로젝트의 ViolationEvent 필드에 맞게 세팅
                         trackId = t.id,
@@ -84,6 +91,12 @@ class SignalViolationDetection(private val vehicleLabels: Set<String> = setOf("c
                         val acc = (accumLeftDx[t.id] ?: 0f) + stepDx // 음수 누적
                         accumLeftDx[t.id] = acc
                         if (acc <= -lateralAccumThresh && t.id !in recordedInThisPhase) {
+                            Log.w(
+                                "SignalViolation",
+                                "RED-MOVE-LEFT id=${t.id} label=${t.label} ts=$nowMs " +
+                                        "accLeftDx=${"%.3f".format(acc)} stepDx=${"%.3f".format(stepDx)} " +
+                                        "band=[${"%.3f".format(crosswalkTopY)}..${"%.3f".format(crosswalkBottomY)}] y=${"%.3f".format(currBottomY)}"
+                            )
                             violations += ViolationEvent(
                                 // TODO: 프로젝트의 ViolationEvent 필드에 맞게 세팅
                                 trackId = t.id,

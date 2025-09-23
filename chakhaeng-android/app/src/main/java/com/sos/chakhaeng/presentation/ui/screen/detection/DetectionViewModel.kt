@@ -210,6 +210,21 @@ class DetectionViewModel @Inject constructor(
                     }
                 }
 
+                // ===== 여기부터 로그 출력 =====
+                val thisW = bitmap.width
+                val thisH = bitmap.height
+                val LOG_TAG_DET = "DetRT"
+                val LOG_EVERY_N_FRAMES = 2  // 5프레임마다 로그
+
+                if (frameIndex % LOG_EVERY_N_FRAMES == 0L) {
+                    // 1) 요약 로그: 라벨별 개수
+                    val byLabel = merged.groupingBy { it.label }.eachCount()
+                    val summary = byLabel.entries
+                        .sortedByDescending { it.value }
+                        .joinToString { "${it.key} x${it.value}" }
+                    android.util.Log.i(LOG_TAG_DET, "frame#$frameIndex dets=${merged.size} :: $summary")
+                }
+
                 withContext(Dispatchers.Main) {
 //                    _detections.value = merged
 //                    _violations.value = processDetectionsUseCase(merged)
