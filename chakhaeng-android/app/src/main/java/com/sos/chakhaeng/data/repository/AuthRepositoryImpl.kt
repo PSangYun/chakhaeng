@@ -1,15 +1,20 @@
 package com.sos.chakhaeng.data.repository
 
 import com.sos.chakhaeng.core.session.AuthState
+import com.google.firebase.messaging.FirebaseMessaging
 import com.sos.chakhaeng.data.datasource.remote.AuthRemoteDataSource
 import com.sos.chakhaeng.domain.repository.AuthRepository
 import com.sos.chakhaeng.core.session.SessionManager
 import com.sos.chakhaeng.domain.model.User
+import com.sos.chakhaeng.data.network.api.FcmApi
+import com.sos.chakhaeng.data.network.dto.fcm.FcmRequest
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
     private val remote: AuthRemoteDataSource,
-    private val session: SessionManager
+    private val session: SessionManager,
+    private val fcmApi: FcmApi
 ): AuthRepository {
 
     // Google 사용자 정보를 저장하기 위한 임시 변수
@@ -38,5 +43,10 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentAuthState(): AuthState {
         return session.authState.value
+    }
+
+    override suspend fun sendFcmToken(newToken: String): Result<Unit> = runCatching {
+        val fcmRequest = FcmRequest(newToken,"ANDROID")
+        fcmApi.sendToken(request = fcmRequest)
     }
 }

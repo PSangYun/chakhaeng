@@ -8,4 +8,6 @@ interface AuthRepository {
     suspend fun setGoogleUser(user: User?)
     suspend fun getCurrentUser(): User?
     suspend fun getCurrentAuthState(): AuthState
+
+    suspend fun sendFcmToken(newToken: String): Result<Unit>
 }
