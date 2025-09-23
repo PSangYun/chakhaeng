@@ -21,7 +21,7 @@ public class PushService {
         if (tokens.isEmpty()) return;
 
         String title = "위반 감지";
-        String body  = String.format("[%s] %s 발생", type, occurredAt);
+        String body  = String.format("%s 발생", type);
 
         Map<String, String> data = Map.of(
                 "kind", "VIOLATION_DETECTED",
