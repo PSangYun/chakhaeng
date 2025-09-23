@@ -3,10 +3,14 @@ package com.sos.chakhaeng.core.ai
 class SignalViolationDetection(private val vehicleLabels: Set<String> = setOf("car","motorcycle","bicycle","kickboard","lovebug"),
                                private val crosswalkLabel: String = "crosswalk",
                                private val vehicularSignalPrefix: String = "vehicular_signal_",
-                               private val crossingTol: Float = 0.01f   // y축 잡음 허용 (정규화 기준, ≈ 1% 높이)
+                               private val crossingTol: Float = 0.01f,   // y축 잡음 허용 (정규화 기준, ≈ 1% 높이)
+                               private val lateralStepTol: Float = 0.004f, // 프레임 간 최소 왼쪽 이동량(정규화)
+                               private val lateralAccumThresh: Float = 0.03f // 횡단보도 위에서 왼쪽 누적 이동 임계(정규화)
 ) {
     // 상태: 이전 프레임의 차량 바닥 y, 현재 red phase에서 이미 기록한 차량
     private val prevBottomY = mutableMapOf<Int, Float>()
+    private val prevCenterX = mutableMapOf<Int, Float>()
+    private val accumLeftDx = mutableMapOf<Int, Float>() // 음수(왼쪽)로 누적
     private var isRed = false
     private var phaseId = 0
     private val recordedInThisPhase = mutableSetOf<Int>()
@@ -25,31 +29,39 @@ class SignalViolationDetection(private val vehicleLabels: Set<String> = setOf("c
         val redNow = primarySignal?.let { isRedSignal(it.label) } ?: false
 
         // 3) 횡단보도 선택: 카메라에 가장 가까워 보이는(= 화면 아래쪽) 횡단보도 1개
-        val crosswalks = detections.filter { it.label == crosswalkLabel }
-        val targetCrosswalk = crosswalks.maxByOrNull { it.box.yTop }  // y가 클수록 아래에 있음
-        val crosswalkTopY = targetCrosswalk?.box?.yTop
+        val crosswalk = detections.filter { it.label == crosswalkLabel }
+            .maxByOrNull { it.box.yTop }
+        val cw = crosswalk?.box
+        val crosswalkTopY = cw?.yTop
+        val crosswalkBottomY = cw?.let { it.yTop + it.h }
 
         // phase 관리: 빨간불 진입 시 위반 중복 카운트 초기화
-        if (redNow && !isRed) { phaseId++; recordedInThisPhase.clear() }
+        if (redNow && !isRed) { phaseId++; recordedInThisPhase.clear(); accumLeftDx.clear() }
         isRed = redNow
 
         // 4) 차량 트랙만 선별
         val vehicleTracks = tracks.filter { it.label in vehicleLabels }
-
         val violations = mutableListOf<ViolationEvent>()
 
         if (isRed && crosswalkTopY != null) {
+            val topY = cw.yTop
+            val bottomY = cw.yTop + cw.h
             for (t in vehicleTracks) {
-                val (_, currBottomY) = t.box.bottomCenter()
+                val (currCx, currBottomY) = t.box.bottomCenter()
                 val prevY = prevBottomY[t.id]
+                val prevX = prevCenterX[t.id]
 
-                // "아래(=prev >= topY)" → "위(=curr < topY - tol)" 로 처음 넘어가면 위반
-                if (prevY != null &&
-                    prevY >= crosswalkTopY - crossingTol &&
-                    currBottomY < crosswalkTopY - crossingTol &&
-                    t.id !in recordedInThisPhase
-                ) {
+                /// -----------------------------
+                // A) 세로 경계선 교차(기존 규칙)
+                // -----------------------------
+                val crossedUp =
+                    prevY != null &&
+                            prevY >= crosswalkTopY - crossingTol &&
+                            currBottomY <  crosswalkTopY - crossingTol
+
+                if (crossedUp && t.id !in recordedInThisPhase) {
                     violations += ViolationEvent(
+                        // TODO: 네 프로젝트의 ViolationEvent 필드에 맞게 세팅
                         trackId = t.id,
                         whenMs = nowMs,
                         vehicleLabel = t.label,
@@ -59,8 +71,43 @@ class SignalViolationDetection(private val vehicleLabels: Set<String> = setOf("c
                     recordedInThisPhase += t.id
                 }
 
+                // --------------------------------------------
+                // B) 횡단보도 "영역 안"에서 왼쪽으로 쭉 이동(신규 규칙)
+                // --------------------------------------------
+                val insideCrosswalkBand =
+                    currBottomY <= bottomY + crossingTol &&
+                            currBottomY >= topY - crossingTol
+
+                if (insideCrosswalkBand && prevX != null) {
+                    val stepDx = currCx - prevX // 왼쪽 이동이면 stepDx < 0
+                    if (stepDx <= -lateralStepTol) {
+                        val acc = (accumLeftDx[t.id] ?: 0f) + stepDx // 음수 누적
+                        accumLeftDx[t.id] = acc
+                        if (acc <= -lateralAccumThresh && t.id !in recordedInThisPhase) {
+                            violations += ViolationEvent(
+                                // TODO: 프로젝트의 ViolationEvent 필드에 맞게 세팅
+                                trackId = t.id,
+                                whenMs = nowMs,
+                                vehicleLabel = t.label,
+                                crosswalkTopY = crosswalkTopY,
+                                bottomCenterY = currBottomY
+                            )
+                            recordedInThisPhase += t.id
+                            // 같은 phase에서 같은 차량의 중복 트리거 방지
+                            accumLeftDx[t.id] = 0f
+                        }
+                    } else if (stepDx > 0f) {
+                        // 오른쪽 이동/정지면 누적을 서서히 해제(또는 즉시 리셋)
+                        accumLeftDx.remove(t.id)
+                    }
+                } else {
+                    // 횡단보도 영역 밖이면 누적 리셋
+                    accumLeftDx.remove(t.id)
+                }
+
                 // 상태 갱신
                 prevBottomY[t.id] = currBottomY
+                prevCenterX[t.id] = currCx
             }
         } else {
             // 빨간불이 아니면 위치만 갱신하고, 이전 phase 기록은 유지

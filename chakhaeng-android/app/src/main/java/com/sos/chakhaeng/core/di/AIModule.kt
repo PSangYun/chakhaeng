@@ -24,15 +24,16 @@ object AIModule {
     fun provideDetector(@ApplicationContext context: Context): Detector {
         val specs = listOf(
             ModelSpec(
-                key = "yolov8s",
-                assetPath = "models/yolov8s.tflite", // ✅ 임시 YOLO 모델 파일명
-                numClasses = 80,                            // COCO 80 클래스
+                key = "yolo11s",
+                assetPath = "models/yolo11_float16.tflite", // ✅ 임시 YOLO 모델 파일명
+                numClasses = 26,                            // COCO 80 클래스
                 maxDetections = 8400,                      // YOLOv8 640 입력 기준
                 preferInputSize = 640,                     // 보통 640
                 inputRange = InputRange.FLOAT32_0_1,       // fp16/float32 모델이면 0~1 정규화
                 colorOrder = ColorOrder.RGB,               // 일반적으로 RGB
                 labelMap = null                            // /assets/labels/yolov8s.txt 있으면 자동 로드
-            )
+            ),
+
         )
 
         val backend = Backend.GPU // 필요 시 Backend.NNAPI / Backend.GPU
