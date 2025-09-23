@@ -4,6 +4,7 @@ import com.sos.chakhaeng.data.network.dto.response.violation.UploadUrl
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
 
 data class ViolationDetailUiState(
+    val isLoading: Boolean = false,
     val isEditing: Boolean = false,
     val isUploading: Boolean = false,
     val uploadProgress: Float = 0f,
