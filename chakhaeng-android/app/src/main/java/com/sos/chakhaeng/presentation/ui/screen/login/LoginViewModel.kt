@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.messaging.FirebaseMessaging
 import com.sos.chakhaeng.core.navigation.BottomTabRoute
 import com.sos.chakhaeng.core.navigation.Navigator
+import com.sos.chakhaeng.domain.model.User
+import com.sos.chakhaeng.domain.repository.AuthRepository
 import com.sos.chakhaeng.domain.usecase.auth.GoogleLoginUseCase
 import com.sos.chakhaeng.domain.usecase.auth.SendFcmTokenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +21,7 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val navigator: Navigator,
     private val googleLoginUseCase: GoogleLoginUseCase,
+    private val authRepository: AuthRepository,
     private val sendFcmTokenUseCase: SendFcmTokenUseCase
 ) : ViewModel() {
 
@@ -28,17 +31,21 @@ class LoginViewModel @Inject constructor(
     fun navigateHome() = viewModelScope.launch {
         navigator.navigate(route = BottomTabRoute.Home)
     }
-    fun googleLogin(idToken: String?) {
+    fun googleLogin(idToken: String?, user: User? = null) {
         viewModelScope.launch {
             if (idToken.isNullOrBlank()) {
                 _uiState.value = LoginUiState.Error("Google 인증이 취소되었거나 계정이 없습니다.")
                 return@launch
             }
             _uiState.value = LoginUiState.Loading
+
+            // Google 사용자 정보를 AuthRepository에 설정
+            authRepository.setGoogleUser(user)
+
             val result = googleLoginUseCase(idToken)
             result
                 .onSuccess {
-                    user ->
+                    loginResult ->
                     _uiState.value = LoginUiState.Success
                     navigateHome()
                 }

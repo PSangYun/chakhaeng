@@ -7,6 +7,7 @@ import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.sos.chakhaeng.BuildConfig
+import com.sos.chakhaeng.domain.model.User
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
@@ -34,8 +35,8 @@ class GoogleAuthManager @Inject constructor(
      * 실패 시 null.
      */
 
-    suspend fun signInWithGoogle(): String? = runCatching {
-        credentialManager
+    suspend fun signInWithGoogle(): Pair<String?, User?> = runCatching {
+        val credential = credentialManager
             .getCredential(
                 request = buildGetCredentialRequest(),
                 context = context
@@ -43,10 +44,19 @@ class GoogleAuthManager @Inject constructor(
             .credential
             .data
             .let(GoogleIdTokenCredential.Companion::createFrom)
-            .idToken
+
+        val idToken = credential.idToken
+        val user = User(
+            id = credential.id,
+            email = credential.id, // Google ID는 이메일
+            name = credential.displayName ?: "",
+            pictureUrl = credential.profilePictureUri?.toString() ?: ""
+        )
+
+        idToken to user
     }
         .onFailure { e ->
             Log.e(TAG, "signInWithGoogle failed", e)
         }
-        .getOrNull()
+        .getOrNull() ?: (null to null)
 }
