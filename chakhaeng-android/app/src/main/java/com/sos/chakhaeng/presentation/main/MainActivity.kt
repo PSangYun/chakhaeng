@@ -40,6 +40,7 @@ import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
 import com.sos.chakhaeng.presentation.ui.screen.detection.DetectionScreen
 import com.sos.chakhaeng.presentation.ui.screen.home.HomeRoute
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
+import com.sos.chakhaeng.presentation.ui.screen.mission.MissionRoute
 import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileRoute
 import com.sos.chakhaeng.presentation.ui.screen.report.ReportRoute
 import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailRoute
@@ -213,6 +214,12 @@ internal fun ChakhaengApp(
 
                     is Route.AllBadges -> NavEntry(key) {
                         AllBadgesRoute(
+                            navBackStack = navBackStack
+                        )
+                    }
+
+                    is Route.Mission -> NavEntry(key) {
+                        MissionRoute(
                             navBackStack = navBackStack
                         )
                     }
