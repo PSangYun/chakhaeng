@@ -40,17 +40,6 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         if (message.data.isNotEmpty()) {
             sendNotification(message)
-
-            val title = message.notification?.title ?: "착행 알림"
-            val body = message.notification?.body ?: ""
-            val trimmedBody = if (body.length > 2) body.dropLast(2) else body
-            val textToRead = "$trimmedBody 감지되었습니다."
-
-            if (ChakHaengApplication.ttsReady) {
-                ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
-            } else {
-                Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
-            }
         }
     }
 

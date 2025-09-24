@@ -69,7 +69,7 @@ class NoHelmetRule @Inject constructor(
             if (nh != null) {
                 val veh = if (listOf("kickboard","e-scooter","scooter").any { v.label.equals(it, true) }) "KICKBOARD" else "MOTORCYCLE"
                 val conf = min(p.score, min(v.score, nh.score))
-                val evt = ViolationEvent(type = "NO_HELMET_$veh", confidence = conf)
+                val evt = ViolationEvent(type = "헬멧 미착용", confidence = conf)
                 val region = union(p.box, v.box)
                 if (throttle.allow(evt, region)) events += evt
                 continue
@@ -79,7 +79,7 @@ class NoHelmetRule @Inject constructor(
             if (!hasHelmetOnHead) {
                 val veh = if (listOf("kickboard","e-scooter","scooter").any { v.label.equals(it, true) }) "KICKBOARD" else "MOTORCYCLE"
                 val conf = min(p.score, v.score) * 0.75f
-                val evt = ViolationEvent(type = "NO_HELMET_SUSPECTED_$veh", confidence = conf)
+                val evt = ViolationEvent(type = "헬멧 미착용", confidence = conf)
                 val region = union(p.box, v.box)
                 if (throttle.allow(evt, region)) events += evt
             }
