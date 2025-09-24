@@ -6,7 +6,7 @@ import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.ai.geom.iou01
 
 class ViolationThrottle(
-    private val cooldownMs: Long = 4000L,
+    private val cooldownMs: Long = 10000L,
     private val dedupIou: Float = 0.30f,
 ) {
     private data class Seen(val whenMs: Long, val box: RectF, val type: String)
