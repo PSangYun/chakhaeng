@@ -49,7 +49,9 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.sos.chakhaeng.core.ai.Detector
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
+import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -72,11 +74,12 @@ import javax.inject.Inject
 
 private const val TAG = "CamSvc"
 
+@AndroidEntryPoint
 class CameraRecordingService : LifecycleService() {
 
     @Inject lateinit var detector: Detector
     @Inject lateinit var processDetectionsUseCase: ProcessDetectionsUseCase
-
+    @Inject lateinit var detectionSessionHolder: DetectionSessionHolder
     companion object {
         const val CHANNEL_ID = "record_cam_channel"
         const val NOTI_ID = 7771
@@ -209,9 +212,14 @@ class CameraRecordingService : LifecycleService() {
             ACTION_START -> lifecycleScope.launch {
                 // UI가 아직 없어도 Headless로 먼저 바인딩 보장
                 if (!cameraBound) ensureCamera(HeadlessSurfaceProvider())
+                detectionSessionHolder.start()
                 startBuffering()
             }
-            ACTION_STOP -> { stopBuffering(); stopSelf() }
+            ACTION_STOP -> {
+                stopBuffering()
+                stopSelf()
+                detectionSessionHolder.clear()
+            }
             ACTION_OPEN -> {
                 val launch = packageManager.getLaunchIntentForPackage(packageName)
                 launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -249,14 +257,15 @@ class CameraRecordingService : LifecycleService() {
             .setTargetRotation(rotation)
             .build().also { it.setSurfaceProvider(surfaceProvider) }
 
-        // (선택) ImageAnalysis는 안정화 후 추가
         imageAnalysis = null
-        // imageAnalysis = ImageAnalysis.Builder()
-        //     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-        //     .setImageQueueDepth(1)
-        //     .setTargetRotation(rotation)
-        //     .setTargetResolution(android.util.Size(320, 180))
-        //     .build().apply { setAnalyzer(analysisExecutor, ::analyzeFrame) }
+        imageAnalysis = ImageAnalysis.Builder()
+             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+             .setImageQueueDepth(1)
+             .setTargetRotation(rotation)
+             .setTargetResolution(android.util.Size(320, 180))
+             .build().apply {
+                 setAnalyzer(analysisExecutor, ::analyzeFrame)
+         }
 
         provider.unbindAll()
         provider.bindToLifecycle(

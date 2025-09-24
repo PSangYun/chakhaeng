@@ -95,6 +95,7 @@ fun DetectionScreen(
             // 하단 위반 목록
             if (!uiState.isFullscreen) {
                 ViolationDetectionSection(
+                    isActive = uiState.isDetectionActive,
                     selectedFilter = uiState.selectedViolationFilter,
                     violations = uiState.filteredViolations,
                     onFilterSelected = viewModel::onViolationFilterSelected,

@@ -4,6 +4,8 @@ import android.util.Log
 import com.sos.chakhaeng.data.datasource.remote.ViolationRemoteDataSource
 import com.sos.chakhaeng.data.mapper.ViolationDataMapper.toDomain
 import com.sos.chakhaeng.data.mapper.ViolationDataMapper.toRequest
+import com.sos.chakhaeng.data.network.api.ViolationApi
+import com.sos.chakhaeng.data.network.dto.request.violation.DetectViolationRequest
 import com.sos.chakhaeng.data.network.dto.request.violation.ViolationRangeRequest
 import com.sos.chakhaeng.domain.model.violation.GetViolationDetail
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
@@ -14,6 +16,7 @@ import javax.inject.Inject
 
 class ViolationRepositoryImpl @Inject constructor(
     private val remote : ViolationRemoteDataSource,
+    private val api : ViolationApi
 ) : ViolationRepository {
 
     override suspend fun submitViolation(entity: ViolationEntity): Result<ViolationSubmit> =
@@ -45,5 +48,22 @@ class ViolationRepositoryImpl @Inject constructor(
         val res = remote.getViolationDetail(violationId)
         check(res.success) { res.message }
         requireNotNull(res.data) { "해당 탐지 상세 정보 데이터가 없습니다." }.toDomain()
+    }
+
+    override suspend fun detectViolation(
+        videoId: String,
+        type: String,
+        plate: String,
+        locationText: String,
+        occurredAt: String
+    ): Result<Unit>  = runCatching{
+        val req = DetectViolationRequest(
+            videoId = videoId,
+            type = type,
+            plate = plate,
+            locationText = locationText,
+            occurredAt = occurredAt
+        )
+        api.detectViolation(req)
     }
 }

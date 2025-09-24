@@ -68,6 +68,7 @@ import com.sos.chakhaeng.presentation.ui.components.violationDetail.TimePickerFi
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationDetailTopBar
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationInfoItem
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationMediaSection
+import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationSubmitDialog
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationTypeField
 import com.sos.chakhaeng.presentation.ui.components.violationDetail.ViolationVideoPlayerDialog
 
@@ -107,6 +108,11 @@ fun ViolationDetailScreen(
             viewModel.load(violationId)
         }
     }
+    LaunchedEffect(state.videoObjectKey){
+        if(state.videoObjectKey != null){
+            viewModel.loadVideo(state.videoObjectKey)
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -121,7 +127,6 @@ fun ViolationDetailScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackBarHostState) },
-        // ✅ 안쪽 Scaffold는 시스템 인셋을 처리하지 않게 해서 중복 방지
         contentWindowInsets = WindowInsets(0)
     ) { innerPadding ->
 
@@ -129,10 +134,8 @@ fun ViolationDetailScreen(
         Column(
             Modifier
                 .fillMaxSize()
-//                .padding(paddingValues)              // 부모 인셋
-                .padding(innerPadding)               // 이 화면 탑바 인셋
-//                .consumeWindowInsets(paddingValues)  // 전파 차단
-//                .consumeWindowInsets(innerPadding)   // 전파 차단
+                .padding(innerPadding)
+                .padding(bottom = paddingValues.calculateBottomPadding())
                 .verticalScroll(rememberScrollState())
                 .background(Color.White)
         ) {
@@ -187,7 +190,7 @@ fun ViolationDetailScreen(
                 }
 
                 ViolationMediaSection(
-                    videoUrl = state.lastUploaded?.downloadUrl.orEmpty(),
+                    videoUrl = state.lastUploaded?.downloadUrl,
                     onRequestUpload = { openVideoPicker() },
                     onRequestEdit = { openVideoPicker() },
                     onRequestDelete = { }
@@ -248,7 +251,7 @@ fun ViolationDetailScreen(
                 ) {
                     Column {
                         Button(
-                            onClick = { viewModel.onSubmit() },
+                            onClick = { viewModel.showSubmitDialog(true) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(64.dp),
@@ -283,7 +286,15 @@ fun ViolationDetailScreen(
             lottieUrl = "https://lottie.host/3828abb2-6b0d-40c4-9878-435899ab26fa/q4i8TQV1qV.json"
         )
     }
-
+    if(state.showSubmitDialog){
+        ViolationSubmitDialog(
+            onDismiss = { viewModel.showSubmitDialog(false) },
+            onConfirm = {
+                viewModel.showSubmitDialog(false)
+                viewModel.onSubmit()
+            }
+        )
+    }
     if (videoDialogVisible && entity.videoUrl.isNotBlank()) {
         ViolationVideoPlayerDialog(
             url = entity.videoUrl,
@@ -291,3 +302,5 @@ fun ViolationDetailScreen(
         )
     }
 }
+
+

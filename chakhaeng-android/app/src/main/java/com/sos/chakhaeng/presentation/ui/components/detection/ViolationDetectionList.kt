@@ -16,14 +16,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
+import com.sos.chakhaeng.core.utils.TimeAgo
+import com.sos.chakhaeng.domain.model.ViolationType
+import com.sos.chakhaeng.domain.model.violation.ViolationInRangeEntity
 
 private const val TAG = "ViolationDetectionList"
 
 @Composable
 fun ViolationDetectionList(
-    violations: List<ViolationDetectionUiModel>,
-    onViolationClick: (ViolationDetectionUiModel) -> Unit,
+    violations: List<ViolationInRangeEntity>,
+    onViolationClick: (ViolationInRangeEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (violations.isEmpty()) {
@@ -49,7 +51,7 @@ fun ViolationDetectionList(
 
 @Composable
 private fun ViolationDetectionItem(
-    violation: ViolationDetectionUiModel,
+    violation: ViolationInRangeEntity,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -85,27 +87,43 @@ private fun ViolationDetectionItem(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = violation.type.displayName,
+                            text = violation.violationType.displayName,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )
                         // 신뢰도
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = when {
-                                violation.confidencePercentage >= 90 -> Color(0xFF4CAF50).copy(alpha = 0.1f)
-                                violation.confidencePercentage >= 70 -> Color(0xFFFF9800).copy(alpha = 0.1f)
-                                else -> Color(0xFFF44336).copy(alpha = 0.1f)
-                            }
+                            color = when (violation.violationType) {
+                                ViolationType.WRONG_WAY -> Color(0xFFFEF2F2)
+                                ViolationType.SIGNAL -> Color(0xFFFEF2F2)
+                                ViolationType.LANE -> Color(0xFFFFF7ED)
+                                ViolationType.NO_PLATE -> Color(0xFFFFF7ED)
+                                ViolationType.NO_HELMET -> Color(0xFFFEFCE8)
+                                ViolationType.OTHERS -> Color(0xFFFEFCE8)
+                                else -> Color(0xFFFEFCE8)
+                            },
                         ) {
                             Text(
-                                text = "${violation.confidencePercentage}%",
+                                text = when (violation.violationType) {
+                                    ViolationType.WRONG_WAY -> "위험"
+                                    ViolationType.SIGNAL -> "위험"
+                                    ViolationType.LANE -> "주의"
+                                    ViolationType.NO_PLATE -> "주의"
+                                    ViolationType.NO_HELMET -> "경미"
+                                    ViolationType.OTHERS -> "경미"
+                                    else -> "경미"
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
-                                color = when {
-                                    violation.confidencePercentage >= 90 -> Color(0xFF4CAF50)
-                                    violation.confidencePercentage >= 70 -> Color(0xFFFF9800)
-                                    else -> Color(0xFFF44336)
+                                color = when (violation.violationType) {
+                                    ViolationType.WRONG_WAY -> Color(0xFFEF4444)
+                                    ViolationType.SIGNAL -> Color(0xFFEF4444)
+                                    ViolationType.LANE -> Color(0xFFF97316)
+                                    ViolationType.NO_PLATE -> Color(0xFFF97316)
+                                    ViolationType.NO_HELMET -> Color(0xFFCA8A04)
+                                    ViolationType.OTHERS -> Color(0xFFCA8A04)
+                                    else -> Color(0xFFCA8A04)
                                 },
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
@@ -113,7 +131,7 @@ private fun ViolationDetectionItem(
                     }
 
                     Text(
-                        text = violation.timeAgo,
+                        text = TimeAgo.from(violation.occurredAt),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -121,13 +139,13 @@ private fun ViolationDetectionItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Row (
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
-                ){
+                ) {
                     Text(
-                        text = violation.licenseNumber,
+                        text = violation.plate ?: "번호판 감지 실패",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
@@ -150,7 +168,7 @@ private fun ViolationDetectionItem(
                         modifier = Modifier.size(12.dp)
                     )
                     Text(
-                        text = violation.location,
+                        text = violation.locationText ?: "구미시 진평동 543-2",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -184,7 +202,7 @@ private fun EmptyViolationList(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "탐지된 위반 사항이 없습니다",
+            text = "탐지 대기중",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
