@@ -42,6 +42,9 @@ internal fun ProfileRoute(
             viewModel = viewModel,
             onAllBadgesClick = {
                 navBackStack.add(Route.AllBadges)
+            },
+            onMissionClick = {
+                navBackStack.add(Route.Mission)
             }
         )
     }
