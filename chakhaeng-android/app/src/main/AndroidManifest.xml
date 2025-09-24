@@ -77,6 +77,15 @@
             android:theme="@style/Theme.LaneTest">
         </activity>
 
+        <activity
+            android:name=".ui.test.CameraLaneActivity"
+            android:exported="true"
+            android:label="Camera Lane Detection Test"
+            android:theme="@style/Theme.LaneTest"
+            android:screenOrientation="portrait"
+            >
+        </activity>
+
     </application>
 
 </manifest>
