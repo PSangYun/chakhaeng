@@ -17,6 +17,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -32,7 +35,10 @@ import com.sos.chakhaeng.presentation.ui.components.detection.CameraInactiveOver
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraLoadingScreen
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraPermissionRequest
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraPreviewSection
+import com.sos.chakhaeng.presentation.ui.components.detection.DetectionOverlay
 import com.sos.chakhaeng.presentation.ui.components.detection.ViolationDetectionSection
+import com.sos.chakhaeng.recording.CameraRecordingService
+import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -42,6 +48,11 @@ fun DetectionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
+
+    var service by remember { mutableStateOf<CameraRecordingService?>(null) }
+    val detections by remember(service) {
+        service?.detectionsFlow() ?: flowOf(emptyList())
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
 
     LaunchedEffect(Unit) {
         if (!cameraPermission.status.isGranted) {
@@ -73,13 +84,23 @@ fun DetectionScreen(
 
                     uiState.isLoading -> CameraLoadingScreen()
                     uiState.isDetectionActive && uiState.isCameraReady -> {
-                        CameraPreviewSection(
-                            isDetectionActive = uiState.isDetectionActive,
-                            isFullscreen = uiState.isFullscreen,
-                            onToggleFullscreen = {
-                                viewModel.toggleFullscreen()
-                            }
-                        )
+                        // ✅ 미리보기 + 오버레이를 한 레이어(Box)에서 함께 그린다
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            CameraPreviewSection(
+                                isDetectionActive = uiState.isDetectionActive,
+                                isFullscreen = uiState.isFullscreen,
+                                onToggleFullscreen = {
+                                    viewModel.toggleFullscreen()
+                                },
+                                onServiceConnected = {svc -> service = svc}
+
+                            )
+                            // ✅ 프리뷰 위를 가득 덮는 바운딩 박스 오버레이
+                            DetectionOverlay(
+                                detections = detections,
+                                modifier = Modifier.matchParentSize()
+                            )
+                        }
                     }
 
                     !uiState.isDetectionActive -> CameraInactiveOverlay()
