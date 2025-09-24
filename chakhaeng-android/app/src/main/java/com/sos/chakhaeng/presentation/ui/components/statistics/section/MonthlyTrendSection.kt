@@ -53,49 +53,81 @@ fun MonthlyTrendSection(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
+            val maxCount = monthlyTrend.maxOfOrNull { it.count } ?: 1
+
             monthlyTrend.forEach { trend ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         modifier = Modifier.weight(1f),
                         text = trend.month,
-                        style = chakhaengTypography().bodyMedium
+                        style = chakhaengTypography().bodyMedium,
                     )
 
                     Row(
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // 진행 바
-                        Box(
-                            modifier = Modifier
-                                .width(100.dp)
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color.Gray.copy(alpha = 0.3f))
+                        // 최대값 대비 비율을 나타내는 진행 바
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxHeight()
-                                    .fillMaxWidth(trend.percentage / 100f)
+                                    .width(80.dp)
+                                    .height(8.dp)
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(primaryLight)
+                                    .background(Color.Gray.copy(alpha = 0.3f))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth(trend.count.toFloat() / maxCount)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(primaryLight)
+                                )
+                            }
+
+                            Text(
+                                text = "${trend.count}건",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Medium
+                                )
                             )
                         }
 
-                        Text(
-                            text = "${trend.count}건",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Medium
+                        // 전월 대비 증감률
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+
+                            Text(
+                                text = if (trend.changeFromPreviousMonth > 0)
+                                    "+${trend.changeFromPreviousMonth}%"
+                                else if (trend.changeFromPreviousMonth < 0)
+                                    "${trend.changeFromPreviousMonth}%"
+                                else
+                                    "변화없음",
+                                style = MaterialTheme.typography.bodySmall,
+
+                                color = if (trend.changeFromPreviousMonth > 0)
+                                    Color.Red
+                                else if (trend.changeFromPreviousMonth < 0)
+                                    primaryLight
+                                else
+                                    Color.Gray,
+                                fontWeight = FontWeight.Bold
                             )
-                        )
+                        }
                     }
+
                 }
             }
 

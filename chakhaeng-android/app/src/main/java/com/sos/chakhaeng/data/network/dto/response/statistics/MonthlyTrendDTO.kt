@@ -9,6 +9,6 @@ data class MonthlyTrendDTO(
     @SerializedName("count")
     val count: Int,
 
-    @SerializedName("percentage")
-    val percentage: Int
+    @SerializedName("changeFromPreviousMonth")
+    val changeFromPreviousMonth: Int
 )
