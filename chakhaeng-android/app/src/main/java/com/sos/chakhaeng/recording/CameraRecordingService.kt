@@ -13,6 +13,7 @@ import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.SurfaceTexture
+import android.hardware.display.DisplayManager
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
@@ -23,8 +24,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Size
+import android.view.Display
+import android.view.OrientationEventListener
 import android.view.Surface
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
@@ -34,6 +39,8 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.FileOutputOptions
@@ -109,7 +116,8 @@ class CameraRecordingService : LifecycleService() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var preview: Preview? = null
     private var videoCapture: VideoCapture<Recorder>? = null
-    private var imageAnalysis: ImageAnalysis? = null // TODO: 안정화 후 붙이기
+    private var imageAnalysis: ImageAnalysis? = null
+    private var displayListener: DisplayManager.DisplayListener? = null
 
     private var currentRecording: Recording? = null
     private var bufferingJob: Job? = null
@@ -120,16 +128,33 @@ class CameraRecordingService : LifecycleService() {
     private val _detections = MutableStateFlow<List<Detection>>(emptyList())
     fun detectionsFlow(): StateFlow<List<Detection>> = _detections
 
-    private val serviceScope = kotlinx.coroutines.CoroutineScope(
-        kotlinx.coroutines.SupervisorJob() + Dispatchers.Default
-    )
+    private var orientationListener: OrientationEventListener? = null
+    private var lastSurfaceRotation: Int = Surface.ROTATION_0
+
+    private fun surfaceRotationFromDegrees(deg: Int): Int {
+        if (deg == OrientationEventListener.ORIENTATION_UNKNOWN) return lastSurfaceRotation
+        // 0/90/180/270으로 양자화 (45° 히스테리시스)
+        return when (((deg + 45) / 90) % 4) {
+            0 -> Surface.ROTATION_0
+            1 -> Surface.ROTATION_90
+            2 -> Surface.ROTATION_180
+            else -> Surface.ROTATION_270
+        }
+    }
 
     private val detectorReady = MutableStateFlow(false)
 
     private val inferGate = kotlinx.coroutines.sync.Semaphore(1)
     private var lastInferTs = 0L
-    private val minGapMs = 100L
-    private lateinit var yuv: YuvToRgbConverter
+    private val minGapMs = 16L
+
+    // 탐지(inference) FPS
+    private var infFpsCnt = 0
+    private var infFpsLast = SystemClock.elapsedRealtime()
+
+    // 입력(analysis callback) FPS
+    private var inFpsCnt = 0
+    private var inFpsLast = SystemClock.elapsedRealtime()
 
     /** 링버퍼 */
     private data class Segment(val file: File, val startMs: Long, var endMs: Long)
@@ -167,6 +192,25 @@ class CameraRecordingService : LifecycleService() {
     }
 
     private var lastPreviewViewRef: WeakReference<PreviewView>? = null
+
+    private fun currentRotation(): Int {
+        // 1순위: OrientationEventListener가 마지막으로 기록한 값
+        val cached = lastSurfaceRotation
+        if (cached in arrayOf(
+                Surface.ROTATION_0, Surface.ROTATION_90,
+                Surface.ROTATION_180, Surface.ROTATION_270
+            )
+        ) return cached
+
+        // 2순위: PreviewView.display
+        val pv = lastPreviewViewRef?.get()
+        pv?.display?.rotation?.let { return it }
+
+        // 3순위: DisplayManager (기기에 따라 null/고정 0일 수 있음)
+        val dm = getSystemService(DISPLAY_SERVICE) as DisplayManager
+        val d = dm.getDisplay(Display.DEFAULT_DISPLAY)
+        return d?.rotation ?: Surface.ROTATION_0
+    }
     @Volatile private var cameraBound = false
 
     private fun runOnMain(block: () -> Unit) {
@@ -210,7 +254,7 @@ class CameraRecordingService : LifecycleService() {
         }
 
         createNotificationChannel()
-        yuv = YuvToRgbConverter(this)
+        yuvConverter = YuvToRgbConverter(this)
         lifecycleScope.launch(Dispatchers.Default) {
             runCatching { detector.warmup() }
                 .onSuccess {
@@ -226,6 +270,35 @@ class CameraRecordingService : LifecycleService() {
         } else {
             startForeground(NOTI_ID, notif)
         }
+
+        val dm = getSystemService(DISPLAY_SERVICE) as DisplayManager
+        displayListener = object : DisplayManager.DisplayListener {
+            override fun onDisplayChanged(id: Int) {
+                val rot = currentRotation()
+                preview?.targetRotation = rot
+                imageAnalysis?.targetRotation = rot
+                videoCapture?.targetRotation = rot
+                Log.d("CamSvc", "rotation updated -> $rot")
+                // 재바인딩은 필요 없음. targetRotation만 갱신하는 게 가장 안전.
+            }
+            override fun onDisplayAdded(id: Int) {}
+            override fun onDisplayRemoved(id: Int) {}
+        }
+        orientationListener = object : OrientationEventListener(this) {
+            override fun onOrientationChanged(degrees: Int) {
+                val rot = surfaceRotationFromDegrees(degrees)
+                if (rot != lastSurfaceRotation) {
+                    lastSurfaceRotation = rot
+                    // ▶ 화면/분석/녹화 모두 갱신
+                    preview?.targetRotation = rot
+                    imageAnalysis?.targetRotation = rot
+                    videoCapture?.targetRotation = rot
+                    Log.d(TAG, "orientation updated -> $rot ($degrees°)")
+                }
+            }
+        }
+        orientationListener?.enable()
+        dm.registerDisplayListener(displayListener, Handler(Looper.getMainLooper()))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -258,8 +331,18 @@ class CameraRecordingService : LifecycleService() {
             cameraProvider = it
         }
 
-        val pv = lastPreviewViewRef?.get()
-        val rotation = pv?.display?.rotation ?: Surface.ROTATION_0
+        val analysisResolution = Size(640, 480) // 또는 960x540, 1280x720로 점증 테스트
+
+        val analysisSelector = ResolutionSelector.Builder()
+            .setResolutionStrategy(
+                ResolutionStrategy(
+                    analysisResolution,
+                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER // 우선 근접 큰 해상도, 없으면 작은 해상도
+                )
+            )
+            .build()
+
+        val rotation = currentRotation()
 
         // VideoCapture: 가볍게 (SD 우선)
         val qualitySelector = QualitySelector.fromOrderedList(
@@ -269,9 +352,18 @@ class CameraRecordingService : LifecycleService() {
         val recorder = Recorder.Builder().setQualitySelector(qualitySelector).build()
         videoCapture = VideoCapture.withOutput(recorder).apply { targetRotation = rotation }
 
+        val previewSelector = ResolutionSelector.Builder()
+            .setResolutionStrategy(
+                ResolutionStrategy(
+                    Size(1280, 720),
+                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
+                )
+            )
+            .build()
+
         // Preview
         preview = Preview.Builder()
-            .setTargetAspectRatio(androidx.camera.core.AspectRatio.RATIO_16_9)
+            .setResolutionSelector(previewSelector)
             .setTargetRotation(rotation)
             .build().also { it.setSurfaceProvider(surfaceProvider) }
 
@@ -279,6 +371,7 @@ class CameraRecordingService : LifecycleService() {
              .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
              .setImageQueueDepth(1)
              .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+             .setResolutionSelector(analysisSelector)
              .setTargetRotation(rotation)
              .build().apply { setAnalyzer(analysisExecutor, ::analyzeFrame) }
 
@@ -291,29 +384,50 @@ class CameraRecordingService : LifecycleService() {
             imageAnalysis!!
         )
         cameraBound = true
-        Log.d(TAG, "ensureCamera(): bound (rotation=$rotation, provider=$surfaceProvider)")
+        Log.d("AI", "ensureCamera(): bound (rotation=$rotation, provider=$surfaceProvider)")
         updateNotification("준비 완료")
     }
 
     @OptIn(ExperimentalGetImage::class)
     private fun analyzeFrame(image: ImageProxy) {
+        var gateAcquired = false
+        var launchedJob = false
         try {
+            inFpsCnt++
+            val nowIn = SystemClock.elapsedRealtime()
+            if (nowIn - inFpsLast >= 1000) {
+                Log.d("AI", "input fps=$inFpsCnt")
+                inFpsCnt = 0
+                inFpsLast = nowIn
+            }
+
             if (!detectorReady.value) { image.close(); return }
 
             val now = android.os.SystemClock.elapsedRealtime()
             if (now - lastInferTs < minGapMs) { image.close(); return }
             if (!inferGate.tryAcquire()) { image.close(); return }
+            gateAcquired = true
             lastInferTs = now
 
             // YUV -> Bitmap
-            val bmp0 = image.toBitmap(yuvConverter)
             val rotation = image.imageInfo.rotationDegrees
+            val bmp0 = image.toBitmap(yuvConverter)
             val bmp = if (rotation != 0) bmp0.rotateDeg(rotation) else bmp0
             image.close() // 비트맵으로 변환했으니 즉시 반납
 
             lifecycleScope.launch(Dispatchers.Default) {
+                launchedJob = true
                 try {
-                    val dets = withTimeoutOrNull(3000) { detector.detect(bmp, /*unused*/0) } ?: emptyList()
+                    Log.d("AI", "analyze rotate=$rotation, bmp=${bmp.width}x${bmp.height}")
+                    val dets = withTimeoutOrNull(3000) { detector.detect(bmp,0) } ?: emptyList()
+
+                    infFpsCnt++
+                    val nowInf = SystemClock.elapsedRealtime()
+                    if (nowInf - infFpsLast >= 1000) {
+                        Log.d("AI", "inference fps=$infFpsCnt")
+                        infFpsCnt = 0
+                        infFpsLast = nowInf
+                    }
 
                     // 🔎 탐지 개수/상위 샘플 로깅
                     if (dets.isEmpty()) {
@@ -336,12 +450,15 @@ class CameraRecordingService : LifecycleService() {
                     Log.e("AI", "detect failed: ${t.message}", t)
                 } finally {
                     if (!bmp.isRecycled) bmp.recycle()
-                    inferGate.release()
+                    if (gateAcquired) inferGate.release()
                 }
             }
         } catch (t: Throwable) {
             Log.e("AI", "analyzeFrame error: ${t.message}", t)
             try { image.close() } catch (_: Throwable) {}
+            if (gateAcquired && !launchedJob) {
+                inferGate.release()
+            }
         }
     }
 
@@ -590,6 +707,15 @@ class CameraRecordingService : LifecycleService() {
         super.onDestroy()
         stopBuffering()
         cameraProvider?.unbindAll()
+        // 회전 리스너 해제
+        (getSystemService(DISPLAY_SERVICE) as? DisplayManager)
+            ?.unregisterDisplayListener(displayListener)
+        displayListener = null
+
+        // Analyzer 스레드 정리
+        runCatching { analysisExecutor.shutdown() }
+        orientationListener?.disable()
+        orientationListener = null
     }
 
     private fun createNotificationChannel() {
