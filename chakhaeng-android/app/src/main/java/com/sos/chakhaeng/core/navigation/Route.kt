@@ -15,6 +15,9 @@ sealed interface Route : NavKey {
 
     @Serializable
     data object AllBadges: Route
+
+    @Serializable
+    data object Mission : Route
 }
 
 

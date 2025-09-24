@@ -13,7 +13,8 @@ import com.sos.chakhaeng.presentation.ui.components.profile.*
 fun ProfileScreen(
     uiState: ProfileUiState,
     viewModel: ProfileViewModel,
-    onAllBadgesClick: () -> Unit
+    onAllBadgesClick: () -> Unit,
+    onMissionClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -41,7 +42,8 @@ fun ProfileScreen(
 
                 ProfileContent(
                     uiState = uiState,
-                    onAllBadgesClick = onAllBadgesClick
+                    onAllBadgesClick = onAllBadgesClick,
+                    onMissionClick = onMissionClick
                 )
             }
         }
