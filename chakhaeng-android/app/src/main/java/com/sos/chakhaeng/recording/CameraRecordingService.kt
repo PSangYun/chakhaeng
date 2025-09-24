@@ -26,6 +26,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.MediaStore
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.util.Size
 import android.view.Display
@@ -55,11 +56,13 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import com.sos.chakhaeng.ChakHaengApplication
 import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.Detector
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.core.camera.toBitmap
+import com.sos.chakhaeng.core.fcm.FirebaseMessagingService
 import com.sos.chakhaeng.core.worker.getCurrentLocationAndEnqueue
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.AndroidEntryPoint
@@ -168,6 +171,8 @@ class CameraRecordingService : LifecycleService() {
         val preMs: Long,
         val postMs: Long,
         val displayName: String,
+        val violationType : String = "신호위반",
+        val plate : String = "무번호판"
     )
     @Volatile private var pendingCapture: CaptureRequest? = null
     private var mergingJob: Job? = null
@@ -450,8 +455,10 @@ class CameraRecordingService : LifecycleService() {
 
                     val violations = processDetectionsUseCase(dets)
                     if (violations.isNotEmpty()) {
-                        Log.d("AI", "violations=${violations.size} -> markEvent()")
-                        markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
+                        val chosen = violations.first()
+                        val violationType = chosen.type
+                        val plate = resolvePlate(dets) ?: "무번호판"  // 지금은 placeholder
+                        markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS, violationType = violationType, plate = plate)
                     }
                 } catch (t: Throwable) {
                     Log.e("AI", "detect failed: ${t.message}", t)
@@ -491,6 +498,14 @@ class CameraRecordingService : LifecycleService() {
         }
         return true
     }
+
+    // CameraRecordingService.kt
+    private fun resolvePlate(dets: List<Detection>): String? {
+        // TODO: 번호판 detector/OCR 붙이면 여기에서 실제 텍스트 반환
+        //  - 예: dets에서 "plate" 라벨 찾아 OCR 결과 매핑
+        return null // 지금은 없는 경우 null -> "무번호판"으로 대체
+    }
+
 
     /** Ring buffer loop */
     private fun startBuffering() {
@@ -577,11 +592,21 @@ class CameraRecordingService : LifecycleService() {
         }
     }
 
-    /** Incident handling & merge */
     private fun markEvent(preMs: Long, postMs: Long) {
+        markEvent(
+            preMs = preMs,
+            postMs = postMs,
+            violationType = "UNKNOWN",   // 기본값 (수동 트리거 등)
+            plate = "무번호판"
+        )
+    }
+
+    /** Incident handling & merge */
+    private fun markEvent(preMs: Long, postMs: Long, violationType: String, plate: String) {
         val now = System.currentTimeMillis()
         val name = "incident_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(now))}.mp4"
-        pendingCapture = CaptureRequest(eventTs = now, preMs = preMs, postMs = postMs, displayName = name)
+        // 넣어줘 상윤아
+        pendingCapture = CaptureRequest(eventTs = now, preMs = preMs, postMs = postMs, displayName = name, violationType = violationType, plate = plate)
         updateNotification("사건 감지! 후단 ${postMs / 1000}s 수집 중…")
     }
 
@@ -599,6 +624,12 @@ class CameraRecordingService : LifecycleService() {
 
     private suspend fun checkAndMaybeMerge() {
         val req = pendingCapture ?: return
+        val textToRead = "${req.violationType} 감지되었습니다."
+        if (ChakHaengApplication.ttsReady) {
+            ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
+        } else {
+            Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
+        }
         val enough = segMutex.withLock {
             segmentQueue.isNotEmpty() && (segmentQueue.last().endMs >= req.eventTs + req.postMs)
         }
@@ -618,9 +649,10 @@ class CameraRecordingService : LifecycleService() {
             var outUri: Uri? = null
             try {
                 updateNotification("사건 클립 병합 중 (${sources.size}개)…")
+
                 outUri = createVideoUri(req.displayName)
                 mergeMp4SegmentsToUri(sources, outUri)
-                getCurrentLocationAndEnqueue(this@CameraRecordingService, outUri, "신호위반", "12가1234" )
+                getCurrentLocationAndEnqueue(this@CameraRecordingService, outUri, req.violationType, req.plate )
                 notifyIncidentSaved(outUri)
                 updateNotification("사건 저장 완료: ${req.displayName}")
             } catch (t: Throwable) {
