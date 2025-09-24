@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -19,6 +20,7 @@ android {
     ksp {
         useKsp2 = false
     }
+
 
     defaultConfig {
         applicationId = "com.sos.chakhaeng"
@@ -115,15 +117,20 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
     implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.hilt.common)
-    implementation(libs.androidx.hilt.work)
 
-    ksp(libs.hilt.compiler)
+    // Hilt (dagger)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)                 // com.google.dagger:hilt-android-compiler  ✅
+
+    // Hilt + WorkManager glue
+    implementation(libs.androidx.hilt.work)  // androidx.hilt:hilt-work                  ✅
+    kapt(libs.androidx.hilt.compiler)        // androidx.hilt:hilt-compiler              ✅
+
+  //  ksp(libs.hilt.compiler)
 
     implementation(libs.core)
     implementation(libs.calendar)
     implementation(libs.clock)
-//    kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     hilt{
         enableAggregatingTask = false

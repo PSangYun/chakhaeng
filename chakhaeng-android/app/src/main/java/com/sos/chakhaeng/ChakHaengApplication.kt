@@ -23,6 +23,7 @@ class ChakHaengApplication : Application(), TextToSpeech.OnInitListener, Configu
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
+            .setMinimumLoggingLevel(Log.DEBUG)
             .build()
 
     override fun onCreate() {

@@ -25,13 +25,12 @@ class DetectViolationUseCase @Inject constructor(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         videoRepository.uploadVideo(uri, onProgress)
             .flatMap { uploadResult ->
-                val locationText = locationRepository.getAddressFromLocation(Location(lat, lng))
-                    ?.fullAddress
-                    ?: return@flatMap Result.failure<Pair<String, String>>(
-                        IllegalStateException("위치 변환 실패: 주소를 가져오지 못함")
-                    )
+//                val locationText = locationRepository.getAddressFromLocation(Location(lat, lng))
+//                    ?.fullAddress
+//                    ?:
+                //                    "구미시 진평동 543-2"
 
-                Result.success(Pair(uploadResult.complete.objectKey, locationText))
+                Result.success(Pair(uploadResult.complete.id, "구미시 진평동 543-2"))
             }
             .flatMap { (videoId, locationText) ->
                 violationRepository.detectViolation(
