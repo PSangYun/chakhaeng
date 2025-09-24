@@ -5,11 +5,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.navigation.Navigator
+import com.sos.chakhaeng.core.utils.OccurredAtFormatter
+import com.sos.chakhaeng.data.network.dto.response.violation.UploadUrl
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
+import com.sos.chakhaeng.domain.usecase.video.GetStreamingVideoUrlUseCase
 import com.sos.chakhaeng.domain.usecase.video.UploadVideoUseCase
 import com.sos.chakhaeng.domain.usecase.violation.GetViolationDetailUseCase
 import com.sos.chakhaeng.domain.usecase.violation.SubmitViolationUseCase
-import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper.mergeWith
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,13 +20,15 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.String
 
 @HiltViewModel
 class ViolationDetailViewModel @Inject constructor(
     private val navigator: Navigator,
     private val submitViolationUseCase: SubmitViolationUseCase,
     private val uploadVideoUseCase: UploadVideoUseCase,
-    private val getViolationDetailUseCase: GetViolationDetailUseCase
+    private val getViolationDetailUseCase: GetViolationDetailUseCase,
+    private val getStreamingVideoUrlUseCase: GetStreamingVideoUrlUseCase
 ): ViewModel() {
 
     private val _uiState = MutableStateFlow(ViolationDetailUiState())
@@ -32,7 +36,13 @@ class ViolationDetailViewModel @Inject constructor(
 
     private val _event = MutableSharedFlow<String>()
     val event = _event.asSharedFlow()
-
+    fun showSubmitDialog(bool : Boolean){
+        _uiState.update {
+            it.copy(
+                showSubmitDialog = bool
+            )
+        }
+    }
     fun onSubmit() {
         Log.d("TAG", "onSubmit: 버튼 클릭")
         val entity = uiState.value.violationDetail
@@ -40,10 +50,10 @@ class ViolationDetailViewModel @Inject constructor(
             Log.d("TAG", "onSubmit: 버튼 클릭22")
             submitViolationUseCase(entity)
                 .onSuccess { resp ->
-                    _event.emit("신고가 접수되었습니다. (id=${resp.id})")
+                    _event.emit("신고가 접수되었습니다.")
                 }
                 .onFailure { e ->
-                    _event.emit(e.message ?: "신고 접수 중 오류가 발생했습니다.")
+                    _event.emit( "신고 접수 중 오류가 발생했습니다.")
                 }
         }
     }
@@ -53,12 +63,18 @@ class ViolationDetailViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             getViolationDetailUseCase(violationId)
                 .onSuccess { detail ->
-                    _uiState.update { s ->
-                        s.copy(
-                            isLoading = false,
-                            violationDetail = s.violationDetail.mergeWith(detail)
-                        )
-                    }
+                    val (dateStr, timeStr) = OccurredAtFormatter.split(detail.occurredAt/*, ZoneId.of("Asia/Seoul")*/)
+                    _uiState.value = _uiState.value.copy(
+                        violationDetail = _uiState.value.violationDetail.copy(
+                            violationType = detail.type,
+                            location = detail.locationText,
+                            plateNumber = detail.plate,
+                            date = dateStr,
+                            time = timeStr
+                        ),
+                        videoId = detail.videoId,
+                        videoObjectKey = detail.objectKey
+                    )
                 }
                 .onFailure { e ->
                     _uiState.update { s -> s.copy(isLoading = false) }
@@ -114,6 +130,16 @@ class ViolationDetailViewModel @Inject constructor(
                 _uiState.update { s -> s.copy(isUploading = false) }
                 _event.emit("동영상 업로드 중 오류가 발생했습니다.")
             }
+        }
+    }
+    fun loadVideo(objectKey: String?) {
+        if (objectKey == null) return
+
+        viewModelScope.launch {
+            runCatching { getStreamingVideoUrlUseCase(objectKey) }
+                .onSuccess { url ->
+                    _uiState.update { it.copy(lastUploaded = UploadUrl(url.url)) }
+                }
         }
     }
 

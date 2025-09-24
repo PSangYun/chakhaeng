@@ -10,6 +10,9 @@ data class ViolationDetailUiState(
     val uploadProgress: Float = 0f,
     val lastUploaded: UploadUrl? = null,
     val violationDetail: ViolationEntity = ViolationEntity(),
+    val videoObjectKey : String? = null,
+    val videoId : String? = null,
+    val showSubmitDialog : Boolean = false
 //    val photoUrls: List<String> = emptyList()
 )
 

@@ -4,7 +4,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.Instant
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class DetectionSessionHolder @Inject constructor(
 
 ){

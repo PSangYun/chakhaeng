@@ -53,7 +53,7 @@ fun ViolationTypeField(
         disabledContainerColor =  Color.White,
         focusedIndicatorColor = NEUTRAL200,
         unfocusedIndicatorColor = NEUTRAL200,
-        disabledTextColor = NEUTRAL800,
+        disabledTextColor = NEUTRAL200,
         disabledPlaceholderColor = NEUTRAL200,
         focusedPlaceholderColor =NEUTRAL200 ,
         focusedLabelColor = NEUTRAL800,
