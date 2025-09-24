@@ -14,7 +14,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +25,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MimeTypes
@@ -59,13 +59,11 @@ fun VideoPlayer(
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val uiState by playerViewModel.uiState.collectAsStateWithLifecycle()
 
-    // 소스 세팅
     LaunchedEffect(url, mimeType, autoPlay, initialMute) {
         playerViewModel.setSource(url, mimeType, autoPlay, initialMute)
         playerViewModel.showControls(autoHide = true)
     }
 
-    // === 일반(임베디드) 플레이어: 16:9 박스 안에만 표시 ===
     if (!uiState.isFullscreen) {
         EmbeddedPlayerBox(
             url = url,
@@ -211,7 +209,8 @@ private fun EmbeddedPlayerBox(
                 onSeekTo = playerViewModel::seekTo,
                 onScrubStart = { playerViewModel.setUserScrubbing(true) },
                 onScrubEnd = { playerViewModel.setUserScrubbing(false) },
-                onToggleFullscreen = { onRequestFullscreen() }
+                onToggleFullscreen = { onRequestFullscreen() },
+                forcePortraitUi = true
             )
         }
     }
@@ -231,6 +230,17 @@ private fun FullscreenPlayerLayer(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { playerViewModel.toggleControls() },
+                    onDoubleTap = { offset ->
+                        val width = this.size.width
+                        if (offset.x < width / 2f) playerViewModel.seekBack()
+                        else playerViewModel.seekForward()
+                        playerViewModel.showControls()
+                    }
+                )
+            }
     ) {
         PlayerAndroidView(
             playerViewModel = playerViewModel,
@@ -253,20 +263,23 @@ private fun FullscreenPlayerLayer(
             visible = uiState.controlsVisible && uiState.error == null,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().zIndex(1f)
         ) {
-            ControlOverlay(
-                isPlaying = uiState.isPlaying,
-                durationMs = uiState.durationMs,
-                positionMs = uiState.positionMs,
-                onPlayPause = playerViewModel::playPause,
-                onSeekBack = playerViewModel::seekBack,
-                onSeekForward = playerViewModel::seekForward,
-                onSeekTo = playerViewModel::seekTo,
-                onScrubStart = { playerViewModel.setUserScrubbing(true) },
-                onScrubEnd = { playerViewModel.setUserScrubbing(false) },
-                onToggleFullscreen = { onExit() } // 전체화면에서 누르면 닫기
-            )
+            PortraitLockedOverlay {
+                ControlOverlay(
+                    isPlaying = uiState.isPlaying,
+                    durationMs = uiState.durationMs,
+                    positionMs = uiState.positionMs,
+                    onPlayPause = playerViewModel::playPause,
+                    onSeekBack = playerViewModel::seekBack,
+                    onSeekForward = playerViewModel::seekForward,
+                    onSeekTo = playerViewModel::seekTo,
+                    onScrubStart = { playerViewModel.setUserScrubbing(true) },
+                    onScrubEnd = { playerViewModel.setUserScrubbing(false) },
+                    onToggleFullscreen = { onExit() },
+                    forcePortraitUi = true,
+                )
+            }
         }
     }
 }
