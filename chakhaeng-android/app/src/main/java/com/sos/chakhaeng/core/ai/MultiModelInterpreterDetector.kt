@@ -211,7 +211,7 @@ class MultiModelInterpreterDetector(
         val detObjs: List<DetObj> = dets.map { it.toNormalizedDetObj(bitmap.width, bitmap.height) }
 
         // 6) 신호위반 계산
-        val hits: List<com.sos.chakhaeng.core.ai.ViolationEvent> =
+        val hits: List<com.sos.chakhaeng.core.ai.SignalViolationHit> =
             signalLogic.updateAndDetectViolations(detObjs, trackObjs, System.currentTimeMillis())
 
         return TrafficFrameResult(

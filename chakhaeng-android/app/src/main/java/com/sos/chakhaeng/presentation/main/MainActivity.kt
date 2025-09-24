@@ -45,7 +45,7 @@ import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailRoute
 import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsRoute
 import com.sos.chakhaeng.presentation.ui.screen.violationDetail.ViolationDetailScreen
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx. collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import javax.inject.Inject
 
 @AndroidEntryPoint
