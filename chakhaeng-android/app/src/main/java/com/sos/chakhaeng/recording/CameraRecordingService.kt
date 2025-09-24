@@ -58,7 +58,9 @@ import androidx.lifecycle.lifecycleScope
 import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.Detector
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
+import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.core.camera.toBitmap
+import com.sos.chakhaeng.core.worker.getCurrentLocationAndEnqueue
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CompletableDeferred
@@ -92,7 +94,7 @@ class CameraRecordingService : LifecycleService() {
     @Inject lateinit var detector: Detector
     @Inject lateinit var yuvConverter: YuvToRgbConverter
     @Inject lateinit var processDetectionsUseCase: ProcessDetectionsUseCase
-
+    @Inject lateinit var detectionSessionHolder: DetectionSessionHolder
     companion object {
         const val CHANNEL_ID = "record_cam_channel"
         const val NOTI_ID = 7771
@@ -308,9 +310,14 @@ class CameraRecordingService : LifecycleService() {
             ACTION_START -> lifecycleScope.launch {
                 // UI가 아직 없어도 Headless로 먼저 바인딩 보장
                 if (!cameraBound) ensureCamera(HeadlessSurfaceProvider())
+                detectionSessionHolder.start()
                 startBuffering()
             }
-            ACTION_STOP -> { stopBuffering(); stopSelf() }
+            ACTION_STOP -> {
+                stopBuffering()
+                stopSelf()
+                detectionSessionHolder.clear()
+            }
             ACTION_OPEN -> {
                 val launch = packageManager.getLaunchIntentForPackage(packageName)
                 launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -613,6 +620,7 @@ class CameraRecordingService : LifecycleService() {
                 updateNotification("사건 클립 병합 중 (${sources.size}개)…")
                 outUri = createVideoUri(req.displayName)
                 mergeMp4SegmentsToUri(sources, outUri)
+                getCurrentLocationAndEnqueue(this@CameraRecordingService, outUri, "신호위반", "12가1234" )
                 notifyIncidentSaved(outUri)
                 updateNotification("사건 저장 완료: ${req.displayName}")
             } catch (t: Throwable) {
