@@ -1,15 +1,12 @@
 package com.sos.chakhaeng.presentation.ui.components.statistics.section
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lightbulb
@@ -20,13 +17,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import com.sos.chakhaeng.R
 import com.sos.chakhaeng.domain.model.statistics.ReportStatistics
+import com.sos.chakhaeng.presentation.theme.StatisticsGradientColors
 import com.sos.chakhaeng.presentation.ui.components.statistics.StatCard
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.ui.components.angledLinearGradientBackground
@@ -105,20 +102,11 @@ fun ReportStatisticsSection(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = status.status,
-                                style = chakhaengTypography().bodyMedium
-                            )
-                        }
+
+                        Text(
+                            text = status.status,
+                            style = chakhaengTypography().bodyMedium
+                        )
 
                         Text(
                             text = "${status.count}건",
@@ -136,9 +124,9 @@ fun ReportStatisticsSection(
                 .fillMaxWidth()
                 .angledLinearGradientBackground(
                     colors = listOf(
-                        Color(0xFF06BE34), // 메인 그린
-                        Color(0xFF00CED1), // 다크 터쿠아즈
-                        Color(0xFFFFB6C1).copy(alpha = 0.4f) // 라이트 핑크
+                        StatisticsGradientColors.Green,
+                        StatisticsGradientColors.Turquoise,
+                        StatisticsGradientColors.Pink.copy(alpha = 0.4f)
                     ),
                     angleDeg = 45f,
                     shape = RoundedCornerShape(20.dp)
