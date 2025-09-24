@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun CameraPreview(
     modifier: Modifier = Modifier,
+    onServiceConnected: (CameraRecordingService) -> Unit = {}
 ) {
     val context = LocalContext.current
     var binder by remember { mutableStateOf<CameraRecordingService.LocalBinder?>(null) }
@@ -38,6 +39,7 @@ fun CameraPreview(
         val conn = object : ServiceConnection {
             override fun onServiceConnected(n: ComponentName?, s: IBinder?) {
                 binder = s as? CameraRecordingService.LocalBinder
+                binder?.getService()?.let(onServiceConnected)
             }
             override fun onServiceDisconnected(n: ComponentName?) { binder = null }
         }
@@ -49,7 +51,7 @@ fun CameraPreview(
         factory = { ctx ->
             PreviewView(ctx).apply {
                 implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                scaleType = PreviewView.ScaleType.FILL_CENTER
+                scaleType = PreviewView.ScaleType.FIT_CENTER
             }
         },
         modifier = modifier,

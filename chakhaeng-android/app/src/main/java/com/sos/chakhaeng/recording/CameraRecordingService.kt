@@ -10,6 +10,7 @@ import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.SurfaceTexture
 import android.media.MediaCodec
@@ -47,15 +48,19 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.Detector
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import com.sos.chakhaeng.core.utils.DetectionSessionHolder
+import com.sos.chakhaeng.core.camera.toBitmap
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -69,6 +74,7 @@ import java.text.SimpleDateFormat
 import java.util.ArrayDeque
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Inject
 
@@ -78,6 +84,7 @@ private const val TAG = "CamSvc"
 class CameraRecordingService : LifecycleService() {
 
     @Inject lateinit var detector: Detector
+    @Inject lateinit var yuvConverter: YuvToRgbConverter
     @Inject lateinit var processDetectionsUseCase: ProcessDetectionsUseCase
     @Inject lateinit var detectionSessionHolder: DetectionSessionHolder
     companion object {
@@ -109,7 +116,17 @@ class CameraRecordingService : LifecycleService() {
     private var bufferingJob: Job? = null
 
     /** Analyzer(추후 사용) */
-    private val analysisExecutor = Executors.newSingleThreadExecutor()
+    private lateinit var analysisExecutor: ExecutorService
+
+    private val _detections = MutableStateFlow<List<Detection>>(emptyList())
+    fun detectionsFlow(): StateFlow<List<Detection>> = _detections
+
+    private val serviceScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + Dispatchers.Default
+    )
+
+    private val detectorReady = MutableStateFlow(false)
+
     private val inferGate = kotlinx.coroutines.sync.Semaphore(1)
     private var lastInferTs = 0L
     private val minGapMs = 100L
@@ -160,6 +177,7 @@ class CameraRecordingService : LifecycleService() {
 
     /** Binder */
     inner class LocalBinder : Binder() {
+        fun getService(): CameraRecordingService = this@CameraRecordingService
         fun attachPreview(view: PreviewView) {
             lastPreviewViewRef = WeakReference(view)
             runOnMain {
@@ -184,6 +202,7 @@ class CameraRecordingService : LifecycleService() {
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate() {
         super.onCreate()
+        analysisExecutor = Executors.newSingleThreadExecutor()
         Log.d(TAG, "onCreate() pid=${android.os.Process.myPid()} tid=${Thread.currentThread().name}")
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -194,7 +213,12 @@ class CameraRecordingService : LifecycleService() {
         createNotificationChannel()
         yuv = YuvToRgbConverter(this)
         lifecycleScope.launch(Dispatchers.Default) {
-            runCatching { detector.warmup() }.onFailure { Log.e("AI", "warmup fail", it) }
+            runCatching { detector.warmup() }
+                .onSuccess {
+                    detectorReady.value = true
+                    Log.d("AI", "warmup ok")
+                }
+                .onFailure { Log.e("AI", "warmup fail", it) }
         }
 
         val notif = buildNotification("준비 중…")
@@ -257,23 +281,20 @@ class CameraRecordingService : LifecycleService() {
             .setTargetRotation(rotation)
             .build().also { it.setSurfaceProvider(surfaceProvider) }
 
-        imageAnalysis = null
-        imageAnalysis = ImageAnalysis.Builder()
+         imageAnalysis = ImageAnalysis.Builder()
              .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
              .setImageQueueDepth(1)
+             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
              .setTargetRotation(rotation)
-             .setTargetResolution(android.util.Size(320, 180))
-             .build().apply {
-                 setAnalyzer(analysisExecutor, ::analyzeFrame)
-         }
+             .build().apply { setAnalyzer(analysisExecutor, ::analyzeFrame) }
 
         provider.unbindAll()
         provider.bindToLifecycle(
             this@CameraRecordingService,
             CameraSelector.DEFAULT_BACK_CAMERA,
             preview!!,
-            videoCapture!!
-            // , imageAnalysis!!
+            videoCapture!!,
+            imageAnalysis!!
         )
         cameraBound = true
         Log.d(TAG, "ensureCamera(): bound (rotation=$rotation, provider=$surfaceProvider)")
@@ -283,20 +304,38 @@ class CameraRecordingService : LifecycleService() {
     @OptIn(ExperimentalGetImage::class)
     private fun analyzeFrame(image: ImageProxy) {
         try {
+            if (!detectorReady.value) { image.close(); return }
+
             val now = android.os.SystemClock.elapsedRealtime()
-            if (now - lastInferTs < minGapMs) return
-            if (!inferGate.tryAcquire()) return
+            if (now - lastInferTs < minGapMs) { image.close(); return }
+            if (!inferGate.tryAcquire()) { image.close(); return }
             lastInferTs = now
 
-            val bmp = yuv.yuv420ToBitmap(image)
+            // YUV -> Bitmap
+            val bmp0 = image.toBitmap(yuvConverter)
             val rotation = image.imageInfo.rotationDegrees
-            image.close()
+            val bmp = if (rotation != 0) bmp0.rotateDeg(rotation) else bmp0
+            image.close() // 비트맵으로 변환했으니 즉시 반납
 
             lifecycleScope.launch(Dispatchers.Default) {
                 try {
-                    val dets = withTimeoutOrNull(3000) { detector.detect(bmp, rotation) } ?: emptyList()
+                    val dets = withTimeoutOrNull(3000) { detector.detect(bmp, /*unused*/0) } ?: emptyList()
+
+                    // 🔎 탐지 개수/상위 샘플 로깅
+                    if (dets.isEmpty()) {
+                        Log.d("AI", "no detections")
+                    } else {
+                        val top = dets.take(3).joinToString { "${it.label}@${"%.2f".format(it.score)}" }
+                        Log.d("AI", "detections=${dets.size}, top=$top")
+                    }
+
+                    // UI에 흘리는 상태도 갱신
+                    val prev = _detections.value
+                    if (!sameDetections(prev, dets)) _detections.value = dets
+
                     val violations = processDetectionsUseCase(dets)
                     if (violations.isNotEmpty()) {
+                        Log.d("AI", "violations=${violations.size} -> markEvent()")
                         markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
                     }
                 } catch (t: Throwable) {
@@ -306,10 +345,33 @@ class CameraRecordingService : LifecycleService() {
                     inferGate.release()
                 }
             }
-        } catch (_: Throwable) {
-            runCatching { image.close() }
-            runCatching { inferGate.release() }
+        } catch (t: Throwable) {
+            Log.e("AI", "analyzeFrame error: ${t.message}", t)
+            try { image.close() } catch (_: Throwable) {}
         }
+    }
+
+    // 추가: Bitmap 회전 헬퍼
+    private fun Bitmap.rotateDeg(deg: Int): Bitmap {
+        if (deg % 360 == 0) return this
+        val m = android.graphics.Matrix().apply { postRotate(deg.toFloat()) }
+        val rotated = Bitmap.createBitmap(this, 0, 0, width, height, m, true)
+        if (rotated !== this) this.recycle()
+        return rotated
+    }
+
+
+    private fun sameDetections(a: List<Detection>, b: List<Detection>): Boolean {
+        if (a.size != b.size) return false
+        for (i in a.indices) {
+            val x = a[i]; val y = b[i]
+            if (x.label != y.label) return false
+            if (kotlin.math.abs(x.box.left - y.box.left) > 1e-4) return false
+            if (kotlin.math.abs(x.box.top - y.box.top) > 1e-4) return false
+            if (kotlin.math.abs(x.box.right - y.box.right) > 1e-4) return false
+            if (kotlin.math.abs(x.box.bottom - y.box.bottom) > 1e-4) return false
+        }
+        return true
     }
 
     /** Ring buffer loop */

@@ -10,14 +10,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.NavBackStack
+import com.sos.chakhaeng.core.navigation.Route
+import com.sos.chakhaeng.presentation.theme.backgroundLight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ProfileRoute(
     padding: PaddingValues,
+    navBackStack: NavBackStack,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -27,17 +30,19 @@ internal fun ProfileRoute(
             viewModel.clearError()
         }
     }
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .padding(padding),
 
-        ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundLight)
+            .padding(padding),
+    ) {
         ProfileScreen(
             uiState = uiState,
-            viewModel = viewModel
+            viewModel = viewModel,
+            onAllBadgesClick = {
+                navBackStack.add(Route.AllBadges)
+            }
         )
     }
 }

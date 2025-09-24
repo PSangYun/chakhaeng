@@ -12,6 +12,9 @@ sealed interface Route : NavKey {
 
     @Serializable
     data class ViolationDetail(val violationId : String?) : Route
+
+    @Serializable
+    data object AllBadges: Route
 }
 
 

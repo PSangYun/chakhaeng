@@ -36,6 +36,7 @@ import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.core.session.SessionManager
 import com.sos.chakhaeng.presentation.theme.ChakHaengTheme
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
+ import com.sos.chakhaeng.presentation.ui.screen.allbadges.AllBadgesRoute
 import com.sos.chakhaeng.presentation.ui.screen.detection.DetectionScreen
 import com.sos.chakhaeng.presentation.ui.screen.home.HomeRoute
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
@@ -45,7 +46,7 @@ import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailRoute
 import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsRoute
 import com.sos.chakhaeng.presentation.ui.screen.violationDetail.ViolationDetailScreen
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx. collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
     private fun performInitialization() {
         isLoading = false
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -125,11 +127,10 @@ internal fun ChakhaengApp(
         is BottomTabRoute.Profile -> MainTab.PROFILE
         else -> MainTab.HOME
     }
+
     Scaffold(
         bottomBar = {
-            if (
-                currentRoute !is Route
-            ) {
+            if (currentRoute !is Route) {
                 BottomNavigationBar(
                     tabs = MainTab.entries.toImmutableList(),
                     currentTab = currentTab,
@@ -186,23 +187,36 @@ internal fun ChakhaengApp(
                     }
 
                     is BottomTabRoute.Profile -> NavEntry(key) {
-                        ProfileRoute(padding = paddingValues)
+                        ProfileRoute(
+                            padding = paddingValues,
+                            navBackStack = navBackStack
+                        )
                     }
+
                     is Route.Login -> NavEntry(key){
                         LoginScreen(googleAuthManager = googleAuthManager)
                     }
+
                     is Route.ReportDetail -> NavEntry(key){
                         ReportDetailRoute(
                             padding = paddingValues,
                             reportId = key.reportId,
                         )
                     }
+
                     is Route.ViolationDetail -> NavEntry(key){
                         ViolationDetailScreen(
                             paddingValues = paddingValues,
                             violationId = key.violationId
                         )
                     }
+
+                    is Route.AllBadges -> NavEntry(key) {
+                        AllBadgesRoute(
+                            navBackStack = navBackStack
+                        )
+                    }
+
                     else -> NavEntry(key) { Unit }
                 }
             },
