@@ -25,4 +25,8 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     List<Report> findAllByOwnerIdOrderByCreatedAtDesc(UUID ownerId);
 
     Optional<Report> findByIdAndOwnerId(UUID id, UUID ownerId);
+
+    List<Report> findByOwnerIdAndCreatedAtBetween(UUID userId, OffsetDateTime from, OffsetDateTime to);
+
+    List<Report> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }

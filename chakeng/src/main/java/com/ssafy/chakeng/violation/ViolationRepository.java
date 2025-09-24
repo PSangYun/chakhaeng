@@ -25,6 +25,8 @@ public interface ViolationRepository extends JpaRepository<Violation, UUID> {
     List<Violation> findAllByVideoOwnerIdAndCreatedAtBetweenOrderByCreatedAtDesc(
             UUID ownerId, OffsetDateTime from, OffsetDateTime to
     );
+    List<Violation> findByVideoOwnerIdAndCreatedAtBetween(UUID userId, OffsetDateTime from, OffsetDateTime to);
+    List<Violation> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }
 
 
