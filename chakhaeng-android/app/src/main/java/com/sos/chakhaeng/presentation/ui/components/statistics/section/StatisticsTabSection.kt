@@ -20,8 +20,7 @@ fun StatisticsTabSection(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .padding(4.dp),
+            .clip(RoundedCornerShape(8.dp)),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         TabButton(

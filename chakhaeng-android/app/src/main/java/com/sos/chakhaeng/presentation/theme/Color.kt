@@ -253,7 +253,12 @@ object BadgeColors {
     val LockedButton = NEUTRAL400
 }
 
-// AllBadges 그라데이션 색상
+object StatisticsGradientColors {
+    val Green = Color(0xFF06BE34)
+    val Turquoise = Color(0xFF00CED1)
+    val Pink = Color(0xFFFFB6C1)
+}
+
 object BadgeGradientColors {
     val Pink = Color(0xFFfff0f5)
     val Mint = Color(0xFFe8f4f8)
@@ -297,8 +302,8 @@ object ReportStatusColors {
 object PieChartColors{
     val SIGNAL = Color(0xFFFF6B6B)
     val LANE = Color(0xFF4ECDC4)
-    val WRONG_WAY = Color(0xFFFFE66D)
+    val WRONG_WAY = Color(0xFFEF476F)
     val NO_PLATE = Color(0xFF9B59B6)
-    val NO_HELMET = Color(0xFFEF476F)
+    val NO_HELMET = Color(0xFFFFE66D)
     val OTHERS = Color(0xFF95A5A6)
 }

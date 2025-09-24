@@ -32,13 +32,11 @@ class StatisticsViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedTab = tab)
     }
 
-    // 통계 데이터 로드
     private fun loadStatistics() {
         viewModelScope.launch {
             _uiState.value = StatisticsUiState.loading()
 
             try {
-                // UseCase를 통해 데이터 로드
                 val violationResult = getViolationStatisticsUseCase()
                 val reportResult = getReportStatisticsUseCase()
 
@@ -60,8 +58,6 @@ class StatisticsViewModel @Inject constructor(
         }
     }
 
-
-    // 통계 새로고침
     fun refreshStatistics() {
         loadStatistics()
     }
