@@ -12,6 +12,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.RectF
 import android.graphics.SurfaceTexture
 import android.media.MediaCodec
 import android.media.MediaExtractor
@@ -50,8 +51,10 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.Detector
+import com.sos.chakhaeng.core.ai.*
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import com.sos.chakhaeng.core.camera.toBitmap
+import com.sos.chakhaeng.domain.usecase.ai.DetectSignalViolationUseCase
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CompletableDeferred
@@ -76,6 +79,7 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Inject
+import kotlin.math.max
 
 private const val TAG = "CamSvc"
 
@@ -85,6 +89,7 @@ class CameraRecordingService : LifecycleService() {
     @Inject lateinit var detector: Detector
     @Inject lateinit var yuvConverter: YuvToRgbConverter
     @Inject lateinit var processDetectionsUseCase: ProcessDetectionsUseCase
+    @Inject lateinit var detectSignalViolationUseCase: DetectSignalViolationUseCase
 
     companion object {
         const val CHANNEL_ID = "record_cam_channel"
@@ -109,16 +114,19 @@ class CameraRecordingService : LifecycleService() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var preview: Preview? = null
     private var videoCapture: VideoCapture<Recorder>? = null
-    private var imageAnalysis: ImageAnalysis? = null // TODO: 안정화 후 붙이기
+    private var imageAnalysis: ImageAnalysis? = null
 
     private var currentRecording: Recording? = null
     private var bufferingJob: Job? = null
 
-    /** Analyzer(추후 사용) */
+    /** Analyzer */
     private lateinit var analysisExecutor: ExecutorService
 
     private val _detections = MutableStateFlow<List<Detection>>(emptyList())
     fun detectionsFlow(): StateFlow<List<Detection>> = _detections
+
+    private val _tracks = MutableStateFlow<List<TrackObj>>(emptyList())
+    fun tracksFlow(): StateFlow<List<TrackObj>> = _tracks
 
     private val serviceScope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + Dispatchers.Default
@@ -128,7 +136,7 @@ class CameraRecordingService : LifecycleService() {
 
     private val inferGate = kotlinx.coroutines.sync.Semaphore(1)
     private var lastInferTs = 0L
-    private val minGapMs = 100L
+    private val minGapMs = 33L
     private lateinit var yuv: YuvToRgbConverter
 
     /** 링버퍼 */
@@ -183,11 +191,9 @@ class CameraRecordingService : LifecycleService() {
                 view.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                 view.scaleType = PreviewView.ScaleType.FILL_CENTER
             }
-            // UI 붙었을 때는 UI SurfaceProvider로 "재바인딩"
             lifecycleScope.launch { ensureCamera(view.surfaceProvider) }
         }
         fun detachPreview() {
-            // 화면 떠날 땐 Headless로 "재바인딩"
             lifecycleScope.launch { ensureCamera(HeadlessSurfaceProvider()) }
         }
         fun startDetection() { startBuffering() }
@@ -196,6 +202,111 @@ class CameraRecordingService : LifecycleService() {
     }
     private val binder = LocalBinder()
     override fun onBind(intent: Intent): IBinder { super.onBind(intent); return binder }
+
+    // ByteTrack
+    private val byteTrack = ByteTrackEngine(
+        scoreThresh = 0.10f,
+        nmsThresh   = 0.70f,
+        trackThresh = 0.25f,
+        trackBuffer = 90,
+        matchThresh = 0.70f
+    )
+
+    // 신호위반 정책  ✅ IoU 임계치만 추가 전달 (나머지는 그대로)
+    private val signalLogic = SignalViolationDetection(
+        vehicleLabels = setOf("car","motorcycle","bicycle","kickboard","lovebug"),
+        crosswalkLabel = "crosswalk",
+        vehicularSignalPrefix = "vehicular_signal_",
+        crossingTol = 0.012f,
+        lateralStepTol = 0.004f,
+        lateralAccumThresh = 0.03f,
+        crosswalkIouThresh = 0.02f    // ← 추가
+    )
+
+    // 라벨 → 인덱스
+    private val labelToIndex by lazy { TrafficLabels.LABELS.withIndex().associate { it.value.trim().lowercase() to it.index } }
+
+    /** 디텍션 요약 로그 */
+    private fun logDetStats(tag: String, dets: List<Detection>, w: Int, h: Int) {
+        if (dets.isEmpty()) { Log.d(tag, "no dets"); return }
+        val l = dets.take(5).joinToString { d ->
+            val L = d.box.left; val T = d.box.top; val R = d.box.right; val B = d.box.bottom
+            val W = R - L; val H = B - T
+            val rawMax = maxOf(L, T, R, B)
+            val unit = if (rawMax <= 1f) "N" else "PX"
+            "(${d.label}@${"%.2f".format(d.score)} $unit) LTRB=[${"%.3f".format(L)},${"%.3f".format(T)},${"%.3f".format(R)},${"%.3f".format(B)}] WH=[${"%.3f".format(W)},${"%.3f".format(H)}]"
+        }
+        val zero = dets.count { (it.box.right - it.box.left) <= 0f || (it.box.bottom - it.box.top) <= 0f }
+        val normLike = dets.count { maxOf(it.box.left, it.box.top, it.box.right, it.box.bottom) <= 1f }
+        Log.d(tag, "frame=${w}x${h} dets=${dets.size} normGuess=$normLike zeroWH=$zero :: $l")
+    }
+
+    private fun iou(a: RectF, b: RectF): Float {
+        val x1 = max(a.left, b.left)
+        val y1 = max(a.top, b.top)
+        val x2 = kotlin.math.min(a.right, b.right)
+        val y2 = kotlin.math.min(a.bottom, b.bottom)
+        val inter = kotlin.math.max(0f, x2 - x1) * kotlin.math.max(0f, y2 - y1)
+        val ua = (a.right - a.left) * (a.bottom - a.top)
+        val ub = (b.right - b.left) * (b.bottom - b.top)
+        return inter / (ua + ub - inter + 1e-6f)
+    }
+
+    private fun nmsClassAgnostic(dets: List<Detection>, iouTh: Float = 0.55f): List<Detection> {
+        val sorted = dets.sortedByDescending { it.score }.toMutableList()
+        val out = mutableListOf<Detection>()
+        while (sorted.isNotEmpty()) {
+            val a = sorted.removeAt(0)
+            out += a
+            val it = sorted.iterator()
+            while (it.hasNext()) {
+                val b = it.next()
+                if (iou(a.box, b.box) > iouTh) it.remove() // ← 라벨 비교 없음
+            }
+        }
+        return out
+    }
+    // Detection → 정규화 LTRB [0,1] 로 변환
+    private fun Detection.toNormLTRB(frameW: Int, frameH: Int): FloatArray? {
+        // 원본값
+        var l = box.left
+        var t = box.top
+        var r = box.right
+        var b = box.bottom
+
+        // 1) 좌표계가 픽셀이면 정규화
+        val maxv = maxOf(l, t, r, b)
+        if (maxv > 1f) {
+            l /= frameW; r /= frameW
+            t /= frameH; b /= frameH
+        }
+
+        // 2) LTRB인지 XYWH(센터)인지 판별 후 LTRB로 통일
+        var w = r - l
+        var h = b - t
+        if (w <= 0f || h <= 0f) {
+            // XYWH(센터 기준)로 가정
+            val cx = l; val cy = t; val ww = r; val hh = b
+            l = cx - ww / 2f
+            t = cy - hh / 2f
+            r = cx + ww / 2f
+            b = cy + hh / 2f
+            w = r - l
+            h = b - t
+        }
+
+        // 3) 클램프 & 너무 작은 박스 제거(프레임의 ~1%)
+        l = l.coerceIn(0f, 1f)
+        t = t.coerceIn(0f, 1f)
+        r = r.coerceIn(0f, 1f)
+        b = b.coerceIn(0f, 1f)
+
+        w = (r - l).coerceAtLeast(1e-6f)
+        h = (b - t).coerceAtLeast(1e-6f)
+
+        if (w < 0.01f || h < 0.01f) return null
+        return floatArrayOf(l, t, w, h)
+    }
 
     /** Lifecycle */
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -233,7 +344,6 @@ class CameraRecordingService : LifecycleService() {
         Log.d(TAG, "onStartCommand action=${intent?.action}")
         when (intent?.action) {
             ACTION_START -> lifecycleScope.launch {
-                // UI가 아직 없어도 Headless로 먼저 바인딩 보장
                 if (!cameraBound) ensureCamera(HeadlessSurfaceProvider())
                 startBuffering()
             }
@@ -252,7 +362,6 @@ class CameraRecordingService : LifecycleService() {
         return START_STICKY
     }
 
-    /** ✅ 한 곳에서만 바인딩: UI/Headless 공급자만 바꿔서 매번 "재바인딩" */
     private suspend fun ensureCamera(surfaceProvider: Preview.SurfaceProvider) = withContext(Dispatchers.Main) {
         val provider = cameraProvider ?: ProcessCameraProvider.getInstance(this@CameraRecordingService).get().also {
             cameraProvider = it
@@ -261,7 +370,6 @@ class CameraRecordingService : LifecycleService() {
         val pv = lastPreviewViewRef?.get()
         val rotation = pv?.display?.rotation ?: Surface.ROTATION_0
 
-        // VideoCapture: 가볍게 (SD 우선)
         val qualitySelector = QualitySelector.fromOrderedList(
             listOf(Quality.SD, Quality.HD),
             FallbackStrategy.lowerQualityThan(Quality.SD)
@@ -269,18 +377,17 @@ class CameraRecordingService : LifecycleService() {
         val recorder = Recorder.Builder().setQualitySelector(qualitySelector).build()
         videoCapture = VideoCapture.withOutput(recorder).apply { targetRotation = rotation }
 
-        // Preview
         preview = Preview.Builder()
             .setTargetAspectRatio(androidx.camera.core.AspectRatio.RATIO_16_9)
             .setTargetRotation(rotation)
             .build().also { it.setSurfaceProvider(surfaceProvider) }
 
-         imageAnalysis = ImageAnalysis.Builder()
-             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-             .setImageQueueDepth(1)
-             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
-             .setTargetRotation(rotation)
-             .build().apply { setAnalyzer(analysisExecutor, ::analyzeFrame) }
+        imageAnalysis = ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .setImageQueueDepth(1)
+            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+            .setTargetRotation(rotation)
+            .build().apply { setAnalyzer(analysisExecutor, ::analyzeFrame) }
 
         provider.unbindAll()
         provider.bindToLifecycle(
@@ -305,31 +412,83 @@ class CameraRecordingService : LifecycleService() {
             if (!inferGate.tryAcquire()) { image.close(); return }
             lastInferTs = now
 
-            // YUV -> Bitmap
             val bmp0 = image.toBitmap(yuvConverter)
             val rotation = image.imageInfo.rotationDegrees
             val bmp = if (rotation != 0) bmp0.rotateDeg(rotation) else bmp0
-            image.close() // 비트맵으로 변환했으니 즉시 반납
+            image.close()
 
             lifecycleScope.launch(Dispatchers.Default) {
                 try {
                     val dets = withTimeoutOrNull(3000) { detector.detect(bmp, /*unused*/0) } ?: emptyList()
 
-                    // 🔎 탐지 개수/상위 샘플 로깅
-                    if (dets.isEmpty()) {
-                        Log.d("AI", "no detections")
-                    } else {
-                        val top = dets.take(3).joinToString { "${it.label}@${"%.2f".format(it.score)}" }
-                        Log.d("AI", "detections=${dets.size}, top=$top")
-                    }
+                    // 1) 원시 디텍션 로그
+                    logDetStats("DET.Raw", dets, bmp.width, bmp.height)
 
-                    // UI에 흘리는 상태도 갱신
+                    // 2) 상태 갱신
                     val prev = _detections.value
                     if (!sameDetections(prev, dets)) _detections.value = dets
 
-                    val violations = processDetectionsUseCase(dets)
+                    // 3) 차량 필터
+                    val vehIdxSet = TrafficLabels.VEH_IDX
+                    val rawVeh = dets.filter { d ->
+                        val key = d.label.trim().lowercase()
+                        val idx = labelToIndex[key] ?: d.label.toIntOrNull()
+                        idx?.let { it in vehIdxSet } == true
+                    }
+                    logDetStats("DET.Veh", rawVeh, bmp.width, bmp.height)
+                    val vehDedup = nmsClassAgnostic(rawVeh)
+                    // 4) 좌표 변환: 어떤 입력이 와도 정규화 LTRB로 통일
+                    val vehForTrack = rawVeh.mapNotNull { d ->
+                        val labIdx = labelToIndex[d.label.trim().lowercase()] ?: d.label.toIntOrNull() ?: return@mapNotNull null
+                        val nb = d.toNormLTRB(bmp.width, bmp.height) ?: return@mapNotNull null
+                        ByteTrackEngine.Det(category = labIdx, conf = d.score, x = nb[0], y = nb[1], w = nb[2], h = nb[3])
+                    }.also { list ->
+                        val brief = list.take(5).joinToString {
+                            "c=${it.category}@${"%.2f".format(it.conf)} N=[${"%.3f".format(it.x)},${"%.3f".format(it.y)},${"%.3f".format(it.w)},${"%.3f".format(it.h)}]"
+                        }
+                        Log.d("BT.InN", "N dets=${list.size} :: $brief")
+                    }
+
+// 5) ByteTrack 업데이트 (이미 정규화이므로 normW/H 넘기지 않음)
+                    val tracksRaw = byteTrack.update(dets = vehForTrack)
+                    tracksRaw.take(5).forEach {
+                        Log.d("BT.DebugOutN", "N x=${"%.3f".format(it.x)} y=${"%.3f".format(it.y)} w=${"%.3f".format(it.w)} h=${"%.3f".format(it.h)}")
+                    }
+                    // 6) 출력 검증/로그
+                    val oobOut = tracksRaw.filter { t ->
+                        t.x < 0f || t.y < 0f || t.w <= 0f || t.h <= 0f ||
+                                (t.x + t.w) > 1f || (t.y + t.h) > 1f
+                    }
+                    if (oobOut.isNotEmpty()) {
+                        Log.w("BT.Out", "out-of-range: " + oobOut.joinToString {
+                            "ID=${it.id} N=[${"%.3f".format(it.x)},${"%.3f".format(it.y)},${"%.3f".format(it.w)},${"%.3f".format(it.h)}]"
+                        })
+                    } else {
+                        val brief = tracksRaw.take(4).joinToString {
+                            "ID=${it.id} c=${it.category} conf=${"%.2f".format(it.conf)}"
+                        }
+                        Log.d("BT.Out", "tracks=${tracksRaw.size} :: $brief")
+                    }
+
+                    // 7) UI 전달
+                    val trackObjs = tracksRaw.map { it.toTrackObj() }
+                    _tracks.value = trackObjs
+
+                    // 8) 신호위반 판단
+                    val detObjs = dets.map { it.toNormalizedDetObj(bmp.width, bmp.height) }
+                    val hits = signalLogic.updateAndDetectViolations(
+                        detections = detObjs,
+                        tracks = trackObjs,
+                        nowMs = System.currentTimeMillis()
+                    )
+                    if (hits.isNotEmpty()) {
+                        Log.w("SignalViolation", "hits=${hits.size} -> markEvent()")
+                        markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
+                    }
+
+                    val violations = detectSignalViolationUseCase(dets, bmp.width, bmp.height)
                     if (violations.isNotEmpty()) {
-                        Log.d("AI", "violations=${violations.size} -> markEvent()")
+                        Log.d("SignalViolation", "violations=${violations.size} -> markEvent()")
                         markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
                     }
                 } catch (t: Throwable) {
@@ -345,7 +504,6 @@ class CameraRecordingService : LifecycleService() {
         }
     }
 
-    // 추가: Bitmap 회전 헬퍼
     private fun Bitmap.rotateDeg(deg: Int): Bitmap {
         if (deg % 360 == 0) return this
         val m = android.graphics.Matrix().apply { postRotate(deg.toFloat()) }
@@ -353,7 +511,6 @@ class CameraRecordingService : LifecycleService() {
         if (rotated !== this) this.recycle()
         return rotated
     }
-
 
     private fun sameDetections(a: List<Detection>, b: List<Detection>): Boolean {
         if (a.size != b.size) return false
@@ -398,7 +555,6 @@ class CameraRecordingService : LifecycleService() {
         }
     }
 
-    /** 녹화 세그먼트 */
     private suspend fun recordOneSegment(durationMs: Long): Segment? = withContext(Dispatchers.Main) {
         val vc = videoCapture ?: return@withContext null
         val startTs = System.currentTimeMillis()
@@ -453,7 +609,6 @@ class CameraRecordingService : LifecycleService() {
         }
     }
 
-    /** Incident handling & merge */
     private fun markEvent(preMs: Long, postMs: Long) {
         val now = System.currentTimeMillis()
         val name = "incident_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(now))}.mp4"
@@ -565,7 +720,6 @@ class CameraRecordingService : LifecycleService() {
         return outUri
     }
 
-    /** Notifications */
     private fun notifyIncidentSaved(uri: Uri) {
         val open = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "video/mp4")

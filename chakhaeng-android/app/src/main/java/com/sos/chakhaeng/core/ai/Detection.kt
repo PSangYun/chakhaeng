@@ -29,12 +29,3 @@ data class DetObj( // YOLO 검출(신호/횡단보도 등)
     val conf: Float,
     val box: BBoxN
 )
-
-data class ViolationEvent(
-    val trackId: Int,
-    val whenMs: Long,
-    val vehicleLabel: String,
-    val crosswalkTopY: Float,  // 정규화 y
-    val bottomCenterY: Float   // 정규화 y
-)
-

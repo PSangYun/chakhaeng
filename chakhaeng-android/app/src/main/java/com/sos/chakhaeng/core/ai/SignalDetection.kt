@@ -26,10 +26,24 @@ val Detection.w: Float get() = box.width()
 val Detection.h: Float get() = box.height()
 
 fun Detection.toNormalizedDetObj(frameW: Int, frameH: Int): DetObj {
-    val nx = x / frameW
-    val ny = y / frameH
-    val nw = w / frameW
-    val nh = h / frameH
+    // 이미 정규화인지(<=1) 픽셀인지(>1) 자동 판별
+    val isNormalized = maxOf(box.left, box.top, box.right, box.bottom) <= 1f
+
+    val nx: Float
+    val ny: Float
+    val nw: Float
+    val nh: Float
+    if (isNormalized) {
+        nx = box.left
+        ny = box.top
+        nw = box.width()
+        nh = box.height()
+    } else {
+        nx = box.left / frameW
+        ny = box.top / frameH
+        nw = box.width() / frameW
+        nh = box.height() / frameH
+    }
     return DetObj(label = label, conf = score, box = BBoxN(nx, ny, nw, nh))
 }
 
@@ -44,5 +58,5 @@ fun ByteTrackEngine.Track.toTrackObj(): TrackObj =
 data class TrafficFrameResult(
     val detections: List<Detection>,               // YOLO 결과 (bbox=픽셀 좌표)
     val tracks: List<TrackObj>,                    // ByteTrack 결과 (정규화 좌표)
-    val violations: List<com.sos.chakhaeng.core.ai.ViolationEvent> // 신호위반(내부 AI 타입)
+    val violations: List<SignalViolationHit>       // 신호위반(내부 AI 타입)
 )
