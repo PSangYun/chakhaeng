@@ -1,21 +1,9 @@
-package com.sos.chakhaeng.presentation.ui.components.allbadges
+package com.sos.chakhaeng.presentation.ui.components.mission
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,24 +13,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.R
-import com.sos.chakhaeng.presentation.theme.backgroundLight
-import com.sos.chakhaeng.presentation.theme.chakhaengTypography
-import com.sos.chakhaeng.presentation.theme.onPrimaryContainerLight
-import com.sos.chakhaeng.presentation.theme.primaryContainerLight
-import com.sos.chakhaeng.presentation.theme.primaryLight
+import com.sos.chakhaeng.presentation.theme.*
 import java.util.Locale
 
 @Composable
-fun BadgeProgressSection(
-    unlockedCount: Int,
+fun MissionProgressSection(
+    completedCount: Int,
     totalCount: Int,
     progressPercentage: Float,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = primaryContainerLight
         )
@@ -51,27 +34,28 @@ fun BadgeProgressSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // 헤더 섹션
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "배지 수집 현황",
+                    text = "미션 진행 현황",
                     style = chakhaengTypography().titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = onPrimaryContainerLight
                 )
 
-                // 획득 개수 표시
+                // 완료 개수 표시
                 Surface(
                     color = backgroundLight,
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
-                        text = "$unlockedCount/$totalCount",
+                        text = "$completedCount/$totalCount",
                         style = chakhaengTypography().bodyLarge,
                         fontWeight = FontWeight.Bold,
                         color = primaryLight,
@@ -107,7 +91,7 @@ fun BadgeProgressSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${String.format(Locale.KOREA, "%.1f", progressPercentage)}% 완료",
+                        text = "${String.format(Locale.US, "%.1f", progressPercentage)}% 완료",
                         style = chakhaengTypography().bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = onPrimaryContainerLight
@@ -117,6 +101,7 @@ fun BadgeProgressSection(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        // 진행률에 따른 아이콘
                         Icon(
                             painter = painterResource(
                                 id = when {
@@ -134,11 +119,11 @@ fun BadgeProgressSection(
 
                         Text(
                             text = when {
-                                progressPercentage >= 100f -> "모든 배지 수집 완료!"
-                                progressPercentage >= 75f -> "거의 다 모았어요!"
-                                progressPercentage >= 50f -> "절반 이상 수집!"
-                                progressPercentage > 0f -> "좋은 시작이에요!"
-                                else -> "배지 수집을 시작해보세요!"
+                                progressPercentage >= 100f -> "모든 미션 완료!"
+                                progressPercentage >= 75f -> "거의 다 완료했어요!"
+                                progressPercentage >= 50f -> "절반 이상 진행!"
+                                progressPercentage > 0f -> "미션 진행 중!"
+                                else -> "미션을 시작해보세요!"
                             },
                             style = chakhaengTypography().bodySmall,
                             color = onPrimaryContainerLight.copy(alpha = 0.8f)
