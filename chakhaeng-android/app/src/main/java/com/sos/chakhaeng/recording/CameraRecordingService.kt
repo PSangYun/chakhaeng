@@ -443,7 +443,7 @@ class CameraRecordingService : LifecycleService() {
 
                     val violations = processDetectionsUseCase(dets)
                     if (violations.isNotEmpty()) {
-                        Log.d("AI", "violations=${violations.size} -> markEvent()")
+                        Log.d("AI2", "violations=${violations.size} -> markEvent()")
                         markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
                     }
                 } catch (t: Throwable) {

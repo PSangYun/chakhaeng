@@ -27,7 +27,7 @@ object AIModule {
             ModelSpec(
                 key = "final",
                 assetPath = "models/final_float16.tflite", // ✅ 임시 YOLO 모델 파일명
-                numClasses = 26,                            // COCO 80 클래스
+                numClasses = 26,                       // COCO 80 클래스
                 maxDetections = 8400,                      // YOLOv8 640 입력 기준
                 preferInputSize = 640,                     // 보통 640
                 inputRange = InputRange.FLOAT32_0_1,       // fp16/float32 모델이면 0~1 정규화
