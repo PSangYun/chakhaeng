@@ -11,6 +11,7 @@ import com.sos.chakhaeng.presentation.ui.screen.profile.ProfileUiState
 fun ProfileContent(
     uiState: ProfileUiState,
     onAllBadgesClick: () -> Unit,
+    onMissionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -37,7 +38,8 @@ fun ProfileContent(
         // 미션 정보 섹션
         item {
             MissionInfoSection(
-                missions = uiState.missions
+                missions = uiState.missions,
+                onMissionClick = onMissionClick
             )
         }
     }
