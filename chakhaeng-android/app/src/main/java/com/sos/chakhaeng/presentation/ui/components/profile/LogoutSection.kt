@@ -1,11 +1,19 @@
 package com.sos.chakhaeng.presentation.ui.components.profile
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,26 +22,28 @@ import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.errorLight
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogoutSection(
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row (
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Color.White),
-        horizontalArrangement = Arrangement.End
-    ) {
-        Icon(
-            imageVector = Icons.Default.Logout,
-            contentDescription = "logout icon",
-            modifier = Modifier
-                .padding(16.dp)
-                .size(24.dp)
-                .clickable { onLogoutClick() },
-        )
-    }
+    CenterAlignedTopAppBar(
+        title = { Text(
+            text = "프로필",
+            style = chakhaengTypography().titleSmall,
+            fontWeight = FontWeight.SemiBold
+        ) },
+        actions = {
+            IconButton(onClick = {onLogoutClick()}) {
+                Icon(Icons.Default.Logout, contentDescription = "뒤로")
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.White
+        ),
+        windowInsets = WindowInsets(0)
+    )
 }
 
 @Composable

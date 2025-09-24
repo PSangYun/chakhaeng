@@ -1,10 +1,8 @@
-package com.sos.chakhaeng.domain.model.violation
+package com.sos.chakhaeng.data.network.dto.response.violation
 
-
-data class GetViolationDetail (
+data class DetectViolationResponse (
     val id: String,
     val videoId: String,
-    val objectKey: String,
     val type: String,
     val plate: String,
     val locationText: String,
