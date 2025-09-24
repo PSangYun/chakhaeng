@@ -53,6 +53,7 @@ import com.sos.chakhaeng.core.ai.Detector
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.core.camera.toBitmap
+import com.sos.chakhaeng.core.worker.getCurrentLocationAndEnqueue
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CompletableDeferred
@@ -502,6 +503,7 @@ class CameraRecordingService : LifecycleService() {
                 updateNotification("사건 클립 병합 중 (${sources.size}개)…")
                 outUri = createVideoUri(req.displayName)
                 mergeMp4SegmentsToUri(sources, outUri)
+                getCurrentLocationAndEnqueue(this@CameraRecordingService, outUri, "신호위반", "12가1234" )
                 notifyIncidentSaved(outUri)
                 updateNotification("사건 저장 완료: ${req.displayName}")
             } catch (t: Throwable) {
