@@ -45,7 +45,7 @@ object StatisticsDataMapper {
         MonthlyTrend(
             month = month,
             count = count,
-            percentage = percentage
+            changeFromPreviousMonth = changeFromPreviousMonth
         )
 
     private fun ReportStatusStatsDTO.toEntity(): ReportStatusStatistic =

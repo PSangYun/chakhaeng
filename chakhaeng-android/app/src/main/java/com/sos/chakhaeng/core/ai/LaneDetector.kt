@@ -4,14 +4,17 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.Log
+import android.widget.GridLayout.spec
 import org.tensorflow.lite.Interpreter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.exp
 
+private const val TAG = "bandi"
 class LaneDetector(
     private val interpreter: Interpreter,
-    private val spec: LaneModelSpec
+    val spec: LaneModelSpec
 ) {
     private var outputMap: MutableMap<Int, Any>? = null
     private var inputBuffer: ByteBuffer? = null
@@ -22,10 +25,12 @@ class LaneDetector(
     }
 
     /**
-     * Bitmap → Lane 좌표
+     * Bitmap → Lane 좌표 + confidence
      */
-    fun detect(bitmap: Bitmap): List<List<Pair<Int, Int>>> {
+    fun detect(bitmap: Bitmap): List<List<Triple<Int, Int, Float>>> {
+        //Log.d("bandi", "bitmap.width: ${bitmap.width}, bitmap.height: ${bitmap.height}")
         val input = bitmapToInputBuffer(bitmap)
+        Log.d("bandi", "input_size: $input")
         val outputs = HashMap<Int, Any>()
 
         // [1, 100, 81, 4]
@@ -42,46 +47,44 @@ class LaneDetector(
         outputs[2] = output2
         outputs[3] = output3
 
-        for (i in 0 until interpreter.outputTensorCount) {
-            val tensor = interpreter.getOutputTensor(i)
-            android.util.Log.d(
-                "LaneDetector",
-                "Output[$i] name=${tensor.name()} shape=${tensor.shape().contentToString()} dtype=${tensor.dataType()}"
-            )
-        }
-
+        val start = System.nanoTime()
         interpreter.runForMultipleInputsOutputs(arrayOf(input), outputs)
+        val end = System.nanoTime()
+        val inferenceTimeMs = (end - start) / 1_000_000.0
+        Log.d("LaneDetector", "Inference time = $inferenceTimeMs ms")
+
         return parseLanes(outputs, bitmap.width, bitmap.height)
     }
 
     /**
-     * 시각화 (테스트용)
+     * 시각화 (confidence 기반 → 선 굵기 / 투명도 조절)
      */
-    fun drawLanes(bitmap: Bitmap, lanes: List<List<Pair<Int, Int>>>): Bitmap {
+    fun drawLanes(bitmap: Bitmap, lanes: List<List<Triple<Int, Int, Float>>>): Bitmap {
         val output = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(output)
 
-        // laneIdx별 색상
         val colors = arrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW)
 
         for ((laneIdx, lane) in lanes.withIndex()) {
-            val paint = Paint().apply {
-                color = colors[laneIdx % colors.size]  // lane 0,1,2,3 → 다른 색
-                strokeWidth = 4f
-                style = Paint.Style.STROKE
-                isAntiAlias = true
-            }
-
             for (i in 0 until lane.size - 1) {
-                val (x1, y1) = lane[i]
-                val (x2, y2) = lane[i + 1]
+                val (x1, y1, conf1) = lane[i]
+                val (x2, y2, conf2) = lane[i + 1]
+                val avgConf = (conf1 + conf2) / 2f
+
+                val paint = Paint().apply {
+                    color = colors[laneIdx % colors.size]
+                    strokeWidth = 2f + avgConf * 6f // 2~8 px
+                    style = Paint.Style.STROKE
+                    isAntiAlias = true
+                    alpha = (avgConf * 255).toInt().coerceIn(60, 255) // 최소 투명도 60
+                }
+
                 canvas.drawLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat(), paint)
             }
         }
 
         return output
     }
-
 
     // ---------------- 내부 유틸 ----------------
 
@@ -92,23 +95,19 @@ class LaneDetector(
     }
 
     private fun bitmapToInputBuffer(bitmap: Bitmap): ByteBuffer {
-        // Python과 동일하게 full-height로 먼저 리사이즈
-        val hFull = (spec.preferInputH / spec.cropRatio).toInt()   // 320 / 0.6 ≈ 533
+        // cropRatio 반영 → 원본을 hFull로 resize 후, 아래쪽 cropRatio 부분만 사용
+        val hFull = (spec.preferInputH / spec.cropRatio).toInt()   // e.g. 320 / 0.6 ≈ 533
         val resizedFull = Bitmap.createScaledBitmap(bitmap, spec.preferInputW, hFull, true)
 
-        // crop offset (위쪽 잘라내기)
-        val cutOffset = hFull - spec.preferInputH                  // 533 - 320 = 213
+        val cutOffset = (hFull * (1 - spec.cropRatio)).toInt()     // e.g. 533 * 0.4 = 213
         val cropped = Bitmap.createBitmap(resizedFull, 0, cutOffset, spec.preferInputW, spec.preferInputH)
 
-        // ByteBuffer 초기화
         val buf = inputBuffer ?: throw IllegalStateException("Input buffer not initialized")
         buf.clear()
 
-        // 정규화 파라미터
         val mean = floatArrayOf(0.485f, 0.456f, 0.406f)
         val std = floatArrayOf(0.229f, 0.224f, 0.225f)
 
-        // BGR → RGB 변환 (Bitmap은 이미 ARGB_8888, Color.xxx로 접근하면 RGB 추출됨)
         for (y in 0 until spec.preferInputH) {
             for (x in 0 until spec.preferInputW) {
                 val c = cropped.getPixel(x, y)
@@ -123,17 +122,12 @@ class LaneDetector(
 
         buf.rewind()
 
-        // 메모리 누수 방지
         if (resizedFull !== bitmap) resizedFull.recycle()
         if (cropped !== resizedFull && cropped !== bitmap) cropped.recycle()
 
         return buf
     }
 
-
-    /**
-     * 모델 출력 shape에 맞게 버퍼 생성
-     */
     private fun ensureOutputBuffers() {
         outputMap = HashMap<Int, Any>().apply {
             this[0] = Array(1) { Array(spec.numCellRow) { Array(spec.numRow) { FloatArray(spec.numLanes) } } }
@@ -144,9 +138,9 @@ class LaneDetector(
     }
 
     /**
-     * 후처리 (출력 좌표를 실제 Bitmap 크기로 scaling)
+     * 후처리 (confidence 포함 + anchor 보정)
      */
-    private fun parseLanes(outputs: Map<Int, Any>, outW: Int, outH: Int): List<List<Pair<Int, Int>>> {
+    private fun parseLanes(outputs: Map<Int, Any>, outW: Int, outH: Int): List<List<Triple<Int, Int, Float>>> {
         @Suppress("UNCHECKED_CAST")
         val locCol = outputs[0] as Array<Array<Array<FloatArray>>>
         @Suppress("UNCHECKED_CAST")
@@ -157,10 +151,11 @@ class LaneDetector(
         val existRow = outputs[3] as Array<Array<Array<FloatArray>>>
 
         val numLanes = spec.numLanes
-        val lanes = Array(numLanes) { mutableListOf<Pair<Int, Int>>() }
+        val lanes = Array(numLanes) { mutableListOf<Triple<Int, Int, Float>>() }
 
+        // crop 이후 입력(320) 기준으로 anchor 정의
         val rowAnchor = FloatArray(spec.numRow) { i ->
-            (1.0f - spec.cropRatio) + i.toFloat() / (spec.numRow - 1) * spec.cropRatio
+            i.toFloat() / (spec.numRow - 1)
         }
         val colAnchor = FloatArray(spec.numCol) { i ->
             i.toFloat() / (spec.numCol - 1)
@@ -176,21 +171,19 @@ class LaneDetector(
         // ROW 기반
         for (laneIdx in 0 until numLanes) {
             for (k in rowAnchor.indices) {
-                val rowProb = softmax(
-                    floatArrayOf(existRow[0][0][k][laneIdx], existRow[0][1][k][laneIdx])
-                )
-                if (rowProb[1] > 0.55f) {
-                    val logits = FloatArray(spec.numCellRow) { c ->
-                        locRow[0][c][k][laneIdx]
-                    }
+                val rowProb = softmax(floatArrayOf(existRow[0][0][k][laneIdx], existRow[0][1][k][laneIdx]))
+                if (rowProb[1] > 0.6f) {
+                    val logits = FloatArray(spec.numCellRow) { c -> locRow[0][c][k][laneIdx] }
                     val sm = softmax(logits)
-
                     val maxIdx = sm.indices.maxByOrNull { sm[it] } ?: -1
-                    if (maxIdx >= 0 && sm[maxIdx] > 0.5f) { // confidence 체크
+                    if (maxIdx >= 0 && sm[maxIdx] > 0.6f) {
                         val out = maxIdx + 0.5f
                         val xPx = (out / (spec.numCellRow - 1)) * outW
                         val yPx = rowAnchor[k] * outH
-                        lanes[laneIdx].add(Pair(xPx.toInt(), yPx.toInt()))
+                        val confidence = sm[maxIdx]
+                        if (xPx in 0f..outW.toFloat() && yPx in 0f..outH.toFloat()) {
+                            lanes[laneIdx].add(Triple(xPx.toInt(), yPx.toInt(), confidence))
+                        }
                     }
                 }
             }
@@ -199,21 +192,19 @@ class LaneDetector(
         // COL 기반
         for (laneIdx in 0 until numLanes) {
             for (k in colAnchor.indices) {
-                val colProb = softmax(
-                    floatArrayOf(existCol[0][0][k][laneIdx], existCol[0][1][k][laneIdx])
-                )
-                if (colProb[1] > 0.55f) {
-                    val logits = FloatArray(spec.numCellCol) { c ->
-                        locCol[0][c][k][laneIdx]
-                    }
+                val colProb = softmax(floatArrayOf(existCol[0][0][k][laneIdx], existCol[0][1][k][laneIdx]))
+                if (colProb[1] > 0.6f) {
+                    val logits = FloatArray(spec.numCellCol) { c -> locCol[0][c][k][laneIdx] }
                     val sm = softmax(logits)
-
                     val maxIdx = sm.indices.maxByOrNull { sm[it] } ?: -1
-                    if (maxIdx >= 0 && sm[maxIdx] > 0.5f) { // confidence 체크
+                    if (maxIdx >= 0 && sm[maxIdx] > 0.6f) {
                         val out = maxIdx + 0.5f
                         val yPx = (out / (spec.numCellCol - 1)) * outH
                         val xPx = colAnchor[k] * outW
-                        lanes[laneIdx].add(Pair(xPx.toInt(), yPx.toInt()))
+                        val confidence = sm[maxIdx]
+                        if (xPx in 0f..outW.toFloat() && yPx in 0f..outH.toFloat()) {
+                            lanes[laneIdx].add(Triple(xPx.toInt(), yPx.toInt(), confidence))
+                        }
                     }
                 }
             }
@@ -221,5 +212,4 @@ class LaneDetector(
 
         return lanes.filter { it.isNotEmpty() }
     }
-
 }

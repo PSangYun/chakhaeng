@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.domain.model.violation
 
+
 data class GetViolationDetail (
     val id: String,
     val videoId: String,

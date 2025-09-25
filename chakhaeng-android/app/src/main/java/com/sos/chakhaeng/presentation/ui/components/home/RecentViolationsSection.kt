@@ -57,8 +57,7 @@ fun RecentViolationsSection(
         if (violations.isEmpty()) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp),
+                    .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -83,7 +82,7 @@ fun RecentViolationsSection(
             Column(
                 modifier = Modifier
                     .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 violations.forEach { violation ->
                     ViolationItem(violation = violation)

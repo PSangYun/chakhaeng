@@ -69,12 +69,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove">
+        </provider>
         <activity
             android:name=".ui.test.LaneTestActivity"
             android:exported="true"
             android:label="Lane Detection Test"
             android:theme="@style/Theme.LaneTest">
+        </activity>
+
+        <activity
+            android:name=".ui.test.CameraLaneActivity"
+            android:exported="true"
+            android:label="Camera Lane Detection Test"
+            android:theme="@style/Theme.LaneTest"
+            android:screenOrientation="portrait"
+            >
         </activity>
 
     </application>

@@ -1,7 +1,7 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
 import com.sos.chakhaeng.domain.model.ViolationType
-import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
+import com.sos.chakhaeng.domain.model.violation.ViolationInRangeEntity
 
 data class DetectionUiState(
     val isLoading: Boolean = false,
@@ -11,8 +11,7 @@ data class DetectionUiState(
     val cameraPermissionGranted: Boolean = false,
     val error: String? = null,
 
-    // 위반 탐지 관련 상태
-    val violationDetections: List<ViolationDetectionUiModel> = emptyList(),
+    val violationDetections: List<ViolationInRangeEntity> = emptyList(),
     val selectedViolationFilter: ViolationType = ViolationType.ALL,
-    val filteredViolations: List<ViolationDetectionUiModel> = emptyList()
+    val filteredViolations: List<ViolationInRangeEntity> = emptyList()
 )
