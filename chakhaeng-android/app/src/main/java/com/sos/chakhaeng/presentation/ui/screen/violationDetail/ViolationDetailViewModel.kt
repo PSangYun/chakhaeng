@@ -67,6 +67,8 @@ class ViolationDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         violationDetail = _uiState.value.violationDetail.copy(
                             violationType = detail.type,
+                            title = "${detail.locationText}에서 ${detail.type}",
+                            description = "${detail.locationText}에서 $dateStr : $timeStr 에 ${detail.type} 감지 되었습니다",
                             location = detail.locationText,
                             plateNumber = detail.plate,
                             date = dateStr,
