@@ -31,7 +31,7 @@ public class HomeController {
     @GetMapping("/recent")
     public ResponseEntity<ApiResponse<List<RecentViolationItem>>> recent(
             @RequestAttribute("userId") UUID userId,
-            @RequestParam(defaultValue = "3") int limit
+            @RequestParam(defaultValue = "10") int limit
     ) {
         var data = recentService.getRecent(userId, limit);
         return ResponseEntity.ok(ApiResponse.ok("Recent violations fetched.", data));
