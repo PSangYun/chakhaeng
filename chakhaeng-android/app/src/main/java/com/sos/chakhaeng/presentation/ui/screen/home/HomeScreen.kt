@@ -55,7 +55,9 @@ fun HomeScreen(uiState: HomeUiState, viewModel: HomeViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    color = if (uiState.isDetectionActive) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else primaryLight
+                    color = if (uiState.isDetectionActive) MaterialTheme.colorScheme.error.copy(
+                        alpha = 0.7f
+                    ) else primaryLight
                 )
         ) {
             LazyColumn(
@@ -89,7 +91,10 @@ fun HomeScreen(uiState: HomeUiState, viewModel: HomeViewModel) {
                 // 실시간 위반 감지 리스트
                 item {
                     RecentViolationsSection(
-                        violations = uiState.recentViolations
+                        violations = uiState.recentViolations,
+                        onClick = { violationId ->
+                            viewModel.navigateDetectionDetail(violationId)
+                        }
                     )
                 }
             }

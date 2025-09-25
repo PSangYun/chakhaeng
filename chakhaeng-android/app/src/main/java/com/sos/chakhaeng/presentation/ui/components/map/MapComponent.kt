@@ -22,10 +22,160 @@ import com.sos.chakhaeng.R
 import com.sos.chakhaeng.data.mapper.LocationMapper
 import com.sos.chakhaeng.domain.model.report.ReportDetailItem
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
+import com.sos.chakhaeng.presentation.ui.screen.detectionDetail.DetectionDetailUiState
 import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailUiState
 
 @Composable
 fun MapComponent(
+    reportDetailItem: ReportDetailItem,
+    uiState: DetectionDetailUiState,
+    onLocationRequest: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val mapPosition = LocationMapper.toLatLng(uiState.mapLocation)
+    var markerIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
+
+    // 마커 아이콘 초기화
+    LaunchedEffect(Unit) {
+        markerIcon = try {
+            createSizedMarker(context, 80) ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+        } catch (e: Exception) {
+            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+        }
+    }
+
+    LaunchedEffect(reportDetailItem.location) {
+        if (reportDetailItem.location.isNotEmpty()) {
+            onLocationRequest(reportDetailItem.location)
+        }
+    }
+
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(mapPosition, 15f)
+    }
+
+    // 마커 위치가 변경되면 카메라도 이동 (DEFAULT 위치가 아닌 경우에만)
+    LaunchedEffect(uiState.mapLocation) {
+        if (!uiState.mapLocation.isDefault()) {
+            val newPosition = LocationMapper.toLatLng(uiState.mapLocation)
+            cameraPositionState.move(
+                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(newPosition, 15f)
+            )
+        }
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        // Google Map 영역
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                GoogleMap(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(8.dp)),
+                    cameraPositionState = cameraPositionState,
+                    properties = MapProperties(
+                        isMyLocationEnabled = false,
+                        mapType = MapType.NORMAL
+                    ),
+                    uiSettings = MapUiSettings(
+                        zoomControlsEnabled = true,
+                        zoomGesturesEnabled = true,
+                        scrollGesturesEnabled = true,
+                        rotationGesturesEnabled = false,
+                        tiltGesturesEnabled = false,
+                        compassEnabled = true,
+                        mapToolbarEnabled = false
+                    )
+                ) {
+                    // 마커 아이콘이 준비된 후에만 마커 표시
+                    markerIcon?.let { icon ->
+                        Marker(
+                            state = MarkerState(position = mapPosition),
+                            title = "🚨 위반 발생 지점",
+                            snippet = buildString {
+                                append("위치: ${reportDetailItem.location}")
+                            },
+                            icon = icon,
+                            onClick = {
+                                false
+                            }
+                        )
+                    }
+                }
+
+                // 로딩 오버레이
+                if (uiState.isMapLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.Black.copy(alpha = 0.7f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "지도 로딩 중...",
+                                    color = Color.White,
+                                    style = chakhaengTypography().bodySmall
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 에러 오버레이
+                if (uiState.mapError != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Text(
+                                text = uiState.mapError,
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+}
+
+@Composable
+fun MapComponentForReportDetail(
     reportDetailItem: ReportDetailItem,
     uiState: ReportDetailUiState,
     onLocationRequest: (String) -> Unit,

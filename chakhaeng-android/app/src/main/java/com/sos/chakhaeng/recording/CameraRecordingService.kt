@@ -119,7 +119,7 @@ class CameraRecordingService : LifecycleService() {
     private val SEGMENT_MS = 5_000L
     private val SEGMENT_COOLDOWN_MS = 150L
     private val PRE_WINDOW_LIMIT_MS = 12_000L
-    private val DEFAULT_PRE_MS = 6_000L
+    private val DEFAULT_PRE_MS = 3_000L
     private val DEFAULT_POST_MS = 5_000L
 
     /** CameraX & Recording state */
@@ -743,6 +743,12 @@ class CameraRecordingService : LifecycleService() {
     private fun markEvent(preMs: Long, postMs: Long, violationType: String, plate: String) {
         val now = System.currentTimeMillis()
         val name = "incident_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(now))}.mp4"
+        val textToRead = "$violationType 감지되었습니다."
+        if (ChakHaengApplication.ttsReady) {
+            ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
+        } else {
+            Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
+        }
         // 넣어줘 상윤아
         pendingCapture = CaptureRequest(eventTs = now, preMs = preMs, postMs = postMs, displayName = name, violationType = violationType, plate = plate)
         updateNotification("사건 감지! 후단 ${postMs / 1000}s 수집 중…")
@@ -762,7 +768,7 @@ class CameraRecordingService : LifecycleService() {
 
     private suspend fun checkAndMaybeMerge() {
         val req = pendingCapture ?: return
-        val textToRead = "${req.violationType} 감지되었습니다."
+
         val enough = segMutex.withLock {
             segmentQueue.isNotEmpty() && (segmentQueue.last().endMs >= req.eventTs + req.postMs)
         }
@@ -782,11 +788,7 @@ class CameraRecordingService : LifecycleService() {
             var outUri: Uri? = null
             try {
                 updateNotification("사건 클립 병합 중 (${sources.size}개)…")
-                if (ChakHaengApplication.ttsReady) {
-                    ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
-                } else {
-                    Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
-                }
+
                 outUri = createVideoUri(req.displayName)
                 mergeMp4SegmentsToUri(sources, outUri)
                 getCurrentLocationAndEnqueue(this@CameraRecordingService, outUri, req.violationType, req.plate )
