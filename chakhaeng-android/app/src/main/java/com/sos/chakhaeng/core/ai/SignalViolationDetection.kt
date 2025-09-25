@@ -47,8 +47,6 @@ class SignalViolationDetection(
         val cw = crosswalk?.box
         val cwRect = cw?.toRectF()
         val crosswalkTopY = cw?.yTop
-        val crosswalkBottomY = cw?.yBottom
-        val crosswalkMidY = cw?.let { it.yTop + it.h * 0.6f }   // ✅ 추가: 세로 중간선
 
         if (debug) {
             Log.d(TAG_CTX, "f=$frameNo red=$redNow " +
@@ -67,7 +65,7 @@ class SignalViolationDetection(
         if (isRed && crosswalkTopY != null && cwRect != null) {
             val topY = cw.yTop
             val bottomY = cw.yBottom
-            val midY = cw.let { it.yTop + it.h * 0.5f }
+            val midY = cw.let { it.yTop + it.h * 0.6f }
             for (t in vehicleTracks) {
                 val (currCx, currBottomY) = t.box.bottomCenter()
                 val prevY = prevBottomY[t.id]
@@ -77,21 +75,6 @@ class SignalViolationDetection(
                 val trRect = t.box.toRectF()
                 val iouWithCrosswalk = iou(trRect, cwRect)
 
-                /// -----------------------------
-                // A) 세로 경계선 교차(기존 규칙)
-                // -----------------------------
-//                val crossedUp =
-//                    prevY != null &&
-//                            prevY >= crosswalkTopY - crossingTol &&
-//                            currBottomY <  crosswalkTopY - crossingTol
-//
-//                if (crossedUp && t.id !in recordedInThisPhase) {
-//                    Log.w(
-//                        TAG_VIOL,
-//                        "RED-CROSS id=${t.id} label=${t.label} ts=$nowMs " +
-//                                "prevY=${"%.3f".format(prevY!!)} currY=${"%.3f".format(currBottomY)} topY=${"%.3f".format(crosswalkTopY)} " +
-//                                "iou=${"%.3f".format(iouWithCrosswalk)}"
-//                    )
                 // -----------------------------
                 // A) ✅ 빨간불 동안 차량 바닥이 "횡단보도 세로 중간선(midY)"을 상향 통과하면 위반
                 //    (이전 프레임은 midY 아래, 현재 프레임은 midY 위로 넘어감)
@@ -117,46 +100,6 @@ class SignalViolationDetection(
                     recordedInThisPhase += t.id
                 }
 
-                // --------------------------------------------
-                // B) 횡단보도 "영역 안"에서 왼쪽으로 쭉 이동(신규 규칙)
-                //    - y-band 충족 OR IoU 임계 이상이면 누적 허용
-                // --------------------------------------------
-//                val insideCrosswalkBand =
-//                    currBottomY <= bottomY + crossingTol &&
-//                            currBottomY >= topY - crossingTol
-//                val inCrossByIou = iouWithCrosswalk >= crosswalkIouThresh
-//
-//                if ((insideCrosswalkBand || inCrossByIou) && prevX != null) {
-//                    val stepDx = currCx - prevX // 왼쪽 이동이면 stepDx < 0
-//                    if (stepDx <= -lateralStepTol) {
-//                        val acc = (accumLeftDx[t.id] ?: 0f) + stepDx // 음수 누적
-//                        accumLeftDx[t.id] = acc
-//                        if (acc <= -lateralAccumThresh && t.id !in recordedInThisPhase) {
-//                            Log.w(
-//                                TAG_VIOL,
-//                                "RED-MOVE-LEFT id=${t.id} label=${t.label} ts=$nowMs " +
-//                                        "accLeftDx=${"%.3f".format(acc)} stepDx=${"%.3f".format(stepDx)} " +
-//                                        "band=[${"%.3f".format(topY)}..${"%.3f".format(bottomY)}] " +
-//                                        "y=${"%.3f".format(currBottomY)} iou=${"%.3f".format(iouWithCrosswalk)}"
-//                            )
-//                            violations += SignalViolationHit(
-//                                trackId = t.id,
-//                                whenMs = nowMs,
-//                                vehicleType = t.label,
-//                                plateText = null
-//                            )
-//                            recordedInThisPhase += t.id
-//                            // 같은 phase에서 같은 차량의 중복 트리거 방지
-//                            accumLeftDx[t.id] = 0f
-//                        }
-//                    } else if (stepDx > 0f) {
-//                        // 오른쪽 이동/정지면 누적을 해제
-//                        accumLeftDx.remove(t.id)
-//                    }
-//                } else {
-//                    // 횡단보도 영역/IoU가 아니면 누적 리셋
-//                    accumLeftDx.remove(t.id)
-//                }
 
                 // 🚥 트랙 상태 디버그 로그 (5프레임마다)
                 if (debug && frameNo % 5L == 0L) {
