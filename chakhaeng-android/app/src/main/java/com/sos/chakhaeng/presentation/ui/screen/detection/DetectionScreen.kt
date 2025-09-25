@@ -57,6 +57,11 @@ fun DetectionScreen(
         service?.detectionsFlow() ?: flowOf(emptyList())
     }.collectAsStateWithLifecycle(initialValue = emptyList())
 
+    // ★ ByteTrack tracks 수집 (ID/정규화 bbox)
+    val tracks by remember(service) {
+        service?.tracksFlow() ?: flowOf(emptyList())
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
+
     LaunchedEffect(Unit) {
         if (!cameraPermission.status.isGranted) {
             cameraPermission.launchPermissionRequest()
@@ -101,6 +106,7 @@ fun DetectionScreen(
                             // ✅ 프리뷰 위를 가득 덮는 바운딩 박스 오버레이
                             DetectionOverlay(
                                 detections = detections,
+                                tracks = tracks,
                                 modifier = Modifier.matchParentSize()
                             )
                         }

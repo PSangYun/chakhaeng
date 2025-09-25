@@ -1,0 +1,26 @@
+bicycle
+car
+carplate
+crosswalk
+helmet
+invisible_signal_None
+kickboard
+lovebug
+motorcycle
+no-helmet
+pedestrian_signal_etc
+pedestrian_signal_green
+pedestrian_signal_red
+person
+unusual_signal_bus
+vehicular_signal_etc
+vehicular_signal_green
+vehicular_signal_green and green arrow
+vehicular_signal_green and yellow
+vehicular_signal_green arrow
+vehicular_signal_green arrow and green arrow
+vehicular_signal_green arrow down
+vehicular_signal_red
+vehicular_signal_red and green arrow
+vehicular_signal_red and yellow
+vehicular_signal_yellow
