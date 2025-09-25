@@ -11,7 +11,6 @@ data class ProfileUiState(
 
     val userProfile: UserProfile? = null,
     val badges: List<Badge> = emptyList(),
-    val missions: List<Mission> = emptyList(),
     val recentCompletedMissions: List<Mission> = emptyList(),
     val isLogoutDialogVisible: Boolean = false
 ) {

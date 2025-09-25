@@ -114,30 +114,4 @@ class ProfileViewModel @Inject constructor(
             )
         }
     }
-
-    private fun createMockMissions(): List<Mission> {
-        return listOf(
-            Mission(
-                id = "mission1",
-                title = "첫 번째 위반 탐지",
-                description = "교통위반을 1회 탐지하세요",
-                iconRes = R.drawable.ic_target_gd,
-                isCompleted = true
-            ),
-            Mission(
-                id = "mission2",
-                title = "정확한 신고",
-                description = "정확한 신고를 5회 완료하세요",
-                iconRes = R.drawable.ic_report_gd,
-                isCompleted = true
-            ),
-            Mission(
-                id = "mission3",
-                title = "연속 사용",
-                description = "7일 연속으로 앱을 사용하세요",
-                iconRes = R.drawable.ic_calendar,
-                isCompleted = false
-            ),
-        )
-    }
 }
