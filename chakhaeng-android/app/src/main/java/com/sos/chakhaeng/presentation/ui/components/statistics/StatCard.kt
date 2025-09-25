@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.style.TextAlign
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.onSurfaceVariantLight
 
@@ -41,10 +42,10 @@ fun StatCard(
                 .padding(16.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
         ){
 
             Column(
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -68,9 +69,11 @@ fun StatCard(
             }
 
             Text(
+                modifier = Modifier.weight(1f),
                 text = value,
                 style = chakhaengTypography().headlineSmall,
                 fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
             )
         }
     }

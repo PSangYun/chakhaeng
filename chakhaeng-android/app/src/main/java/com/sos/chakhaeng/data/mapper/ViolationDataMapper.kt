@@ -1,25 +1,28 @@
 package com.sos.chakhaeng.data.mapper
 
 import com.sos.chakhaeng.data.network.dto.request.violation.ViolationRequest
+import com.sos.chakhaeng.data.network.dto.response.violation.DetectViolationResponse
 import com.sos.chakhaeng.data.network.dto.response.violation.GetViolationDetailDto
 import com.sos.chakhaeng.data.network.dto.response.violation.ViolationDto
 import com.sos.chakhaeng.data.network.dto.response.violation.ViolationSubmitResponse
+import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.model.violation.GetViolationDetail
 import com.sos.chakhaeng.domain.model.violation.ViolationEntity
 import com.sos.chakhaeng.domain.model.violation.ViolationInRangeEntity
 import com.sos.chakhaeng.domain.model.violation.ViolationSubmit
+import kotlin.random.Random
 
 object ViolationDataMapper {
 
     fun ViolationEntity.toRequest() = ViolationRequest(
         violationType = violationType,
-        location      = location,
-        title         = title,
-        description   = description,
-        plateNumber   = plateNumber,
-        date          = date,
-        time          = time,
-        videoId       = videoUrl
+        location = location,
+        title = title,
+        description = description,
+        plateNumber = plateNumber,
+        date = date,
+        time = time,
+        videoId = videoUrl
     )
 
     fun ViolationSubmitResponse.toDomain() = ViolationSubmit(
@@ -30,7 +33,7 @@ object ViolationDataMapper {
     fun ViolationDto.toDomain() = ViolationInRangeEntity(
         id = id,
         videoId = videoId,
-        violationType = type,
+        violationType = type.toViolationType(),
         plate = plate,
         locationText = locationText,
         occurredAt = occurredAt,
@@ -47,4 +50,12 @@ object ViolationDataMapper {
         occurredAt = occurredAt,
         createdAt = createdAt
     )
+    private fun String.toViolationType(): ViolationType = when (this.uppercase()) {
+        "역주행" -> ViolationType.WRONG_WAY
+        "신호위반" -> ViolationType.SIGNAL
+        "차선침범" -> ViolationType.LANE
+        "무번호판" -> ViolationType.NO_PLATE
+        "헬멧 미착용" -> ViolationType.NO_HELMET
+        else -> ViolationType.OTHERS
+    }
 }

@@ -1,4 +1,3 @@
-// presentation/ui/screen/profile/ProfileScreen.kt
 package com.sos.chakhaeng.presentation.ui.screen.profile
 
 import androidx.compose.foundation.background
@@ -13,7 +12,9 @@ import com.sos.chakhaeng.presentation.ui.components.profile.*
 @Composable
 fun ProfileScreen(
     uiState: ProfileUiState,
-    viewModel: ProfileViewModel
+    viewModel: ProfileViewModel,
+    onAllBadgesClick: () -> Unit,
+    onMissionClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -40,7 +41,9 @@ fun ProfileScreen(
                 )
 
                 ProfileContent(
-                    uiState = uiState
+                    uiState = uiState,
+                    onAllBadgesClick = onAllBadgesClick,
+                    onMissionClick = onMissionClick
                 )
             }
         }

@@ -1,6 +1,7 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
 import android.Manifest
+import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,6 +48,7 @@ fun DetectionScreen(
     viewModel: DetectionViewModel = hiltViewModel(),
     paddingValues: PaddingValues
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
 
@@ -122,6 +125,7 @@ fun DetectionScreen(
             // 하단 위반 목록
             if (!uiState.isFullscreen) {
                 ViolationDetectionSection(
+                    isActive = uiState.isDetectionActive,
                     selectedFilter = uiState.selectedViolationFilter,
                     violations = uiState.filteredViolations,
                     onFilterSelected = viewModel::onViolationFilterSelected,

@@ -11,25 +11,31 @@ import com.sos.chakhaeng.core.ai.MultiModelInterpreterDetector
 import com.sos.chakhaeng.core.ai.TrafficFrameResult
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
+import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.usecase.violation.DetectionUseCase
 import com.sos.chakhaeng.domain.usecase.violation.GetViolationsInRangeUseCase
-import com.sos.chakhaeng.presentation.model.ViolationDetectionUiModel
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
+import com.sos.chakhaeng.domain.model.violation.ViolationInRangeEntity
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
-import com.sos.chakhaeng.presentation.mapper.ViolationUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import java.time.Instant
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -39,7 +45,8 @@ class DetectionViewModel @Inject constructor(
     private val detectionUseCase: DetectionUseCase,
     private val getViolationsInRangeUseCase: GetViolationsInRangeUseCase,
     private val detector: Detector,
-    private val processDetectionsUseCase: ProcessDetectionsUseCase
+    private val processDetectionsUseCase: ProcessDetectionsUseCase,
+    private val sessionHolder: DetectionSessionHolder
 ) : ViewModel() {
 
     private val _detections = MutableStateFlow<List<Detection>>(emptyList())
@@ -104,11 +111,25 @@ class DetectionViewModel @Inject constructor(
             detectionUseCase.isDetectionActive.collect { isActive ->
                 if (isActive) {
                     initializeCamera()
-                    generateSampleViolationData()
-                    getViolationsInRangeUseCase("2025-09-12T05:59:21.093Z", "2025-09-22T05:59:21.093Z")
-                } else {
-                    pauseCamera()
                 }
+                    sessionHolder.startInstant
+                    .filterNotNull()
+                    .distinctUntilChanged()
+                    .collect { startedAt ->
+                        while (isActive) {
+                            val now = Instant.now()
+                            getViolationsInRangeUseCase(startedAt.toString(), now.toString())
+                                .onSuccess { data ->
+                                    _uiState.update { it.copy(violationDetections = data) }
+                                }
+                                .onFailure { e ->
+                                    Log.e("Poll", "fetch fail: ${e.message}", e)
+                                }
+
+                            delay(5_000L)
+                        }
+                    }
+
             }
         }
     }
@@ -282,7 +303,7 @@ class DetectionViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedViolationFilter = filter)
     }
 
-    fun onViolationClick(violation: ViolationDetectionUiModel) {
+    fun onViolationClick(violation: ViolationInRangeEntity) {
         viewModelScope.launch {
             navigator.navigate(Route.ViolationDetail(violation.id))
         }
@@ -293,57 +314,14 @@ class DetectionViewModel @Inject constructor(
     }
 
     private fun filterViolations(
-        violations: List<ViolationDetectionUiModel>,
+        violations: List<ViolationInRangeEntity>,
         filter: ViolationType
-    ): List<ViolationDetectionUiModel> {
+    ): List<ViolationInRangeEntity> {
         return if (filter == ViolationType.ALL) {
             violations
         } else {
-            violations.filter { it.type == filter }
+            violations.filter { it.violationType.toString() == filter.toString() }
         }
-    }
-
-    private fun generateSampleViolationData() {
-        val sampleViolations = listOf(
-            ViolationUiMapper.mapToUiModel(
-                id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                type = ViolationType.WRONG_WAY,
-                licenseNumber = "12가1234",
-                location = "강남구 테헤란로 123",
-                detectedAt = LocalDateTime.now().minusMinutes(2),
-                confidence = 0.95f,
-                thumbnailUrl = null
-            ),
-            ViolationUiMapper.mapToUiModel(
-                id ="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                type = ViolationType.SIGNAL,
-                licenseNumber = "34나5678",
-                location = "서초구 서초대로 456",
-                detectedAt = LocalDateTime.now().minusMinutes(5),
-                confidence = 0.88f,
-                thumbnailUrl = null
-            ),
-            ViolationUiMapper.mapToUiModel(
-                id ="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                type = ViolationType.LANE,
-                licenseNumber = "56다9012",
-                location = "마포구 월드컵로 789",
-                detectedAt = LocalDateTime.now().minusMinutes(12),
-                confidence = 0.73f,
-                thumbnailUrl = null
-            ),
-            ViolationUiMapper.mapToUiModel(
-                id = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                type = ViolationType.NO_PLATE,
-                licenseNumber = "78라3456",
-                location = "용산구 한강대로 321",
-                detectedAt = LocalDateTime.now().minusMinutes(25),
-                confidence = 0.82f,
-                thumbnailUrl = null
-            )
-        )
-
-        _uiState.value = _uiState.value.copy(violationDetections = sampleViolations)
     }
 
     override fun onCleared() {

@@ -6,22 +6,30 @@ import android.app.NotificationManager
 import android.os.Build
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import java.util.Locale
+import javax.inject.Inject
 
 @HiltAndroidApp
-class ChakHaengApplication : Application(), TextToSpeech.OnInitListener{
+class ChakHaengApplication : Application(), TextToSpeech.OnInitListener, Configuration.Provider{
 
     companion object {
         lateinit var tts: TextToSpeech
         var ttsReady = false
     }
+    @Inject lateinit var workerFactory: HiltWorkerFactory
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .setMinimumLoggingLevel(Log.DEBUG)
+            .build()
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels()
         tts = TextToSpeech(this, this)
-        // 앱 초기화 로직
     }
     private fun createNotificationChannels() {
         val channel = NotificationChannel(
@@ -51,4 +59,6 @@ class ChakHaengApplication : Application(), TextToSpeech.OnInitListener{
     override fun onTerminate() {
         super.onTerminate()
     }
+
+
 }
