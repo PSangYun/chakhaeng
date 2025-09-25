@@ -38,15 +38,6 @@ class RedSignalCrosswalkRule @Inject constructor(
         TrafficLabels.LABELS.withIndex().associate { it.value.trim().lowercase() to it.index }
     }
 
-    // ByteTrack (정규화 좌표로 사용)
-    private val tracker = ByteTrackEngine(
-        scoreThresh = 0.10f,
-        nmsThresh   = 0.70f,
-        trackThresh = 0.25f,
-        trackBuffer = 90,
-        matchThresh = 0.70f
-    )
-
     // 프레임 간 상태
     private val prevBottomY = mutableMapOf<Int, Float>()
     private val prevCenterX = mutableMapOf<Int, Float>()
@@ -55,7 +46,10 @@ class RedSignalCrosswalkRule @Inject constructor(
     private var isRed = false
     private var phaseId = 0
 
-    override fun evaluate(detections: List<Detection>): List<ViolationEvent> {
+    override fun evaluate(
+        detections: List<Detection>,
+        tracks: List<TrackObj>
+        ): List<ViolationEvent> {
         if (detections.isEmpty()) return emptyList()
 
         // 1) 신호 선택: 화면에서 가장 위(= y 최소)인 vehicular_signal_* 1개
@@ -78,17 +72,17 @@ class RedSignalCrosswalkRule @Inject constructor(
         isRed = redNow
 
         // 3) 차량만 추려서 ByteTrack 입력 (정규화 LTRB -> N(x,y,w,h))
-        val vehIdxSet = TrafficLabels.VEH_IDX
-        val vehForTrack = detections.mapNotNull { d ->
-            val idx = labelToIndex[d.label.trim().lowercase()] ?: return@mapNotNull null
-            if (idx !in vehIdxSet) return@mapNotNull null
-            val l = d.box.left; val t = d.box.top; val r = d.box.right; val b = d.box.bottom
-            val w = (r - l).coerceAtLeast(1e-6f)
-            val h = (b - t).coerceAtLeast(1e-6f)
-            ByteTrackEngine.Det(category = idx, conf = d.score, x = l, y = t, w = w, h = h)
-        }
-
-        val tracks = tracker.update(vehForTrack).map { it.toTrackObj() } // Track → TrackObj (정규화 반환) :contentReference[oaicite:1]{index=1}
+//        val vehIdxSet = TrafficLabels.VEH_IDX
+//        val vehForTrack = detections.mapNotNull { d ->
+//            val idx = labelToIndex[d.label.trim().lowercase()] ?: return@mapNotNull null
+//            if (idx !in vehIdxSet) return@mapNotNull null
+//            val l = d.box.left; val t = d.box.top; val r = d.box.right; val b = d.box.bottom
+//            val w = (r - l).coerceAtLeast(1e-6f)
+//            val h = (b - t).coerceAtLeast(1e-6f)
+//            ByteTrackEngine.Det(category = idx, conf = d.score, x = l, y = t, w = w, h = h)
+//        }
+//
+//        val tracks = tracker.update(vehForTrack).map { it.toTrackObj() } // Track → TrackObj (정규화 반환) :contentReference[oaicite:1]{index=1}
         if (!isRed || cwRect == null) {
             // 녹색 or 횡단보도 없음 → 위치만 갱신
             tracks.forEach { t ->
@@ -102,6 +96,7 @@ class RedSignalCrosswalkRule @Inject constructor(
         // 4) 빨간불 + 횡단보도 있을 때만 위반 판정
         val topY = cwRect.top
         val bottomY = cwRect.bottom
+        val midY = topY + (bottomY-topY)*0.6
         val events = mutableListOf<ViolationEvent>()
 
         for (t in tracks) {
@@ -116,30 +111,10 @@ class RedSignalCrosswalkRule @Inject constructor(
             val inside = insideBandByY || insideByIou
 
             // (A) 윗선 통과(아래→위) : prevY >= top && curr < top
-            val crossedUp = prevY != null && prevY >= topY - cfg.crossingTol && currBottomY < topY - cfg.crossingTol
+            val crossedMidUp = prevY != null && prevY >= midY - cfg.crossingTol && currBottomY < topY - cfg.crossingTol
 
-            // (B) 횡단보도 위에서 왼쪽 진행 누적
-            var makeEvent = false
-            if (crossedUp && t.id !in recordedInThisPhase) {
-                makeEvent = true
-            } else if (inside && prevX != null) {
-                val stepDx = currCx - prevX
-                if (stepDx <= -cfg.lateralStepTol) {
-                    val acc = (accumLeftDx[t.id] ?: 0f) + stepDx
-                    accumLeftDx[t.id] = acc
-                    if (acc <= -cfg.lateralAccumThresh && t.id !in recordedInThisPhase) {
-                        makeEvent = true
-                        accumLeftDx[t.id] = 0f
-                    }
-                } else if (stepDx > 0f) {
-                    // 오른쪽으로 되돌아가면 누적 초기화
-                    accumLeftDx.remove(t.id)
-                }
-            } else {
-                accumLeftDx.remove(t.id)
-            }
 
-            if (makeEvent) {
+            if (inside && crossedMidUp && t.id !in recordedInThisPhase) {
                 val evt = ViolationEvent(type = "신호위반", confidence = (primarySignal?.score ?: 0.9f))
                 val region = union(toRectF(t.box), cwRect)
                 if (throttle.allow(evt, region)) events += evt

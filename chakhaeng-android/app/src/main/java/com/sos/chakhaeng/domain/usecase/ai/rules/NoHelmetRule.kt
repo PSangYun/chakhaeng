@@ -2,6 +2,7 @@ package com.sos.chakhaeng.domain.usecase.ai.rules
 
 import android.graphics.RectF
 import com.sos.chakhaeng.core.ai.Detection
+import com.sos.chakhaeng.core.ai.TrackObj
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.ai.ViolationThrottle
 import com.sos.chakhaeng.domain.usecase.ai.geom.centerX
@@ -29,7 +30,7 @@ class NoHelmetRule @Inject constructor(
 
     override val name: String = "NoHelmet"
 
-    override fun evaluate(detections: List<Detection>): List<ViolationEvent> {
+    override fun evaluate(detections: List<Detection>, tracks: List<TrackObj>): List<ViolationEvent> {
         fun isPerson(x: Detection) = x.label.equals("person", true) && x.score >= cfg.minPerson
         fun isVehicle(x: Detection) = listOf("kickboard", "motorcycle", "bicycle")
             .any { x.label.equals(it, true) } && x.score >= cfg.minVehicle
