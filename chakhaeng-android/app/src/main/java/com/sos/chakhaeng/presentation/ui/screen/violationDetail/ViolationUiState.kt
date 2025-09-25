@@ -17,5 +17,5 @@ data class ViolationDetailUiState(
 )
 
 val VIOLATION_TYPE_OPTIONS = listOf(
-    "신호위반", "차선침범", "역주행", "무번호판", "헬멧 미착용", "위반"
+    "신호위반", "차선침범", "역주행", "킥보드 2인이상", "무번호판", "헬멧 미착용", "위반"
 )

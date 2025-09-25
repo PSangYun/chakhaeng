@@ -98,6 +98,7 @@ private fun ViolationDetectionItem(
                                 ViolationType.WRONG_WAY -> Color(0xFFFEF2F2)
                                 ViolationType.SIGNAL -> Color(0xFFFEF2F2)
                                 ViolationType.LANE -> Color(0xFFFFF7ED)
+                                ViolationType.LOVE_BUG -> Color(0xFFFFF7ED)
                                 ViolationType.NO_PLATE -> Color(0xFFFFF7ED)
                                 ViolationType.NO_HELMET -> Color(0xFFFEFCE8)
                                 ViolationType.OTHERS -> Color(0xFFFEFCE8)
@@ -109,6 +110,7 @@ private fun ViolationDetectionItem(
                                     ViolationType.WRONG_WAY -> "위험"
                                     ViolationType.SIGNAL -> "위험"
                                     ViolationType.LANE -> "주의"
+                                    ViolationType.LOVE_BUG -> "주의"
                                     ViolationType.NO_PLATE -> "주의"
                                     ViolationType.NO_HELMET -> "경미"
                                     ViolationType.OTHERS -> "경미"
@@ -120,6 +122,7 @@ private fun ViolationDetectionItem(
                                     ViolationType.WRONG_WAY -> Color(0xFFEF4444)
                                     ViolationType.SIGNAL -> Color(0xFFEF4444)
                                     ViolationType.LANE -> Color(0xFFF97316)
+                                    ViolationType.LOVE_BUG -> Color(0xFFF97316)
                                     ViolationType.NO_PLATE -> Color(0xFFF97316)
                                     ViolationType.NO_HELMET -> Color(0xFFCA8A04)
                                     ViolationType.OTHERS -> Color(0xFFCA8A04)
