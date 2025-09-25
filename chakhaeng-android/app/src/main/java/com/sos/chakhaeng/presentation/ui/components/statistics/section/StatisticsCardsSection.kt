@@ -47,7 +47,7 @@ fun StatisticsCardsSection(
         ) {
             StatCard(
                 modifier = Modifier.weight(1f),
-                title = "이번 주 탐지",
+                title = "이번 주 탐지 \n",
                 value = weeklyDetections.toString(),
                 iconVector = painterResource(R.drawable.ic_plan_gd),
                 iconColor = Color.Unspecified
