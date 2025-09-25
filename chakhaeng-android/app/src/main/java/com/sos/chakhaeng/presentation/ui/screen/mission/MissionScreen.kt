@@ -24,6 +24,9 @@ fun MissionScreen(
     viewModel: MissionViewModel,
     onBackClick: () -> Unit
 ) {
+    val sortedMissions = uiState.activeMissions.sortedBy {
+        - it.progressPercentage
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -33,7 +36,7 @@ fun MissionScreen(
             title = {
                 Text(
                     text = "미션",
-                    style = chakhaengTypography().titleLarge,
+                    style = chakhaengTypography().titleSmall,
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -92,7 +95,7 @@ fun MissionScreen(
                     }
 
                     // 활성 미션들
-                    items(uiState.activeMissions) { mission ->
+                    items(sortedMissions) { mission ->
                         MissionItem(
                             mission = mission
                         )
