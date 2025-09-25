@@ -63,7 +63,7 @@ fun LoginScreen(
 ) {
     val state = viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-
+    val context = LocalContext.current
     LaunchedEffect(state) {
         if (state.value is LoginUiState.Success) {
             viewModel.consumeSuccess()
@@ -97,16 +97,16 @@ fun LoginScreen(
             ) {
                 GoogleSignInButton(onClick = {
                     scope.launch {
-                        val (idToken, user) = googleAuthManager.signInWithGoogle()
+                        val (idToken, user) = googleAuthManager.signInWithGoogle(context)
                         viewModel.googleLogin(idToken, user)
                         viewModel.sendFcmToken()
                     }
                 })
                 NaverSignInButton(onClick ={
-                    scope.launch {
-                        val (idToken, user) = googleAuthManager.signInWithGoogle()
-                        viewModel.googleLogin(idToken, user)
-                    }
+//                    scope.launch {
+//                        val (idToken, user) = googleAuthManager.signInWithGoogle(context)
+//                        viewModel.googleLogin(idToken, user)
+//                    }
                 })
 //                TermsText(Modifier.padding(bottom = 24.dp))
                 Spacer(Modifier.height(128.dp))
