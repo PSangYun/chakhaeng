@@ -22,7 +22,9 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun signInWithGoogle(idToken: String): Result<Boolean>  = runCatching {
         val res = remote.loginWithGoogle(idToken)
-        require(res.success && res.data != null) { res.message }
+        require(res.success && res.data != null) {
+            res.message
+        }
 
         // Google 사용자 정보와 함께 세션 저장
         session.onLogin(res.data, currentGoogleUser)
