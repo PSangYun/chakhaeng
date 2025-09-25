@@ -35,7 +35,7 @@ fun AllBadgesScreen(
             title = {
                 Text(
                     text = "전체 배지",
-                    style = chakhaengTypography().titleLarge,
+                    style = chakhaengTypography().titleSmall,
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -78,6 +78,9 @@ fun AllBadgesScreen(
             }
 
             uiState.hasData -> {
+                val sortedBadge = uiState.badges.sortedBy {
+                    it.isUnlocked == false
+                }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(16.dp),
@@ -85,7 +88,7 @@ fun AllBadgesScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(uiState.badges) { badge ->
+                    items(sortedBadge) { badge ->
                         AllBadgeItem(
                             badge = badge,
                             onBadgeClick = { clickedBadge ->

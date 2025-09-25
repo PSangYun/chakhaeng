@@ -22,14 +22,17 @@ import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.onBackgroundLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
 import com.sos.chakhaeng.presentation.ui.components.angledLinearGradientBackground
+import okhttp3.internal.filterList
 
 @Composable
 fun BadgeInfoSection(
     badges: List<Badge>,
-    isBadgeEmpty: Boolean,
     onAllBadgesClick: () -> Unit, // 전체 배지 클릭 콜백 추가
     modifier: Modifier = Modifier
 ) {
+    val validBadgeList = badges.filter {
+        it.isUnlocked == true
+    }
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -68,7 +71,7 @@ fun BadgeInfoSection(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                if (isBadgeEmpty) {
+                if (validBadgeList.isEmpty()) {
                     item {
                         Text(
                             text = "아직 보유한 배지가 없습니다.",
@@ -77,7 +80,7 @@ fun BadgeInfoSection(
                         )
                     }
                 } else{
-                    items(badges) { badge ->
+                    items(validBadgeList) { badge ->
                         BadgeItem(
                             badge = badge
                         )
