@@ -625,11 +625,6 @@ class CameraRecordingService : LifecycleService() {
     private suspend fun checkAndMaybeMerge() {
         val req = pendingCapture ?: return
         val textToRead = "${req.violationType} 감지되었습니다."
-        if (ChakHaengApplication.ttsReady) {
-            ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
-        } else {
-            Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
-        }
         val enough = segMutex.withLock {
             segmentQueue.isNotEmpty() && (segmentQueue.last().endMs >= req.eventTs + req.postMs)
         }
@@ -649,7 +644,11 @@ class CameraRecordingService : LifecycleService() {
             var outUri: Uri? = null
             try {
                 updateNotification("사건 클립 병합 중 (${sources.size}개)…")
-
+                if (ChakHaengApplication.ttsReady) {
+                    ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
+                } else {
+                    Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
+                }
                 outUri = createVideoUri(req.displayName)
                 mergeMp4SegmentsToUri(sources, outUri)
                 getCurrentLocationAndEnqueue(this@CameraRecordingService, outUri, req.violationType, req.plate )
