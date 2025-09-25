@@ -3,11 +3,9 @@ package com.sos.chakhaeng.presentation.ui.screen.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sos.chakhaeng.R
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.session.SessionManager
-import com.sos.chakhaeng.domain.model.profile.Mission
 import com.sos.chakhaeng.domain.usecase.profile.GetRecentCompletedMissionsUseCase
 import com.sos.chakhaeng.domain.usecase.profile.GetUserBadgeUseCase
 import com.sos.chakhaeng.domain.usecase.profile.GetUserProfileUseCase

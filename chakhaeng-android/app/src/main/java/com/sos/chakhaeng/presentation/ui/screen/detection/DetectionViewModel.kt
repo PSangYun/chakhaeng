@@ -74,7 +74,7 @@ class DetectionViewModel @Inject constructor(
                 if (isActive) {
                     initializeCamera()
                 }
-                delay(1000)
+                delay(5000)
                     sessionHolder.startInstant
                     .filterNotNull()
                     .distinctUntilChanged()
