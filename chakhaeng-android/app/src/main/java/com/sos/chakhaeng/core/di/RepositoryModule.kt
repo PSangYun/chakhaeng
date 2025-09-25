@@ -1,6 +1,7 @@
 package com.sos.chakhaeng.core.di
 
 import com.sos.chakhaeng.data.repository.AuthRepositoryImpl
+import com.sos.chakhaeng.data.repository.FakeProfileRepositoryImpl
 import com.sos.chakhaeng.data.repository.HomeRepositoryImpl
 import com.sos.chakhaeng.data.repository.ReportRepositoryImpl
 import com.sos.chakhaeng.data.repository.FakeStatisticsRepositoryImpl
@@ -10,6 +11,7 @@ import com.sos.chakhaeng.domain.repository.ReportRepository
 import com.sos.chakhaeng.data.repository.ViolationRepositoryImpl
 import com.sos.chakhaeng.domain.repository.AuthRepository
 import com.sos.chakhaeng.domain.repository.HomeRepository
+import com.sos.chakhaeng.domain.repository.ProfileRepository
 import com.sos.chakhaeng.domain.repository.StatisticsRepository
 import com.sos.chakhaeng.domain.repository.VideoRepository
 import com.sos.chakhaeng.domain.repository.ViolationRepository
@@ -62,4 +64,11 @@ abstract class RepositoryModule {
     abstract fun bindStatisticsRepository(
         statisticsRepositoryImpl: StatisticsRepositoryImpl
     ) : StatisticsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindProfileRepository(
+        fakeProfileRepositoryImpl: FakeProfileRepositoryImpl
+    ) : ProfileRepository
+    
 }
