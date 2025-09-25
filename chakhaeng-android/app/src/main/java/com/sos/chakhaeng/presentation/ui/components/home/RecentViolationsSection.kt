@@ -3,6 +3,7 @@ package com.sos.chakhaeng.presentation.ui.components.home
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -30,7 +31,7 @@ fun RecentViolationsSection(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -39,16 +40,6 @@ fun RecentViolationsSection(
                 fontWeight = FontWeight.Bold
             )
 
-            TextButton(
-                onClick = { /* 전체보기 */ }
-            ) {
-                Text(
-                    text = "전체보기",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = NEUTRAL400
-                )
-            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
