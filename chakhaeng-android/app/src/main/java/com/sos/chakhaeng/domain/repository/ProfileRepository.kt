@@ -10,4 +10,6 @@ interface ProfileRepository {
     suspend fun getUserBadge(): Result<List<Badge>>
 
     suspend fun getRecentCompletedMissions(): Result<List<Mission>>
+
+    suspend fun getAllMissions(): Result<List<Mission>>
 }

@@ -58,4 +58,18 @@ class ProfileRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getAllMissions(): Result<List<Mission>> {
+        return try {
+            val response = profileApi.getAllMissions()
+            if (response.success) {
+                val missions = response.data?.map { it.toEntity() } ?: emptyList()
+                Result.success(missions)
+            } else {
+                Result.failure(RuntimeException("전체 미션 정보 가져오기 실패"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }
