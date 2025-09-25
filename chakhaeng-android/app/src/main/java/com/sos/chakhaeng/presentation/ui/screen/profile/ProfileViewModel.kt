@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.screen.profile
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.R
@@ -62,29 +63,27 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = ProfileUiState.loading()
 
-            try {
-                // 로딩 시뮬레이션
-                delay(1000)
+            delay(1000)
 
-                getUserProfileUseCase()
-                    .onSuccess { userProfile ->
+            getUserProfileUseCase()
+                .onSuccess { userProfile ->
 
-                        val mockBadges = createMockBadges()
-                        val mockMissions = createMockMissions()
+                    val mockBadges = createMockBadges()
+                    val mockMissions = createMockMissions()
 
-                        _uiState.value = ProfileUiState.success(
-                            userProfile = userProfile,
-                            badges = mockBadges,
-                            missions = mockMissions
-                        )
-                    }
-                    .onFailure { error ->
-                        _uiState.value = ProfileUiState.error("프로필 데이터 로드 실패: ${error.message}")
-                    }
-
-            } catch (e: Exception) {
-                _uiState.value = ProfileUiState.error("프로필 데이터 로드 실패: ${e.message}")
-            }
+                    _uiState.value = ProfileUiState.success(
+                        userProfile = userProfile,
+                        badges = mockBadges,
+                        missions = mockMissions
+                    )
+                }
+                .onFailure { error ->
+                    Log.e("TAG", "loadProfile: 프로필 데이터 로드 실패: ${error.message}")
+                    _uiState.value =  uiState.value.copy(
+                        error = error.message,
+                        isLoading = false
+                    )
+                }
         }
     }
 
