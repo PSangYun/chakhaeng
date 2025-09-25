@@ -57,6 +57,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.Detector
+import com.sos.chakhaeng.core.ai.LaneDetection
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.core.camera.toBitmap
@@ -129,6 +130,9 @@ class CameraRecordingService : LifecycleService() {
 
     private val _detections = MutableStateFlow<List<Detection>>(emptyList())
     fun detectionsFlow(): StateFlow<List<Detection>> = _detections
+
+    private val _lanes = MutableStateFlow<LaneDetection>(LaneDetection(emptyList()))
+    fun lanesFlow(): StateFlow<LaneDetection> = _lanes
 
     private var orientationListener: OrientationEventListener? = null
     private var lastSurfaceRotation: Int = Surface.ROTATION_0
@@ -338,7 +342,7 @@ class CameraRecordingService : LifecycleService() {
             cameraProvider = it
         }
 
-        val analysisResolution = Size(640, 480) // 또는 960x540, 1280x720로 점증 테스트
+        val analysisResolution = Size(1600, 533) // 또는 960x540, 1280x720로 점증 테스트
 
         val analysisSelector = ResolutionSelector.Builder()
             .setResolutionStrategy(
@@ -426,7 +430,9 @@ class CameraRecordingService : LifecycleService() {
                 launchedJob = true
                 try {
                     Log.d("AI", "analyze rotate=$rotation, bmp=${bmp.width}x${bmp.height}")
-                    val dets = withTimeoutOrNull(3000) { detector.detect(bmp,0) } ?: emptyList()
+
+                    val result = withTimeoutOrNull(3000) { detector.detect(bmp, 0) }
+                    val (dets, lanes) = result ?: (emptyList<Detection>() to LaneDetection(emptyList()))
 
                     infFpsCnt++
                     val nowInf = SystemClock.elapsedRealtime()
@@ -447,6 +453,10 @@ class CameraRecordingService : LifecycleService() {
                     // UI에 흘리는 상태도 갱신
                     val prev = _detections.value
                     if (!sameDetections(prev, dets)) _detections.value = dets
+
+                    if (lanes.coords.isNotEmpty()) {
+                        _lanes.value = lanes
+                    }
 
                     val violations = processDetectionsUseCase(dets)
                     if (violations.isNotEmpty()) {

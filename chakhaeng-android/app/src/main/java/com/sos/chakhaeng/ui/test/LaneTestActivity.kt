@@ -7,7 +7,7 @@ import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.sos.chakhaeng.R
-import com.sos.chakhaeng.core.ai.LaneDetector
+import com.sos.chakhaeng.core.ai.LaneDetector_old
 import com.sos.chakhaeng.core.ai.LaneModelSpec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,7 +17,7 @@ import org.tensorflow.lite.support.common.FileUtil
 
 class LaneTestActivity : ComponentActivity() {
 
-    private var detector: LaneDetector? = null
+    private var detector: LaneDetector_old? = null
     private var interpreter: Interpreter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +46,7 @@ class LaneTestActivity : ComponentActivity() {
                 FileUtil.loadMappedFile(this@LaneTestActivity, spec.assetPath)
             }
             interpreter = Interpreter(modelBuffer)
-            detector = LaneDetector(interpreter!!, spec)
+            detector = LaneDetector_old(interpreter!!, spec)
             // 3) 테스트용 이미지 로드 (리소스에서) → I/O는 백그라운드
             val bitmap: Bitmap = withContext(Dispatchers.IO) {
                 BitmapFactory.decodeResource(resources, R.drawable.test5)

@@ -77,11 +77,21 @@ class MultiModelInterpreterDetector(
         Log.d("DTAG", "warmup prepared: in=(${w}x${h}), outShape=${shape.contentToString()}")
     }
 
-    override suspend fun detect(bitmap: Bitmap, rotation: Int): List<Detection> {
+    override suspend fun detect(bitmap: Bitmap, rotation: Int): Pair<List<Detection>, LaneDetection> {
         Log.d("DTAG","detect entry")
         // 이미 처리 중이면 "비우고 최신만" 정책 – 바로 리턴
-        if (!running.compareAndSet(false, true)) return emptyList()
+        if (!running.compareAndSet(false, true)) return Pair(emptyList(), LaneDetection(emptyList()))
         try {
+
+            val laneDetector = LaneDetector(context, "models/culane_res18_dynamic.tflite")
+            val coords = laneDetector.detect(bitmap)
+
+            coords.forEachIndexed { i, lane ->
+                Log.d("Lane", "lane#$i size=${lane.size}, sample=${lane.take(10)}")
+            }
+            Log.d("Lane", "detect() coords=${coords.size}, sample=${coords.firstOrNull()}")
+            val laneResult = LaneDetection(coords)
+
             val spec = requireNotNull(specsByKey[currentKey])
             val itp = interpreters.getOrPut(currentKey) { ensureInterpreter(spec) }
             val parser = parsers.getOrPut(currentKey) { YoloV8Parser(spec.numClasses) }
@@ -132,7 +142,7 @@ class MultiModelInterpreterDetector(
                 }
             } catch (t: TimeoutCancellationException) {
                 Log.e("DTAG", "tflite.run timeout ($runTimeoutMs ms)-> skip this frame")
-                return emptyList()
+                return Pair(emptyList(), LaneDetection(emptyList()))
             }
             val t1 = SystemClock.elapsedRealtime()
             Log.d("DTAG", "tflite.run took=${t1 - t0}ms")
@@ -141,22 +151,27 @@ class MultiModelInterpreterDetector(
             val b = shape[2]
             val out = cachedOutArray!!
 
+            Log.d("Lane_Final", "returning coords=${laneResult.coords.size}, sample=${laneResult.coords.firstOrNull()}")
+
+
             return when {
                 a == 4 + spec.numClasses -> {
-                    YoloV8Parser(spec.numClasses).parseCHW(
+                    val detections = YoloV8Parser(spec.numClasses).parseCHW(
                         out = out,
                         inputW = inW, inputH = inH,
                         origW = bitmap.width, origH = bitmap.height,
                         labels = labels
                     )
+                    Pair(detections, laneResult)
                 }
                 b == 4 + spec.numClasses -> {
-                    YoloV8Parser(spec.numClasses).parseHWC(
+                    val detections = YoloV8Parser(spec.numClasses).parseHWC(
                         out = out,
                         inputW = inW, inputH = inH,
                         origW = bitmap.width, origH = bitmap.height,
                         labels = labels
                     )
+                    Pair(detections, laneResult)
                 }
                 else -> error("Unsupported output shape: ${shape.contentToString()}")
             }

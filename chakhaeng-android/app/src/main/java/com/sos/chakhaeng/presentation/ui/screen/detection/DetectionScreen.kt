@@ -1,7 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
 import android.Manifest
-import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
@@ -30,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.sos.chakhaeng.core.ai.LaneDetection
 import com.sos.chakhaeng.presentation.theme.onPrimaryLight
 import com.sos.chakhaeng.presentation.theme.primaryLight
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraErrorScreen
@@ -41,6 +41,7 @@ import com.sos.chakhaeng.presentation.ui.components.detection.DetectionOverlay
 import com.sos.chakhaeng.presentation.ui.components.detection.ViolationDetectionSection
 import com.sos.chakhaeng.recording.CameraRecordingService
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -53,15 +54,24 @@ fun DetectionScreen(
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
 
     var service by remember { mutableStateOf<CameraRecordingService?>(null) }
+
+    // ✅ YOLO 결과
     val detections by remember(service) {
         service?.detectionsFlow() ?: flowOf(emptyList())
     }.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    val laneDetection by remember(service) {
+        service?.lanesFlow() ?: flowOf(LaneDetection())
+    }.collectAsStateWithLifecycle(initialValue = LaneDetection())
+
+    val coords = laneDetection.coords
 
     LaunchedEffect(Unit) {
         if (!cameraPermission.status.isGranted) {
             cameraPermission.launchPermissionRequest()
         }
     }
+
     BackHandler(enabled = uiState.isFullscreen) {
         viewModel.toggleFullscreen()
     }
@@ -86,27 +96,26 @@ fun DetectionScreen(
                     }
 
                     uiState.isLoading -> CameraLoadingScreen()
+
                     uiState.isDetectionActive && uiState.isCameraReady -> {
-                        // ✅ 미리보기 + 오버레이를 한 레이어(Box)에서 함께 그린다
+                        // ✅ 미리보기 + 오버레이
                         Box(modifier = Modifier.fillMaxSize()) {
                             CameraPreviewSection(
                                 isDetectionActive = uiState.isDetectionActive,
                                 isFullscreen = uiState.isFullscreen,
-                                onToggleFullscreen = {
-                                    viewModel.toggleFullscreen()
-                                },
-                                onServiceConnected = {svc -> service = svc}
-
+                                onToggleFullscreen = { viewModel.toggleFullscreen() },
+                                onServiceConnected = { svc -> service = svc }
                             )
-                            // ✅ 프리뷰 위를 가득 덮는 바운딩 박스 오버레이
                             DetectionOverlay(
                                 detections = detections,
+                                coords = coords, // ✅ lane overlay 같이 전달
                                 modifier = Modifier.matchParentSize()
                             )
                         }
                     }
 
                     !uiState.isDetectionActive -> CameraInactiveOverlay()
+
                     uiState.error != null -> {
                         CameraErrorScreen(
                             error = uiState.error!!,
@@ -116,33 +125,26 @@ fun DetectionScreen(
                 }
             }
 
-            // 하단 위반 목록
+            // ✅ 하단 위반 목록
             if (!uiState.isFullscreen) {
                 ViolationDetectionSection(
                     isActive = uiState.isDetectionActive,
                     selectedFilter = uiState.selectedViolationFilter,
                     violations = uiState.filteredViolations,
                     onFilterSelected = viewModel::onViolationFilterSelected,
-                    onViolationClick = { violation ->
-                        viewModel.onViolationClick(violation)
-                    },
+                    onViolationClick = { violation -> viewModel.onViolationClick(violation) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .fillMaxHeight()
                 )
             }
         }
+
+        // ✅ FloatingActionButton
         FloatingActionButton(
             onClick = {
                 viewModel.navigateViolationDetail(null)
-//                context.startService(
-//                    Intent(context, CameraRecordingService::class.java).apply {
-//                        action = CameraRecordingService.ACTION_MARK_EVENT
-//                        putExtra(CameraRecordingService.EXTRA_PRE_MS, 6_000L)
-//                        putExtra(CameraRecordingService.EXTRA_POST_MS, 5_000L)
-//                    }
-//                )
-                Log.d("test", "test234")
+                Log.d("FAB", "clicked")
             },
             containerColor = primaryLight,
             contentColor = onPrimaryLight,
@@ -153,5 +155,4 @@ fun DetectionScreen(
             Icon(Icons.Filled.Add, contentDescription = "새로 만들기")
         }
     }
-
 }

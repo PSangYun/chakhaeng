@@ -12,7 +12,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import com.sos.chakhaeng.core.ai.LaneDetector
+import com.sos.chakhaeng.core.ai.LaneDetector_old
 import com.sos.chakhaeng.core.ai.LaneModelSpec
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.nnapi.NnApiDelegate
@@ -27,7 +27,7 @@ class CameraLaneActivity : ComponentActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var overlayView: OverlayView
-    private lateinit var laneDetector: LaneDetector
+    private lateinit var laneDetector: LaneDetector_old
     private lateinit var interpreter: Interpreter
     private val analysisExecutor = Executors.newSingleThreadExecutor()
 
@@ -70,7 +70,7 @@ class CameraLaneActivity : ComponentActivity() {
         val nnApiDelegate = NnApiDelegate()
         val options = Interpreter.Options().apply { addDelegate(nnApiDelegate) }
         interpreter = Interpreter(modelBuffer, options)
-        laneDetector = LaneDetector(interpreter, spec)
+        laneDetector = LaneDetector_old(interpreter, spec)
 
         startCamera()
     }
