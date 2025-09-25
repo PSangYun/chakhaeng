@@ -1,9 +1,7 @@
 package com.sos.chakhaeng.presentation.ui.screen.allbadges
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sos.chakhaeng.R
 import com.sos.chakhaeng.domain.model.profile.Badge
 import com.sos.chakhaeng.domain.usecase.profile.GetUserBadgeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -52,21 +50,20 @@ class AllBadgesViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             getUserBadgeUseCase()
-            .onSuccess { badges ->
-                _uiState.value = _uiState.value.copy(
-                    badges = badges,
-                    isLoading = false
-                )
-                Log.d("TAG", "loadAllBadges: ${badges}")
-            }
+                .onSuccess { badges ->
+                    _uiState.value = _uiState.value.copy(
+                        badges = badges,
+                        isLoading = false
+                    )
+                }
 
-
-            .onFailure { error ->
-                _uiState.value = _uiState.value.copy(
-                    error = error.message,
-                    isLoading = false
-                )
-            }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        error = error.message,
+                        isLoading = false
+                    )
+                }
         }
     }
+
 }
