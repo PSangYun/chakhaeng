@@ -1,1 +1,17 @@
-/build
+# 모든 모듈의 빌드 산출물
+**/build/
+**/outputs/
+**/intermediates/
+**/.cxx/
+**/.externalNativeBuild/
+
+# 산출 바이너리
+*.apk
+*.aab
+*.apks
+*.aar
+*.ipa
+
+# IDE/Gradle 캐시 (혹시 들어가 있었다면)
+.gradle/
+.idea/

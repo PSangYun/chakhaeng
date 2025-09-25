@@ -22,5 +22,5 @@ data class ReportStatisticsDTO(
     val totalSuccessRate: Int,
 
     @SerializedName("reportStatusStats")
-    val reportStatusStats: ReportStatusStatsDTO
+    val reportStatusStats: List<ReportStatusStatsDTO>
 )
