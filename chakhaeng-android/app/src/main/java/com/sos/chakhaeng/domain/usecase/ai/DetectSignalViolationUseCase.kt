@@ -65,9 +65,9 @@ class DetectSignalViolationUseCase @Inject constructor() {
         // 3) 도메인 이벤트로 매핑
         return hits.map {
             ViolationEvent(
-                id = it.trackId.toString(),          // ✅ 트래킹 ID를 그대로 사용
-                type = ViolationType.SIGNAL,
-                detectedAt = it.whenMs
+                confidence = 1f,          // ✅ 트래킹 ID를 그대로 사용
+                type = ViolationType.SIGNAL.displayName,
+                timeStamp = it.whenMs
             )
         }
     }
