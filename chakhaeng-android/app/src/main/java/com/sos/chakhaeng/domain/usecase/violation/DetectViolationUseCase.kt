@@ -1,7 +1,6 @@
 package com.sos.chakhaeng.domain.usecase.violation
 
 import android.net.Uri
-import com.sos.chakhaeng.domain.model.location.Location
 import com.sos.chakhaeng.domain.repository.LocationRepository
 import com.sos.chakhaeng.domain.repository.VideoRepository
 import com.sos.chakhaeng.domain.repository.ViolationRepository
@@ -25,9 +24,11 @@ class DetectViolationUseCase @Inject constructor(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         videoRepository.uploadVideo(uri, onProgress)
             .flatMap { uploadResult ->
-                val locationText = locationRepository.getAddressFromLocation(Location(lat, lng))
-                    ?.fullAddress
-                    ?: "구미시 진평동 543-2"
+                val locationText =
+//                    locationRepository.getAddressFromLocation(Location(lat, lng))
+//                    ?.fullAddress
+//                    ?:
+                    "구미시 임수동 94-1"
 
                 Result.success(Pair(uploadResult.complete.id, locationText))
             }
