@@ -61,7 +61,7 @@ fun MissionItemList(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(id = mission.iconRes),
+                    painter = painterResource(id = mission.iconRes?: 0),
                     contentDescription = mission.title,
                     modifier = Modifier.size(20.dp),
                     tint = primaryLight

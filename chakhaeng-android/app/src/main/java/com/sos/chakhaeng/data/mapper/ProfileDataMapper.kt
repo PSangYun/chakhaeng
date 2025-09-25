@@ -3,8 +3,10 @@ package com.sos.chakhaeng.data.mapper
 import com.sos.chakhaeng.R
 import com.sos.chakhaeng.data.network.dto.response.profile.BadgeDTO
 import com.sos.chakhaeng.data.network.dto.response.profile.UserProfileDTO
+import com.sos.chakhaeng.data.network.dto.response.profile.MissionDTO
 import com.sos.chakhaeng.domain.model.profile.Badge
 import com.sos.chakhaeng.domain.model.profile.UserProfile
+import com.sos.chakhaeng.domain.model.profile.Mission
 
 object ProfileDataMapper {
     fun UserProfileDTO.toEntity(): UserProfile = UserProfile(
@@ -19,6 +21,17 @@ object ProfileDataMapper {
         description = description,
         iconRes = name.toDrawableRes(),
         isUnlocked = isUnlocked
+    )
+
+    fun MissionDTO.toEntity(): Mission = Mission(
+        id = id,
+        title = title,
+        description = description,
+        iconRes = title.toDrawableRes(),
+        isCompleted = isCompleted,
+        currentProgress = currentProgress,
+        targetProgress = targetProgress,
+        rewardName = rewardName
     )
 
     private fun String.toDrawableRes(): Int? = when (this) {

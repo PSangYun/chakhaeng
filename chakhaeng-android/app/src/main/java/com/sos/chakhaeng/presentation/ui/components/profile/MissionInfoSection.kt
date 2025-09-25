@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.components.profile
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -10,13 +11,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import com.sos.chakhaeng.domain.model.profile.Mission
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.theme.primaryLight
+import com.sos.chakhaeng.presentation.theme.NEUTRAL400
 
 @Composable
 fun MissionInfoSection(
     missions: List<Mission>,
+    isRecentMissionEmpty: Boolean,
     onMissionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -56,13 +60,33 @@ fun MissionInfoSection(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 미션 리스트
-            missions.take(missions.size).forEach { mission ->
-                MissionItemList(
-                    mission = mission,
-                )
-                if (mission != missions.take(missions.size).last()) {
-                    Spacer(modifier = Modifier.height(12.dp))
+            Log.d("TAG", "MissionInfoSection: ${isRecentMissionEmpty}")
+            Log.d("TAG", "MissionInfoSection: ${missions}")
+            // 미션 리스트 또는 빈 상태
+            if (isRecentMissionEmpty) {
+                // 빈 상태
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "아직 달성한 미션이 없습니다.\n미션을 완료하여 보상을 받아보세요!",
+                        style = chakhaengTypography().bodyMedium,
+                        color = NEUTRAL400,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                // 미션 리스트 (최대 3개)
+                missions.take(3).forEach { mission ->
+                    MissionItemList(
+                        mission = mission,
+                    )
+                    if (mission != missions.take(3).last()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
             }
         }

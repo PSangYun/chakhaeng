@@ -8,6 +8,7 @@ import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.session.SessionManager
 import com.sos.chakhaeng.domain.model.profile.Mission
+import com.sos.chakhaeng.domain.usecase.profile.GetRecentCompletedMissionsUseCase
 import com.sos.chakhaeng.domain.usecase.profile.GetUserBadgeUseCase
 import com.sos.chakhaeng.domain.usecase.profile.GetUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val getUserProfileUseCase: GetUserProfileUseCase,
     private val getUserBadgeUseCase: GetUserBadgeUseCase,
+    private val getRecentCompletedMissionsUseCase: GetRecentCompletedMissionsUseCase,
 
     private val sessionManager: SessionManager,
     private val navigator: Navigator,
@@ -92,11 +94,21 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
 
-            val mockMissions = createMockMissions()
+            getRecentCompletedMissionsUseCase()
+                .onSuccess { missions ->
+                    _uiState.value = _uiState.value.copy(
+                        recentCompletedMissions = missions
+                    )
+                    Log.d("TAG", "loadProfile: ${missions}")
+                }
+                .onFailure { error ->
+                    Log.e("TAG", "loadProfile: 프로필 최근 미션 데이터 로드 실패: ${error.message}")
+                    _uiState.value = uiState.value.copy(
+                        error = error.message,
+                        isLoading = false
+                    )
+                }
 
-            _uiState.value = _uiState.value.copy(
-                missions = mockMissions
-            )
 
             _uiState.value = _uiState.value.copy(
                 isLoading = false

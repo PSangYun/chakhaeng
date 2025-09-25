@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.components.profile
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
@@ -36,10 +37,14 @@ fun ProfileContent(
             )
         }
 
+        Log.d("TAG", "ProfileContent: ${uiState.isRecentMissionEmpty}")
+        Log.d("TAG", "ProfileContent: ${uiState.recentCompletedMissions}")
+
         // 미션 정보 섹션
         item {
             MissionInfoSection(
-                missions = uiState.missions,
+                missions = uiState.recentCompletedMissions,
+                isRecentMissionEmpty = uiState.isRecentMissionEmpty,
                 onMissionClick = onMissionClick
             )
         }
