@@ -16,13 +16,13 @@ import javax.inject.Singleton
  */
 @Singleton
 class DetectSignalViolationUseCase @Inject constructor() {
-    private val tracker = ByteTrackEngine(
-        scoreThresh = 0.20f,
-        nmsThresh   = 0.70f,
-        trackThresh = 0.50f,
-        trackBuffer = 45,
-        matchThresh = 0.80f
-    )
+//    private val tracker = ByteTrackEngine(
+//        scoreThresh = 0.20f,
+//        nmsThresh   = 0.70f,
+//        trackThresh = 0.50f,
+//        trackBuffer = 45,
+//        matchThresh = 0.80f
+//    )
 
     private val signalLogic = SignalViolationDetection(
         vehicleLabels = setOf("car","motorcycle","bicycle","kickboard","lovebug"),
@@ -41,26 +41,27 @@ class DetectSignalViolationUseCase @Inject constructor() {
         dets: List<Detection>,
         frameW: Int,
         frameH: Int,
+        tracks: List<TrackObj>,
         nowMs: Long = System.currentTimeMillis()
     ): List<ViolationEvent> {
         // 1) 차량만 ByteTrack 입력(픽셀좌표 → 내부에서 정규화)
-        val btInputs: List<ByteTrackEngine.Det> = dets.mapNotNull { d ->
-            val idx = labelToIndex[d.label] ?: return@mapNotNull null
-            if (idx !in TrafficLabels.VEH_IDX) return@mapNotNull null
-            ByteTrackEngine.Det(
-                category = idx,
-                conf = d.score,
-                x = d.box.left, y = d.box.top,
-                w = d.box.width(), h = d.box.height()
-            )
-        }
-
-        val tracksRaw = tracker.update(btInputs)
-        val trackObjs = tracksRaw.map { it.toTrackObj() }
+//        val btInputs: List<ByteTrackEngine.Det> = dets.mapNotNull { d ->
+//            val idx = labelToIndex[d.label] ?: return@mapNotNull null
+//            if (idx !in TrafficLabels.VEH_IDX) return@mapNotNull null
+//            ByteTrackEngine.Det(
+//                category = idx,
+//                conf = d.score,
+//                x = d.box.left, y = d.box.top,
+//                w = d.box.width(), h = d.box.height()
+//            )
+//        }
+//
+//        val tracksRaw = tracker.update(btInputs)
+//        val trackObjs = tracksRaw.map { it.toTrackObj() }
 
         // 2) 정책 입력(정규화 좌표)
         val detObjs = dets.map { it.toNormalizedDetObj(frameW, frameH) }
-        val hits     = signalLogic.updateAndDetectViolations(detObjs, trackObjs, nowMs)
+        val hits     = signalLogic.updateAndDetectViolations(detObjs, tracks, nowMs)
 
         // 3) 도메인 이벤트로 매핑
         return hits.map {
@@ -72,13 +73,13 @@ class DetectSignalViolationUseCase @Inject constructor() {
         }
     }
 
-    /** 서비스/세션 리셋 시 호출(선택) */
-    fun reset() {
-        // 필요 시 내부 상태 초기화가 필요하면 SignalViolationDetection에 reset() 만들어 호출
-        // 현재 구현은 phase 전환으로 충분하면 비워도 OK
-    }
-
-    fun close() {
-        tracker.close()
-    }
+//    /** 서비스/세션 리셋 시 호출(선택) */
+//    fun reset() {
+//        // 필요 시 내부 상태 초기화가 필요하면 SignalViolationDetection에 reset() 만들어 호출
+//        // 현재 구현은 phase 전환으로 충분하면 비워도 OK
+//    }
+//
+//    fun close() {
+//        tracker.close()
+//    }
 }
