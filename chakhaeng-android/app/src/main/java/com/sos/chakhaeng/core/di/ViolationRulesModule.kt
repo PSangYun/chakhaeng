@@ -7,6 +7,7 @@ import com.sos.chakhaeng.domain.usecase.ai.rules.CrosswalkConfig
 import com.sos.chakhaeng.domain.usecase.ai.rules.CrosswalkInvadeRule
 import com.sos.chakhaeng.domain.usecase.ai.rules.NoHelmetConfig
 import com.sos.chakhaeng.domain.usecase.ai.rules.NoHelmetRule
+import com.sos.chakhaeng.domain.usecase.ai.rules.RedSignalConfig
 import com.sos.chakhaeng.domain.usecase.ai.rules.ViolationRule
 import dagger.Module
 import dagger.Provides
@@ -27,6 +28,7 @@ object ViolationRulesModule {
     // Config들 (원하면 RemoteConfig/Datastore로 치환)
     @Provides @Singleton fun provideNoHelmetConfig() = NoHelmetConfig()
     @Provides @Singleton fun provideCrosswalkConfig() = CrosswalkConfig()
+    @Provides @Singleton fun provideRedSignalConfig() = RedSignalConfig()
 
     @Provides @IntoSet
     fun provideNoHelmetRule(
