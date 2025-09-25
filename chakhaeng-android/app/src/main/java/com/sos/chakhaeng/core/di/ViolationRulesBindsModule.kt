@@ -4,6 +4,7 @@ import com.sos.chakhaeng.domain.usecase.ai.ViolationAggregator
 import com.sos.chakhaeng.domain.usecase.ai.ViolationThrottle
 import com.sos.chakhaeng.domain.usecase.ai.rules.CrosswalkConfig
 import com.sos.chakhaeng.domain.usecase.ai.rules.CrosswalkInvadeRule
+import com.sos.chakhaeng.domain.usecase.ai.rules.LovebugRule
 import com.sos.chakhaeng.domain.usecase.ai.rules.NoHelmetConfig
 import com.sos.chakhaeng.domain.usecase.ai.rules.NoHelmetRule
 import com.sos.chakhaeng.domain.usecase.ai.rules.RedSignalCrosswalkRule
@@ -29,4 +30,7 @@ abstract class ViolationRulesBindsModule {
 
     @Binds @IntoSet
     abstract fun bindRedSignalCrosswalkRule(impl: RedSignalCrosswalkRule): ViolationRule
+
+    @Binds @IntoSet
+    abstract fun bindLovebugRule(impl: LovebugRule): ViolationRule
 }

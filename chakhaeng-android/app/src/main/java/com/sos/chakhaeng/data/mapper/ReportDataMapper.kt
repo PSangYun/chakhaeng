@@ -41,6 +41,7 @@ object ReportDataMapper {
         "역주행" -> ViolationType.WRONG_WAY
         "신호위반" -> ViolationType.SIGNAL
         "차선침범" -> ViolationType.LANE
+        "킥보드 2인이상" -> ViolationType.LOVE_BUG
         "무번호판" -> ViolationType.NO_PLATE
         "헬멧 미착용" -> ViolationType.NO_HELMET
         "기타" -> ViolationType.OTHERS

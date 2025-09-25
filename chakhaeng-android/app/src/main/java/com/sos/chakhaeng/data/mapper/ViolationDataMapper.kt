@@ -52,6 +52,7 @@ object ViolationDataMapper {
     )
     private fun String.toViolationType(): ViolationType = when (this.uppercase()) {
         "역주행" -> ViolationType.WRONG_WAY
+        "킥보드 2인이상" -> ViolationType.LOVE_BUG
         "신호위반" -> ViolationType.SIGNAL
         "차선침범" -> ViolationType.LANE
         "무번호판" -> ViolationType.NO_PLATE
