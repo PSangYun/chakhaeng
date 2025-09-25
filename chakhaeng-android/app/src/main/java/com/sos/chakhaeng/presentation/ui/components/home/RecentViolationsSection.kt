@@ -2,27 +2,27 @@ package com.sos.chakhaeng.presentation.ui.components.home
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.domain.model.home.RecentViolation
-import com.sos.chakhaeng.presentation.theme.NEUTRAL400
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
+import com.sos.chakhaeng.R
 
 @Composable
 fun RecentViolationsSection(
-    violations: List<RecentViolation>
+    violations: List<RecentViolation>,
+    onClick: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -76,7 +76,10 @@ fun RecentViolationsSection(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 violations.forEach { violation ->
-                    ViolationItem(violation = violation)
+                    ViolationItem(
+                        violation = violation,
+                        onClick = onClick
+                    )
                 }
             }
         }
@@ -85,12 +88,16 @@ fun RecentViolationsSection(
 
 @Composable
 fun ViolationItem(
-    violation: RecentViolation
+    violation: RecentViolation,
+    onClick: (String) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp), // 고정 높이
+            .height(72.dp)
+            .clickable{
+                onClick(violation.violationId)
+            }, // 고정 높이
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -113,9 +120,9 @@ fun ViolationItem(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = getViolationIcon(violation.type),
+                    painter = painterResource(getViolationIcon(violation.type)),
                     contentDescription = null,
-                    tint = getSeverityColor(violation.type),
+                    tint = Color.Unspecified,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -168,14 +175,14 @@ private fun getSeverityColor(severity: String): Color {
     }
 }
 
-private fun getViolationIcon(violationType: String): ImageVector {
+private fun getViolationIcon(violationType: String):Int {
     return when (violationType) {
-        "역주행" -> Icons.Default.UTurnLeft
-        "신호위반" -> Icons.Default.Traffic
-        "차선침범" -> Icons.Default.SwapHoriz
-        "무번호판" -> Icons.Default.Badge
-        "헬멧 미착용" -> Icons.Default.PersonOff
-        else -> Icons.Default.Warning
+        "역주행" -> R.drawable.ic_wrong_way
+        "신호위반" -> R.drawable.ic_traffic
+        "차선침범" -> R.drawable.lane
+        "무번호판" -> R.drawable.ic_plate
+        "헬멧 미착용" -> R.drawable.ic_helmet
+        else -> R.drawable.ic_ete
     }
 }
 

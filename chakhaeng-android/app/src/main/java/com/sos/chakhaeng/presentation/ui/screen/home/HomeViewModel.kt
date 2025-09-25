@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.navigation.BottomTabRoute
 import com.sos.chakhaeng.core.navigation.Navigator
+import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.utils.DetectionStateManager
 import com.sos.chakhaeng.domain.model.home.RecentViolation
 import com.sos.chakhaeng.domain.model.home.TodayStats
@@ -110,6 +111,12 @@ class HomeViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(recentViolations = recentViolations)
                 }
                 .onFailure { /* handle error */ }
+        }
+    }
+
+    fun navigateDetectionDetail(violationId : String){
+        viewModelScope.launch {
+            navigator.navigate(Route.DetectionDetail(violationId))
         }
     }
 }

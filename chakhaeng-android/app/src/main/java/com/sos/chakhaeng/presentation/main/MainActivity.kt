@@ -17,16 +17,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -54,8 +45,9 @@ import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.core.session.SessionManager
 import com.sos.chakhaeng.presentation.theme.ChakHaengTheme
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
- import com.sos.chakhaeng.presentation.ui.screen.allbadges.AllBadgesRoute
+import com.sos.chakhaeng.presentation.ui.screen.allbadges.AllBadgesRoute
 import com.sos.chakhaeng.presentation.ui.screen.detection.DetectionScreen
+import com.sos.chakhaeng.presentation.ui.screen.detectionDetail.DetectionDetailRoute
 import com.sos.chakhaeng.presentation.ui.screen.home.HomeRoute
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
 import com.sos.chakhaeng.presentation.ui.screen.mission.MissionRoute
@@ -288,7 +280,12 @@ internal fun ChakhaengApp(
                             navBackStack = navBackStack
                         )
                     }
-
+                    is Route.DetectionDetail -> NavEntry(key){
+                        DetectionDetailRoute(
+                            padding = paddingValues,
+                            violationId = key.violationId
+                        )
+                    }
                     else -> NavEntry(key) { Unit }
                 }
             },

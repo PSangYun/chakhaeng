@@ -1,4 +1,4 @@
-package com.sos.chakhaeng.presentation.ui.screen.reportdetail
+package com.sos.chakhaeng.presentation.ui.screen.detectionDetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,28 +19,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.sos.chakhaeng.presentation.ui.components.report.ReportMediaSection
-import com.sos.chakhaeng.presentation.ui.components.report.ReportStatusSection
 import com.sos.chakhaeng.presentation.theme.BackgroundGray
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.ui.components.report.LocationInfoSection
-import com.sos.chakhaeng.presentation.ui.components.report.LocationInfoSectionForReportDetail
-import com.sos.chakhaeng.presentation.ui.components.report.ReportContentSection
 import com.sos.chakhaeng.presentation.ui.components.report.ReportDetailInfoSection
+import com.sos.chakhaeng.presentation.ui.components.report.ReportMediaSection
+import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportDetailScreen(uiState: ReportDetailUiState, reportDetailViewModel: ReportDetailViewModel) {
+fun DetectionDetailScreen(
+    uiState: DetectionDetailUiState,
+    detectionDetailViewModel: DetectionDetailViewModel
+) {
     CenterAlignedTopAppBar(
         title = {
             Text(
-                text = "신고 상세 정보",
+                text = "위반 상세 정보",
                 style = chakhaengTypography().titleSmall,
                 fontWeight = FontWeight.Bold
             )
         },
         navigationIcon = {
-            IconButton(onClick = { reportDetailViewModel.navigateBack() }) {
+            IconButton(onClick = { detectionDetailViewModel.navigateBack() }) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "뒤로")
             }
         },
@@ -61,32 +62,19 @@ fun ReportDetailScreen(uiState: ReportDetailUiState, reportDetailViewModel: Repo
                 videoUrl = uiState.streamingUrl,
             )
         }
-
-        item {
-            ReportStatusSection(
-                reportDetailItem = uiState.reportDetailItem
-            )
-        }
-
         item {
             ReportDetailInfoSection(
                 reportDetailItem = uiState.reportDetailItem
             )
         }
 
-        item{
-            LocationInfoSectionForReportDetail(
-                reportDetailItem = uiState.reportDetailItem,
-                reportDetailUiState = uiState,
-                onLocationRequest = { address ->
-                    reportDetailViewModel.getLocationFromAddress(address)
-                }
-            )
-        }
-
         item {
-            ReportContentSection(
-                reportDetailItem = uiState.reportDetailItem
+            LocationInfoSection(
+                reportDetailItem = uiState.reportDetailItem,
+                detectionDetailUiState = uiState,
+                onLocationRequest = { address ->
+                    detectionDetailViewModel.getLocationFromAddress(address)
+                }
             )
         }
     }
