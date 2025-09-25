@@ -7,11 +7,10 @@ import com.sos.chakhaeng.R
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.session.SessionManager
-import com.sos.chakhaeng.domain.model.profile.Badge
 import com.sos.chakhaeng.domain.model.profile.Mission
+import com.sos.chakhaeng.domain.usecase.profile.GetUserBadgeUseCase
 import com.sos.chakhaeng.domain.usecase.profile.GetUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val getUserBadgeUseCase: GetUserBadgeUseCase,
+
     private val sessionManager: SessionManager,
     private val navigator: Navigator,
 ) : ViewModel() {
@@ -63,63 +64,44 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = ProfileUiState.loading()
 
-            delay(1000)
-
             getUserProfileUseCase()
                 .onSuccess { userProfile ->
-
-                    val mockBadges = createMockBadges()
-                    val mockMissions = createMockMissions()
-
-                    _uiState.value = ProfileUiState.success(
-                        userProfile = userProfile,
-                        badges = mockBadges,
-                        missions = mockMissions
+                    _uiState.value = _uiState.value.copy(
+                        userProfile = userProfile
                     )
                 }
                 .onFailure { error ->
-                    Log.e("TAG", "loadProfile: 프로필 데이터 로드 실패: ${error.message}")
-                    _uiState.value =  uiState.value.copy(
+                    Log.e("TAG", "loadProfile: 사용자 프로필 데이터 로드 실패: ${error.message}")
+                    _uiState.value = uiState.value.copy(
                         error = error.message,
                         isLoading = false
                     )
                 }
-        }
-    }
 
-    // Mock 데이터 생성 함수들
+            getUserBadgeUseCase()
+                .onSuccess { badges ->
+                    _uiState.value = _uiState.value.copy(
+                        badges = badges
+                    )
+                }
+                .onFailure { error ->
+                    Log.e("TAG", "loadProfile: 프로필 배지 데이터 로드 실패: ${error.message}")
+                    _uiState.value = uiState.value.copy(
+                        error = error.message,
+                        isLoading = false
+                    )
+                }
 
-    private fun createMockBadges(): List<Badge> {
-        return listOf(
-            Badge(
-                id = "badge1",
-                name = "교통안전 지킴이",
-                description = "첫 번째 교통위반을 신고 하여 획득",
-                iconRes = R.drawable.badge_safety,
-                isUnlocked = true
-            ),
-            Badge(
-                id = "badge2",
-                name = "모범 시민",
-                description = "정확도 90% 이상을 달성 하여 획득",
-                iconRes = R.drawable.badge_citizen,
-                isUnlocked = true
-            ),
-            Badge(
-                id = "badge3",
-                name = "탐지왕",
-                description = "100회 이상 위반 탐지",
-                iconRes = R.drawable.badge_detection,
-                isUnlocked = true
-            ),
-            Badge(
-                id = "badge4",
-                name = "신고 마스터",
-                description = "50회 이상 정확한 신고",
-                iconRes = R.drawable.badge_report,
-                isUnlocked = true
+            val mockMissions = createMockMissions()
+
+            _uiState.value = _uiState.value.copy(
+                missions = mockMissions
             )
-        )
+
+            _uiState.value = _uiState.value.copy(
+                isLoading = false
+            )
+        }
     }
 
     private fun createMockMissions(): List<Mission> {

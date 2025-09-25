@@ -78,7 +78,7 @@ fun AllBadgeItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(badge.iconRes),
+                        painter = painterResource(badge.iconRes?: 0),
                         contentDescription = badge.name,
                         modifier = Modifier
                             .size(60.dp)

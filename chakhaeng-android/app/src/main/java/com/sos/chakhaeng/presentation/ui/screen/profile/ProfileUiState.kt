@@ -17,18 +17,14 @@ data class ProfileUiState(
     companion object{
         fun loading() = ProfileUiState(isLoading = true)
         fun error(message: String) = ProfileUiState(error = message)
-        fun success(
-            userProfile: UserProfile,
-            badges: List<Badge>,
-            missions: List<Mission>
-        ) = ProfileUiState(
-            isLoading = false,
-            userProfile = userProfile,
-            badges = badges,
-            missions = missions
-        )
     }
 
     val hasData: Boolean
         get() = userProfile != null && !isLoading && error == null
+
+    val isBadgeEmpty: Boolean
+        get() = badges.map { !it.isUnlocked }.all { it }
+
+//    val isMissionEmpty: Boolean
+//        get() = missions.isEmpty()
 }
