@@ -4,7 +4,7 @@ import java.time.*
 import java.time.format.DateTimeFormatter
 
 object OccurredAtFormatter {
-    private val dateFmt = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+    private val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     private val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
 
     /** occurredAt ISO-8601을 (date, time)으로 분리. 기본은 시스템 시간대 */
