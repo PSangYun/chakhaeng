@@ -3,6 +3,8 @@ package com.ssafy.chakeng.stats;
 import com.ssafy.chakeng.report.ReportRepository;
 import com.ssafy.chakeng.report.domain.Report;
 import com.ssafy.chakeng.stats.dto.*;
+import com.ssafy.chakeng.user.UserRepository;
+import com.ssafy.chakeng.user.domain.User;
 import com.ssafy.chakeng.violation.ViolationRepository;
 import com.ssafy.chakeng.violation.domain.Violation;
 import org.springframework.stereotype.Service;
@@ -18,11 +20,13 @@ public class StatisticsService {
 
     private final ViolationRepository violationRepository;
     private final ReportRepository reportRepository;
+    private final UserRepository userRepository;
 
     public StatisticsService(ViolationRepository violationRepository,
-                             ReportRepository reportRepository) {
+                             ReportRepository reportRepository, UserRepository userRepository) {
         this.violationRepository = violationRepository;
         this.reportRepository = reportRepository;
+        this.userRepository = userRepository;
     }
 
     // ===== 기본 기간(최근 30일, 끝날짜 당일 23:59:59.999...) =====
@@ -48,6 +52,8 @@ public class StatisticsService {
     public ViolationStatistics getViolationStats(UUID userId, OffsetDateTime from, OffsetDateTime to) {
         Range r = resolveRange(from, to);
         List<Violation> mine = violationRepository.findByVideoOwnerIdAndCreatedAtBetween(userId, r.from, r.to);
+        List<Violation> all = violationRepository.findAll();
+        List<User> users = userRepository.findAll();
 
         int total = mine.size();
 
@@ -99,9 +105,9 @@ public class StatisticsService {
 
         return new ViolationStatistics(
                 total,
-                detectionAccuracy,
+                all.size(),
                 weeklyDetections,
-                round1(dailyAvg),
+                users.size(),
                 typeStats,
                 hourly,
                 monthly
