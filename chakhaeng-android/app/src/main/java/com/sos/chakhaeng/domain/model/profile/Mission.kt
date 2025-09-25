@@ -1,10 +1,12 @@
 package com.sos.chakhaeng.domain.model.profile
 
+import com.sos.chakhaeng.R
+
 data class Mission(
     val id: String,
     val title: String,
     val description: String,
-    val iconRes: Int,
+    val iconRes: Int? = R.drawable.badge_safety,
     val isCompleted: Boolean,
     val currentProgress: Int = 0,
     val targetProgress: Int = 1,

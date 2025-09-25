@@ -4,6 +4,7 @@ import com.sos.chakhaeng.data.mapper.ProfileDataMapper.toEntity
 import com.sos.chakhaeng.data.network.api.ProfileApi
 import com.sos.chakhaeng.domain.model.profile.Badge
 import com.sos.chakhaeng.domain.model.profile.UserProfile
+import com.sos.chakhaeng.domain.model.profile.Mission
 import com.sos.chakhaeng.domain.repository.ProfileRepository
 import javax.inject.Inject
 
@@ -37,6 +38,20 @@ class ProfileRepositoryImpl @Inject constructor(
                 Result.success(badges)
             } else{
                 Result.failure(RuntimeException("사용자 뱃지 정보 가져오기 실패"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getRecentCompletedMissions(): Result<List<Mission>> {
+        return try {
+            val response = profileApi.getRecentCompletedMissions()
+            if (response.success) {
+                val missions = response.data?.map { it.toEntity() } ?: emptyList()
+                Result.success(missions)
+            } else {
+                Result.failure(RuntimeException("최근 달성 미션 정보 가져오기 실패"))
             }
         } catch (e: Exception) {
             Result.failure(e)

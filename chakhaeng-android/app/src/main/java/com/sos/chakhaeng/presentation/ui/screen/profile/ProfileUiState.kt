@@ -12,6 +12,7 @@ data class ProfileUiState(
     val userProfile: UserProfile? = null,
     val badges: List<Badge> = emptyList(),
     val missions: List<Mission> = emptyList(),
+    val recentCompletedMissions: List<Mission> = emptyList(),
     val isLogoutDialogVisible: Boolean = false
 ) {
     companion object{
@@ -25,6 +26,6 @@ data class ProfileUiState(
     val isBadgeEmpty: Boolean
         get() = badges.map { !it.isUnlocked }.all { it }
 
-//    val isMissionEmpty: Boolean
-//        get() = missions.isEmpty()
+    val isRecentMissionEmpty: Boolean
+        get() = recentCompletedMissions.isEmpty()
 }

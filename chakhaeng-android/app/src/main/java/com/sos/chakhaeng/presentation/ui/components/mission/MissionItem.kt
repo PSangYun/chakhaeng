@@ -60,7 +60,7 @@ fun MissionItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(mission.iconRes),
+                        painter = painterResource(mission.iconRes?: 0),
                         contentDescription = mission.title,
                         modifier = Modifier
                             .size(60.dp)
