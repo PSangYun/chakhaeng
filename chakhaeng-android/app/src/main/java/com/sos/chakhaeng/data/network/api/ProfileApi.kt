@@ -16,4 +16,7 @@ interface ProfileApi {
     @GET("profile/missions/recent")
     suspend fun getRecentCompletedMissions(): ApiResponse<List<MissionDTO>>
 
+    @GET("profile/missions")
+    suspend fun getAllMissions(): ApiResponse<List<MissionDTO>>
+
 }
