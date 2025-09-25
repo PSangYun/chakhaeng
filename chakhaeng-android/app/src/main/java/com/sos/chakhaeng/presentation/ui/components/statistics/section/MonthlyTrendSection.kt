@@ -63,11 +63,11 @@ fun MonthlyTrendSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier,
                         text = trend.month,
                         style = chakhaengTypography().bodyMedium,
                     )
-
+                    Spacer(modifier = Modifier.width(16.dp))
                     Row(
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
@@ -80,7 +80,7 @@ fun MonthlyTrendSection(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .width(80.dp)
+                                    .width(120.dp)
                                     .height(8.dp)
                                     .clip(RoundedCornerShape(4.dp))
                                     .background(Color.Gray.copy(alpha = 0.3f))
