@@ -18,6 +18,9 @@ sealed interface Route : NavKey {
 
     @Serializable
     data object Mission : Route
+
+    @Serializable
+    data class DetectionDetail(val violationId : String) : Route
 }
 
 

@@ -30,7 +30,7 @@ class HomeRepositoryImpl @Inject constructor(
 
     override suspend fun getRecentViolation(): Result<List<RecentViolation>> {
         return try {
-            val response = homeApi.getRecentViolation(limit = 3)
+            val response = homeApi.getRecentViolation(limit = 10)
             if (response.success) {
                 val violationList = response.data?.map { it.toEntity() } ?: emptyList()
                 Result.success(violationList)
