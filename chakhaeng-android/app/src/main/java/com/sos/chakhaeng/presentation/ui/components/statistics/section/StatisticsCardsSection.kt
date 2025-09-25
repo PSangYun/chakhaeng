@@ -27,7 +27,7 @@ fun StatisticsCardsSection(
         ) {
             StatCard(
                 modifier = Modifier.weight(1f),
-                title = "총 탐지 횟수",
+                title = "나의 탐지 횟수",
                 value = totalDetections.toString(),
                 iconVector = painterResource(R.drawable.ic_search_gd),
                 iconColor = Color.Unspecified
@@ -35,8 +35,8 @@ fun StatisticsCardsSection(
 
             StatCard(
                 modifier = Modifier.weight(1f),
-                title = "탐지 정확도",
-                value = "${accuracy}%",
+                title = "전체 사용자 탐지 횟수",
+                value = accuracy.toString(),
                 iconVector = painterResource(R.drawable.ic_target_gd),
                 iconColor = Color.Unspecified
             )
@@ -55,7 +55,7 @@ fun StatisticsCardsSection(
 
             StatCard(
                 modifier = Modifier.weight(1f),
-                title = "일 평균 탐지",
+                title = "사용자 평균 탐지",
                 value = String.format(Locale.getDefault(), "%.1f", dailyAverage),
                 iconVector = painterResource(R.drawable.ic_24hours_gd),
                 iconColor = Color.Unspecified
