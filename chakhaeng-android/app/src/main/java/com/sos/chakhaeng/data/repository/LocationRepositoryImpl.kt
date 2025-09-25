@@ -4,6 +4,8 @@ import android.content.Context
 import android.location.Address
 import android.location.Geocoder
 import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import com.sos.chakhaeng.domain.model.location.Address as DomainAddress
 import com.sos.chakhaeng.domain.model.location.Location
 import com.sos.chakhaeng.domain.repository.LocationRepository
@@ -37,26 +39,24 @@ class LocationRepositoryImpl @Inject constructor(
                 getLocationFromAddressLegacy(geocoder, address.fullAddress)
             }
         } catch (e: IOException) {
+            Log.d("test21336",e.message,e)
             e.printStackTrace()
             null
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.d("test21334",e.message,e)
             null
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override suspend fun getAddressFromLocation(location: Location): DomainAddress? = withContext(Dispatchers.IO) {
         try {
             val geocoder = Geocoder(context, Locale.getDefault())
 
             // Android API 33 이상에서는 새로운 API 사용
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                return@withContext getAddressFromLocationNew(geocoder, location)
-            } else {
-                return@withContext getAddressFromLocationLegacy(geocoder, location)
-            }
+            return@withContext getAddressFromLocationNew(geocoder, location)
         } catch (e: IOException) {
-            e.printStackTrace()
+            Log.d("test21335",e.message,e)
             null
         }
     }
@@ -84,6 +84,7 @@ class LocationRepositoryImpl @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            Log.d("test2133",e.message,e)
             continuation.resume(null)
         }
     }
@@ -147,30 +148,32 @@ class LocationRepositoryImpl @Inject constructor(
     /**
      * 기존 역 Geocoding API (Android API 32 이하)
      */
-    @Suppress("DEPRECATION")
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun getAddressFromLocationLegacy(
         geocoder: Geocoder,
         location: Location
     ): DomainAddress? {
         return try {
-            val addressList = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-            if (addressList?.isNotEmpty() == true) {
-                val androidAddress = addressList[0]
-                DomainAddress(
-                    fullAddress = buildAddressString(androidAddress),
-                    city = androidAddress.adminArea,
-                    district = androidAddress.subAdminArea,
-                    street = androidAddress.thoroughfare,
-                    buildingNumber = androidAddress.subThoroughfare,
-                    postalCode = androidAddress.postalCode
-                )
-            } else {
-                null
+            geocoder.getFromLocation(location.latitude, location.longitude, 1){ addressList: List<Address> ->
+                if (addressList.isNotEmpty() == true) {
+                    val androidAddress = addressList[0]
+                    DomainAddress(
+                        fullAddress = buildAddressString(androidAddress),
+                        city = androidAddress.adminArea,
+                        district = androidAddress.subAdminArea,
+                        street = androidAddress.thoroughfare,
+                        buildingNumber = androidAddress.subThoroughfare,
+                        postalCode = androidAddress.postalCode
+                    )
+                } else {
+                    null
+                }
             }
+
         } catch (e: IOException) {
             e.printStackTrace()
             null
-        }
+        } as DomainAddress?
     }
 
     /**
