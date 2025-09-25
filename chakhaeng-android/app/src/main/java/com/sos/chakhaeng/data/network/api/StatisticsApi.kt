@@ -6,9 +6,9 @@ import com.sos.chakhaeng.data.network.dto.response.statistics.ViolationStatistic
 import retrofit2.http.GET
 
 interface StatisticsApi {
-    @GET("statistics/violation")
+    @GET("stats/violations")
     suspend fun getViolationStatistics(): ApiResponse<ViolationStatisticsDTO>
 
-    @GET("statistics/report")
+    @GET("stats/reports")
     suspend fun getReportStatistics(): ApiResponse<ReportStatisticsDTO>
 }
