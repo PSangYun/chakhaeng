@@ -99,7 +99,6 @@ class ProfileViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         recentCompletedMissions = missions
                     )
-                    Log.d("TAG", "loadProfile: ${missions}")
                 }
                 .onFailure { error ->
                     Log.e("TAG", "loadProfile: 프로필 최근 미션 데이터 로드 실패: ${error.message}")
