@@ -51,6 +51,7 @@ class ViolationDetailViewModel @Inject constructor(
             submitViolationUseCase(entity)
                 .onSuccess { resp ->
                     _event.emit("신고가 접수되었습니다.")
+                    navigator.navigateBack()
                 }
                 .onFailure { e ->
                     _event.emit( "신고 접수 중 오류가 발생했습니다.")
@@ -70,7 +71,8 @@ class ViolationDetailViewModel @Inject constructor(
                             location = detail.locationText,
                             plateNumber = detail.plate,
                             date = dateStr,
-                            time = timeStr
+                            time = timeStr,
+                            videoUrl = detail.videoId
                         ),
                         videoId = detail.videoId,
                         videoObjectKey = detail.objectKey
