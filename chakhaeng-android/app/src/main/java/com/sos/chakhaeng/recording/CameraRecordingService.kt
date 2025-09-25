@@ -102,7 +102,6 @@ class CameraRecordingService : LifecycleService() {
     @Inject lateinit var yuvConverter: YuvToRgbConverter
     @Inject lateinit var processDetectionsUseCase: ProcessDetectionsUseCase
     @Inject lateinit var detectionSessionHolder: DetectionSessionHolder
-    @Inject lateinit var detectSignalViolationUseCase: DetectSignalViolationUseCase
 
     companion object {
         const val CHANNEL_ID = "record_cam_channel"
@@ -265,17 +264,6 @@ class CameraRecordingService : LifecycleService() {
         trackThresh = 0.25f,
         trackBuffer = 90,
         matchThresh = 0.70f
-    )
-
-    // 신호위반 정책  ✅ IoU 임계치만 추가 전달 (나머지는 그대로)
-    private val signalLogic = SignalViolationDetection(
-        vehicleLabels = setOf("car","motorcycle","bicycle","kickboard","lovebug"),
-        crosswalkLabel = "crosswalk",
-        vehicularSignalPrefix = "vehicular_signal_",
-        crossingTol = 0.012f,
-        lateralStepTol = 0.004f,
-        lateralAccumThresh = 0.03f,
-        crosswalkIouThresh = 0.02f    // ← 추가
     )
 
     // 라벨 → 인덱스
@@ -606,19 +594,6 @@ class CameraRecordingService : LifecycleService() {
                     val trackObjs = tracksRaw.map { it.toTrackObj() }
                     _tracks.value = trackObjs
 
-                    // 8) 신호위반 판단
-                    val detObjs = dets.map { it.toNormalizedDetObj(bmp.width, bmp.height) }
-                    val hits = signalLogic.updateAndDetectViolations(
-                        detections = detObjs,
-                        tracks = trackObjs,
-                        nowMs = System.currentTimeMillis()
-                    )
-                    if (hits.isNotEmpty()) {
-                        Log.w("SignalViolation", "hits=${hits.size} -> markEvent()")
-                        markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
-                    }
-
-//                    val violations = detectSignalViolationUseCase(dets, bmp.width, bmp.height)
                     val violations = processDetectionsUseCase(dets)
                     if (violations.isNotEmpty()) {
                         val chosen = violations.first()
