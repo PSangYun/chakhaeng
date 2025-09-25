@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -36,7 +35,6 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.Instant
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -230,18 +228,18 @@ class DetectionViewModel @Inject constructor(
                 }
 
                 withContext(Dispatchers.Main) {
-//                    _detections.value = merged
-//                    _violations.value = processDetectionsUseCase(merged)
-                    _detections.value = trafficResult.detections
-                    // UI 쪽 ViolationEvent로 매핑
-                    _violations.value = trafficResult.violations.map { ai ->
-                        com.sos.chakhaeng.domain.model.violation.ViolationEvent(
-                            id = "sig-${ai.trackId}-${ai.whenMs}",
-                            type = com.sos.chakhaeng.domain.model.ViolationType.SIGNAL,
-                            detectedAt = System.currentTimeMillis()
-                        )
-
-                    }
+                    _detections.value = merged
+                    _violations.value = processDetectionsUseCase(merged)
+//                    _detections.value = trafficResult.detections
+//                    // UI 쪽 ViolationEvent로 매핑
+//                    _violations.value = trafficResult.violations.map { ai ->
+//                        com.sos.chakhaeng.domain.model.violation.ViolationEvent(
+//                            confidence = "sig-${ai.trackId}-${ai.whenMs}",
+//                            type = com.sos.chakhaeng.domain.model.ViolationType.SIGNAL,
+//                            timeStamp = System.currentTimeMillis()
+//                        )
+//
+//                    }
                 }
             } finally {
                 // ✅ 수명은 여기서 정리

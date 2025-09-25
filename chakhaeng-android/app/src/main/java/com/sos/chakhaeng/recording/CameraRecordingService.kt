@@ -618,7 +618,8 @@ class CameraRecordingService : LifecycleService() {
                         markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
                     }
 
-                    val violations = detectSignalViolationUseCase(dets, bmp.width, bmp.height)
+//                    val violations = detectSignalViolationUseCase(dets, bmp.width, bmp.height)
+                    val violations = processDetectionsUseCase(dets)
                     if (violations.isNotEmpty()) {
                         val chosen = violations.first()
                         val violationType = chosen.type
