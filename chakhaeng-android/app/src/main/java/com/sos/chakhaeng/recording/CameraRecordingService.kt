@@ -64,8 +64,6 @@ import com.sos.chakhaeng.core.ai.*
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.core.camera.toBitmap
-import com.sos.chakhaeng.domain.usecase.ai.DetectSignalViolationUseCase
-import com.sos.chakhaeng.core.fcm.FirebaseMessagingService
 import com.sos.chakhaeng.core.worker.getCurrentLocationAndEnqueue
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.AndroidEntryPoint
