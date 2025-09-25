@@ -33,6 +33,7 @@ fun ViolationTypeIcon(
                 ViolationType.WRONG_WAY -> painterResource(R.drawable.ic_wrong_way)
                 ViolationType.SIGNAL -> painterResource(R.drawable.ic_traffic)
                 ViolationType.LANE -> painterResource(R.drawable.lane)
+                ViolationType.LOVE_BUG -> painterResource(R.drawable.ic_scooter)
                 ViolationType.NO_PLATE -> painterResource(R.drawable.ic_plate)
                 ViolationType.NO_HELMET -> painterResource(R.drawable.ic_helmet)
                 ViolationType.OTHERS -> painterResource(R.drawable.ic_ete)

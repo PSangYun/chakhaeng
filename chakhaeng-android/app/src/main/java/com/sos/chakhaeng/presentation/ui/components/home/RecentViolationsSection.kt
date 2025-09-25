@@ -182,6 +182,7 @@ private fun getViolationIcon(violationType: String):Int {
         "차선침범" -> R.drawable.lane
         "무번호판" -> R.drawable.ic_plate
         "헬멧 미착용" -> R.drawable.ic_helmet
+        "킥보드 2인이상" -> R.drawable.ic_scooter
         else -> R.drawable.ic_ete
     }
 }
