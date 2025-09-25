@@ -6,8 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.Detector
-import com.sos.chakhaeng.core.ai.MultiModelInterpreterDetector
-import com.sos.chakhaeng.core.ai.TrafficFrameResult
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.utils.DetectionSessionHolder
@@ -69,26 +67,6 @@ class DetectionViewModel @Inject constructor(
 
     private var camera: Camera? = null
 
-    private val activeModelKeys = listOf("yolo11s")
-
-    private val cadence = mapOf(
-        "yolo11s" to 1,
-
-    )
-
-    private var frameIndex = 0L
-
-    @Volatile private var inFlightStartMs = 0L
-    @Volatile private var gateHeld = false
-    private val gateWatchdogMs = 2500L // 2.5초 넘게 잡혀있으면 비정상으로 간주
-
-    val personCount = MutableStateFlow(0)
-    private var hadPerson = false
-
-    private fun isPerson(d: Detection): Boolean {
-        // 라벨 파일이 COCO면 보통 "person" 이거나 인덱스 0
-        return d.label.equals("person", ignoreCase = true) || d.label == "0"
-    }
 
     init {
         viewModelScope.launch {
