@@ -16,11 +16,11 @@ data class ViolationStatisticsDTO (
     val dailyAverageDetections: Double,
 
     @SerializedName("violationTypeStats")
-    val violationTypeStats: ViolationTypeStatisticDTO,
+    val violationTypeStats: List<ViolationTypeStatisticDTO>,
 
-    @SerializedName("hourlyStatistic")
-    val hourlyStatistic: HourlyStatisticDTO,
+    @SerializedName("hourlyStats")
+    val hourlyStatistic: List<HourlyStatisticDTO>,
 
     @SerializedName("monthlyTrend")
-    val monthlyTrend: MonthlyTrendDTO
+    val monthlyTrend: List<MonthlyTrendDTO>
 )

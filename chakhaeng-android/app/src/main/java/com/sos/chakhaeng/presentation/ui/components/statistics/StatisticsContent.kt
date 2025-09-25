@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.*
 import androidx.compose.ui.unit.dp
@@ -36,8 +37,12 @@ fun StatisticsContent(
         when (uiState.selectedTab) {
             StatisticsTab.VIOLATION_STATISTICS -> {
                 // 위반 탐지 통계
-                uiState.violationStats?.let { stats ->
-                    // 통계 카드들
+                if (uiState.violationStats == null) {
+                    item {
+                        Text("위반 탐지먼저 해라")
+                    }
+                } else {
+                    val stats = uiState.violationStats
                     item {
                         StatisticsCardsSection(
                             totalDetections = stats.totalDetections,
@@ -70,6 +75,7 @@ fun StatisticsContent(
                     }
                 }
             }
+
             StatisticsTab.REPORT_STATISTICS -> {
                 // 신고 통계
                 uiState.reportStats?.let { stats ->
