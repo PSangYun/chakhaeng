@@ -23,6 +23,9 @@ fun MissionInfoSection(
     onMissionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val completedMission = missions.filter {
+        it.isCompleted == true
+    }
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -60,7 +63,7 @@ fun MissionInfoSection(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 미션 리스트 또는 빈 상태
-            if (isRecentMissionEmpty) {
+            if (completedMission.isEmpty()) {
                 // 빈 상태
                 Box(
                     modifier = Modifier
@@ -77,7 +80,7 @@ fun MissionInfoSection(
                 }
             } else {
                 // 미션 리스트 (최대 3개)
-                missions.take(3).forEach { mission ->
+                completedMission.take(3).forEach { mission ->
                     MissionItemList(
                         mission = mission,
                     )

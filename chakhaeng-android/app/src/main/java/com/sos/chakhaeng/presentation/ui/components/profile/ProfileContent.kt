@@ -32,7 +32,6 @@ fun ProfileContent(
         item {
             BadgeInfoSection(
                 badges = uiState.badges,
-                isBadgeEmpty = uiState.isBadgeEmpty,
                 onAllBadgesClick = onAllBadgesClick
             )
         }
