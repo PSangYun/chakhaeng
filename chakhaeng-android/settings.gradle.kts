@@ -20,5 +20,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ChakHaeng"
-include(":app")
- 
+include(":app", ":ailia-sdk-jni", ":ailia-tflite-jni", ":ailia-tracker-jni")
+project(":ailia-sdk-jni").projectDir     = file("external/ailia-sdk-jni")
+project(":ailia-tflite-jni").projectDir  = file("external/ailia-tflite-jni")
+project(":ailia-tracker-jni").projectDir = file("external/ailia-tracker-jni")

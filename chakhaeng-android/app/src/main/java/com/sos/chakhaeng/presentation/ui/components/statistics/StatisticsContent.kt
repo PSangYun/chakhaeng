@@ -1,13 +1,18 @@
 package com.sos.chakhaeng.presentation.ui.components.statistics
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.domain.model.statistics.StatisticsTab
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.ui.components.statistics.section.HourlyDistributionSection
 import com.sos.chakhaeng.presentation.ui.components.statistics.section.MonthlyTrendSection
 import com.sos.chakhaeng.presentation.ui.components.statistics.section.ReportStatisticsSection
@@ -36,8 +41,19 @@ fun StatisticsContent(
         when (uiState.selectedTab) {
             StatisticsTab.VIOLATION_STATISTICS -> {
                 // 위반 탐지 통계
-                uiState.violationStats?.let { stats ->
-                    // 통계 카드들
+                if (uiState.violationStats == null) {
+                    item {
+                        Column(modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "위반 탐지먼저 해라",
+                                style = chakhaengTypography().titleSmall
+                            )
+                        }
+                    }
+                } else {
+                    val stats = uiState.violationStats
                     item {
                         StatisticsCardsSection(
                             totalDetections = stats.totalDetections,
@@ -70,6 +86,7 @@ fun StatisticsContent(
                     }
                 }
             }
+
             StatisticsTab.REPORT_STATISTICS -> {
                 // 신고 통계
                 uiState.reportStats?.let { stats ->

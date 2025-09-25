@@ -6,6 +6,7 @@ import com.sos.chakhaeng.domain.usecase.ai.rules.CrosswalkConfig
 import com.sos.chakhaeng.domain.usecase.ai.rules.CrosswalkInvadeRule
 import com.sos.chakhaeng.domain.usecase.ai.rules.NoHelmetConfig
 import com.sos.chakhaeng.domain.usecase.ai.rules.NoHelmetRule
+import com.sos.chakhaeng.domain.usecase.ai.rules.RedSignalCrosswalkRule
 import com.sos.chakhaeng.domain.usecase.ai.rules.ViolationRule
 import dagger.Binds
 import dagger.Module
@@ -25,4 +26,7 @@ abstract class ViolationRulesBindsModule {
 
     @Binds @IntoSet
     abstract fun bindCrosswalkRule(impl: CrosswalkInvadeRule): ViolationRule
+
+    @Binds @IntoSet
+    abstract fun bindRedSignalCrosswalkRule(impl: RedSignalCrosswalkRule): ViolationRule
 }
