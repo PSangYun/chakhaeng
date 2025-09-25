@@ -1,6 +1,7 @@
 package com.sos.chakhaeng.domain.usecase.ai.rules
 
 import com.sos.chakhaeng.core.ai.Detection
+import com.sos.chakhaeng.core.ai.TrackObj
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.ai.geom.iou01
 import javax.inject.Inject
@@ -20,7 +21,7 @@ class CrosswalkInvadeRule @Inject constructor(
 
     override val name: String = "CrosswalkInvade"
 
-    override fun evaluate(detections: List<Detection>): List<ViolationEvent> {
+    override fun evaluate(detections: List<Detection>, tracks: List<TrackObj>): List<ViolationEvent> {
         fun isCar(x: Detection) = cfg.carLabels.any { x.label.equals(it, true) } && x.score >= cfg.minCarScore
         fun isCrosswalk(x: Detection) = cfg.crosswalkLabels.any { x.label.contains(it, true) } && x.score >= cfg.minCrosswalkScore
 
