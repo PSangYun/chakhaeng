@@ -1,6 +1,7 @@
 // core/session/SessionManager.kt
 package com.sos.chakhaeng.core.session
 
+import android.util.Log
 import com.sos.chakhaeng.data.network.dto.auth.SignInData
 import com.sos.chakhaeng.data.network.dto.request.RefreshTokenRequest
 import com.sos.chakhaeng.data.network.api.AuthApi
@@ -130,9 +131,13 @@ class SessionManager @Inject constructor(
 
         // User 정보와 함께 저장
         tokenStore.save(bundle, user)
+        cachedAccessToken = signInData.accessToken
+        accessTokenExpiresAt = accessAt ?: nowMs
 
         // AuthState 업데이트
         _authState.value = AuthState.Authenticated(user)
+
+        Log.d("test1234","sucess")
     }
 
     suspend fun logout() {
