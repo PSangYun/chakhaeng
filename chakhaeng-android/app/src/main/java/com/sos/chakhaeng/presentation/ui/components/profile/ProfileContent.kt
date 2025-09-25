@@ -37,9 +37,6 @@ fun ProfileContent(
             )
         }
 
-        Log.d("TAG", "ProfileContent: ${uiState.isRecentMissionEmpty}")
-        Log.d("TAG", "ProfileContent: ${uiState.recentCompletedMissions}")
-
         // 미션 정보 섹션
         item {
             MissionInfoSection(

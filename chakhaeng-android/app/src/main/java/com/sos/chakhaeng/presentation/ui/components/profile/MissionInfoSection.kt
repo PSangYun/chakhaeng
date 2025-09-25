@@ -1,6 +1,5 @@
 package com.sos.chakhaeng.presentation.ui.components.profile
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -60,8 +59,6 @@ fun MissionInfoSection(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Log.d("TAG", "MissionInfoSection: ${isRecentMissionEmpty}")
-            Log.d("TAG", "MissionInfoSection: ${missions}")
             // 미션 리스트 또는 빈 상태
             if (isRecentMissionEmpty) {
                 // 빈 상태
