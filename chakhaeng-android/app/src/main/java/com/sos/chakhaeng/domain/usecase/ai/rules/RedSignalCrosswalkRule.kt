@@ -45,7 +45,6 @@ class RedSignalCrosswalkRule @Inject constructor(
     private val recordedInThisPhase = mutableSetOf<Int>()
     private var isRed = false
     private var phaseId = 0
-
     override fun evaluate(
         detections: List<Detection>,
         tracks: List<TrackObj>
@@ -96,7 +95,7 @@ class RedSignalCrosswalkRule @Inject constructor(
         // 4) 빨간불 + 횡단보도 있을 때만 위반 판정
         val topY = cwRect.top
         val bottomY = cwRect.bottom
-        val midY = topY + (bottomY-topY)*0.6
+        val midY = topY + (bottomY-topY)*0.7f
         val events = mutableListOf<ViolationEvent>()
 
         for (t in tracks) {
@@ -111,14 +110,24 @@ class RedSignalCrosswalkRule @Inject constructor(
             val inside = insideBandByY || insideByIou
 
             // (A) 윗선 통과(아래→위) : prevY >= top && curr < top
-            val crossedMidUp = prevY != null && prevY >= midY - cfg.crossingTol && currBottomY < topY - cfg.crossingTol
+            val crossedMidUp = prevY != null && prevY >= midY - cfg.crossingTol && currBottomY < midY - cfg.crossingTol
+            // ★ 새 트랙이 이미 mid 위에 있는 경우도 1회 허용
+            val maidenCross =
+                prevY == null &&
+                        currBottomY < (midY - cfg.crossingTol) &&
+                        insideByIou
 
 
-            if (inside && crossedMidUp && t.id !in recordedInThisPhase) {
+
+            if (redNow && cwRect != null && t.id !in recordedInThisPhase &&
+                ( (inside && crossedMidUp) || maidenCross ) ) {
                 val evt = ViolationEvent(type = "신호위반", confidence = (primarySignal?.score ?: 0.9f))
                 val region = union(toRectF(t.box), cwRect)
-                if (throttle.allow(evt, region)) events += evt
-                recordedInThisPhase += t.id
+                val allowed = throttle.allow(evt, region)
+                if (allowed) {
+                    events += evt
+                    recordedInThisPhase += t.id
+                }
             }
 
             // 상태 갱신

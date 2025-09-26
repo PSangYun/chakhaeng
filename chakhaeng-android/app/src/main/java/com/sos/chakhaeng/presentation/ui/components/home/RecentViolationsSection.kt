@@ -171,6 +171,7 @@ private fun getSeverityColor(severity: String): Color {
         "차선침법" -> Color(0xFFFFEB3B)
         "무번호판" -> Color(0xFFCDDC39)
         "헬멧 미착용" -> Color(0xFF9C27B0)
+        "킥보드 2인이상" -> Color(0xFF03A9F4)
         else -> Color.Black
     }
 }

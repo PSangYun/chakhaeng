@@ -28,7 +28,7 @@ class DetectViolationUseCase @Inject constructor(
 //                    locationRepository.getAddressFromLocation(Location(lat, lng))
 //                    ?.fullAddress
 //                    ?:
-                    "구미시 임수동 94-1"
+                    "구미시 삼일로 18"
 
                 Result.success(Pair(uploadResult.complete.id, locationText))
             }
