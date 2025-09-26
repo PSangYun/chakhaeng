@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import com.sos.chakhaeng.presentation.ui.components.detection.CameraLoadingScree
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraPermissionRequest
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraPreviewSection
 import com.sos.chakhaeng.presentation.ui.components.detection.DetectionOverlay
+import com.sos.chakhaeng.presentation.ui.components.detection.TrackingOverlay
 import com.sos.chakhaeng.presentation.ui.components.detection.ViolationDetectionSection
 import com.sos.chakhaeng.recording.CameraRecordingService
 import kotlinx.coroutines.flow.flowOf
@@ -61,6 +63,9 @@ fun DetectionScreen(
     val tracks by remember(service) {
         service?.tracksFlow() ?: flowOf(emptyList())
     }.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    var showDetectionOverlay by rememberSaveable { mutableStateOf(true) }
+    var showTrackingOverlay by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (!cameraPermission.status.isGranted) {
@@ -100,15 +105,30 @@ fun DetectionScreen(
                                 onToggleFullscreen = {
                                     viewModel.toggleFullscreen()
                                 },
+                                isDetectionOn = showDetectionOverlay,
+                                isTrackingOn = showTrackingOverlay,
+                                onToggleDetection = {
+                                    showDetectionOverlay = !showDetectionOverlay
+                                },
+                                onToggleTracking = {
+                                    showTrackingOverlay = !showTrackingOverlay
+                                },
                                 onServiceConnected = {svc -> service = svc}
+                            )
 
-                            )
-                            // ✅ 프리뷰 위를 가득 덮는 바운딩 박스 오버레이
-                            DetectionOverlay(
-                                detections = detections,
-                                tracks = tracks,
-                                modifier = Modifier.matchParentSize()
-                            )
+                            if (showDetectionOverlay) {
+                                DetectionOverlay(
+                                    detections = detections,
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+                            if (showTrackingOverlay){
+                                TrackingOverlay(
+                                    tracks = tracks,
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+
                         }
                     }
 

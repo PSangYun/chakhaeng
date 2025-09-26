@@ -16,6 +16,10 @@ fun CameraPreviewSection(
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
+    isDetectionOn: Boolean,
+    isTrackingOn: Boolean,
+    onToggleDetection: () -> Unit,
+    onToggleTracking: () -> Unit,
     onServiceConnected: (CameraRecordingService) -> Unit = {}
 ) {
 
@@ -29,6 +33,10 @@ fun CameraPreviewSection(
             isDetectionActive = isDetectionActive,
             isFullscreen = isFullscreen,
             onToggleFullscreen = onToggleFullscreen,
+            isDetectionOn = isDetectionOn,
+            isTrackingOn = isTrackingOn,
+            onToggleDetection = onToggleDetection,
+            onToggleTracking = onToggleTracking,
             modifier = Modifier.fillMaxSize()
         )
     }

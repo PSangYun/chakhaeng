@@ -16,6 +16,7 @@ import com.sos.chakhaeng.recording.startCameraFgService
 import com.sos.chakhaeng.recording.stopCameraFgService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -47,6 +48,7 @@ class HomeViewModel @Inject constructor(
 
     fun navigateDetection(){
         viewModelScope.launch {
+            delay(1500)
             navigator.navigate(BottomTabRoute.Detect)
         }
     }

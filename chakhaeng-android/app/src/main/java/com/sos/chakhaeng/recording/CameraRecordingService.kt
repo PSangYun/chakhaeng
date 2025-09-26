@@ -810,6 +810,7 @@ class CameraRecordingService : LifecycleService() {
 
         var dstVideoTrack = -1
         var started = false
+        var orientationHint = 0
 
         val buffer = ByteBuffer.allocate(2 * 1024 * 1024)
         val info = MediaCodec.BufferInfo()
@@ -830,8 +831,25 @@ class CameraRecordingService : LifecycleService() {
             val vIdx = selectTrack(ex, "video/")
 
             if (!started) {
-                if (vIdx != -1) dstVideoTrack = muxer.addTrack(ex.getTrackFormat(vIdx))
+                if (vIdx != -1) {
+                    val srcFmt = ex.getTrackFormat(vIdx)
+                    if (srcFmt.containsKey(MediaFormat.KEY_ROTATION)) {
+                        orientationHint = srcFmt.getInteger(MediaFormat.KEY_ROTATION)
+                    }
+                    muxer.setOrientationHint(orientationHint)
+
+                    dstVideoTrack = muxer.addTrack(srcFmt)
+                }
                 muxer.start(); started = true
+            } else {
+                if (vIdx != -1) {
+                    val srcFmt = ex.getTrackFormat(vIdx)
+                    val rot = if (srcFmt.containsKey(MediaFormat.KEY_ROTATION))
+                        srcFmt.getInteger(MediaFormat.KEY_ROTATION) else 0
+                    if (rot != orientationHint) {
+                        Log.w("Mux", "segment rotation differs: $rot vs $orientationHint (index=)")
+                    }
+                }
             }
 
             if (vIdx != -1 && dstVideoTrack != -1) {
