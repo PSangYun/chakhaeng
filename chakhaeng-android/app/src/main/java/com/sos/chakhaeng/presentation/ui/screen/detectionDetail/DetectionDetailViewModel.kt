@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.navigation.Navigator
+import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.utils.OccurredAtFormatter
 import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.usecase.map.GetLocationFromAddressUseCase
@@ -39,6 +40,7 @@ class DetectionDetailViewModel @Inject constructor(
                 .onSuccess { detail ->
                      _uiState.value = _uiState.value.copy(
                         reportDetailItem = _uiState.value.reportDetailItem.copy(
+                            id = violationId,
                             violationType = detail.type.toViolationType(),
                             title = "${detail.locationText}에서 ${detail.type}",
                             location = detail.locationText,
@@ -94,7 +96,11 @@ class DetectionDetailViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(streamingUrl = url.url)
         }
     }
-
+    fun navigateToReportDetail(violationId : String){
+        viewModelScope.launch {
+            navigator.navigate(Route.ViolationDetail(violationId))
+        }
+    }
     fun navigateBack(){
         viewModelScope.launch {
             navigator.navigateBack()
