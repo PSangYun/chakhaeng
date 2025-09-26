@@ -26,6 +26,19 @@ fun StatisticsContent(
     uiState: StatisticsUiState,
     onTabSelected: (StatisticsTab) -> Unit
 ) {
+    val sampleData = listOf(
+        RegionStatistic("인동동", 53, 46),
+        RegionStatistic("진평동", 33, 29),
+        RegionStatistic("황상동", 6, 5),
+        RegionStatistic("사곡동", 2, 2),
+        RegionStatistic("옥계동", 4, 3),
+        RegionStatistic("원평동", 5, 4),
+        RegionStatistic("기타", 12, 10),
+    )
+    val totalCount = sampleData.sumOf { it.count }
+    val finalStats = sampleData.map {
+        it.copy(percentage = (it.count * 100f / totalCount).toInt())
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -70,7 +83,11 @@ fun StatisticsContent(
                             totalCount = stats.totalDetections
                         )
                     }
-
+                    item{
+                        RegionViolationSection(
+                            finalStats
+                        )
+                    }
                     // 시간대별 위반 발생 차트
                     item {
                         HourlyDistributionSection(
