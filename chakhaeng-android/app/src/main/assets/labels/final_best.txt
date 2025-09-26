@@ -1,0 +1,23 @@
+bicycle
+car
+carplate
+crosswalk
+helmet
+ileegal_motorcycle
+invisible_signal_None
+kickboard
+lovebug
+motocycle
+no-helmet
+pedestrian_signal_etc
+pedestrian_signal_green
+pedestrian_signal_red
+person
+vehicular_signal_etc
+vehicular_signal_green
+vehicular_signal_green and green arrow
+vehicular_signal_green and yellow
+vehicular_signal_green arrow
+vehicular_signal_red
+vehicular_signal_red and green arrow
+vehicular_signal_red and yellowvehicular_signal_yellow
