@@ -13,7 +13,7 @@ enum class ViolationType(
     WRONG_WAY("역주행", ViolationColors.Critical, ViolationColors.CriticalIcon),
     SIGNAL("신호위반", ViolationColors.High, ViolationColors.HighIcon),
     LANE("차선침범", ViolationColors.Medium, ViolationColors.MediumIcon),
-    LOVE_BUG("킥보드 2인이상", ViolationColors.LowAmber, ViolationColors.LowAmberIcon),
+    LOVE_BUG("킥보드 2인이상", ViolationColors.Critical, ViolationColors.CriticalIcon),
     NO_PLATE("무번호판", ViolationColors.LowAmber, ViolationColors.LowAmberIcon),
     NO_HELMET("헬멧 미착용", ViolationColors.LowPurple, ViolationColors.LowPurpleIcon),
     OTHERS("기타", ViolationColors.Others, ViolationColors.OthersIcon)
