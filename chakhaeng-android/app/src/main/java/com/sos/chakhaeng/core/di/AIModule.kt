@@ -28,14 +28,14 @@ object AIModule {
     ): Detector {
         val specs = listOf(
             ModelSpec(
-                key = "final",
-                assetPath = "models/final_float16.tflite", // ✅ YOLO 모델 파일명
-                numClasses = 26,
-                maxDetections = 8400, // YOLOv8 640 기준
-                preferInputSize = 640,
-                inputRange = InputRange.FLOAT32_0_1,
-                colorOrder = ColorOrder.RGB,
-                labelMap = null
+                key = "final_best",
+                assetPath = "models/final_best_float16.tflite", // ✅ 임시 YOLO 모델 파일명
+                numClasses = 24,                       // COCO 80 클래스
+                maxDetections = 8400,                      // YOLOv8 640 입력 기준
+                preferInputSize = 640,                     // 보통 640
+                inputRange = InputRange.FLOAT32_0_1,       // fp16/float32 모델이면 0~1 정규화
+                colorOrder = ColorOrder.RGB,               // 일반적으로 RGB
+                labelMap = null                            // /assets/labels/yolov8s.txt 있으면 자동 로드
             )
         )
 

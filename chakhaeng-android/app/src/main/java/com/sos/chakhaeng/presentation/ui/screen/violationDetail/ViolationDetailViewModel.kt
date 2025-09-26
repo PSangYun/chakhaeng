@@ -54,7 +54,7 @@ class ViolationDetailViewModel @Inject constructor(
                     navigator.navigateBack()
                 }
                 .onFailure { e ->
-                    _event.emit( "신고 접수 중 오류가 발생했습니다.")
+                    _event.emit( "이미 접수 된 신고입니다.")
                 }
         }
     }

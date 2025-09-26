@@ -169,6 +169,7 @@ private fun getSeverityColor(severity: String): Color {
         "역주행" -> Color(0xFFF44336)
         "신호위반" -> Color(0xFFFF9800)
         "차선침법" -> Color(0xFFFFEB3B)
+        "킥보드 2인이상" -> Color(0xFFF44336)
         "무번호판" -> Color(0xFFCDDC39)
         "헬멧 미착용" -> Color(0xFF9C27B0)
         "킥보드 2인이상" -> Color(0xFF03A9F4)
