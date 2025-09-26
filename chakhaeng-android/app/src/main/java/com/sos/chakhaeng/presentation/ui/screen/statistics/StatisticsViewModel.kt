@@ -36,7 +36,7 @@ class StatisticsViewModel @Inject constructor(
 
     private val TAG = "StatisticsVM"
 
-    private fun loadStatistics() {
+    fun loadStatistics() {
         viewModelScope.launch {
             _uiState.value = StatisticsUiState.loading()
 
