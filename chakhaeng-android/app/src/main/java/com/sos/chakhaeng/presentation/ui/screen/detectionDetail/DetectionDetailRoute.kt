@@ -42,6 +42,7 @@ internal fun DetectionDetailRoute(
                 .padding(padding)
     ) {
         DetectionDetailScreen(
+            violationId =violationId,
             uiState = uiState,
             detectionDetailViewModel = detectionDetailViewModel
         )
