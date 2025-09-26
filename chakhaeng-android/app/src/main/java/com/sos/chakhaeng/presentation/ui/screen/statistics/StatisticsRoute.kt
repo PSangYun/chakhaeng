@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,13 +28,13 @@ internal fun StatisticsRoute(
             viewModel.clearError()
         }
     }
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .padding(padding),
-
+    PullToRefreshBox(
+        isRefreshing = uiState.isLoading,
+        onRefresh = { viewModel.loadStatistics() },
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(padding)
     ) {
         StatisticsScreen(
             uiState = uiState,
