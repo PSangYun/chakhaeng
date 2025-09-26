@@ -257,11 +257,11 @@ class CameraRecordingService : LifecycleService() {
 
     // ByteTrack
     private val byteTrack = ByteTrackEngine(
-        scoreThresh = 0.10f,
-        nmsThresh   = 0.70f,
-        trackThresh = 0.25f,
-        trackBuffer = 90,
-        matchThresh = 0.70f
+        scoreThresh = 0.1f,  // ↓ 약간 낮춰 끊김 구간의 약한 박스도 받기
+        nmsThresh   = 0.70f,  // ↓ 중복 박스 정리 강화(유사 IoU 박스는 하나로)
+        trackThresh = 0.10f,  // ↓ 약한 박스도 트랙 유지/연결 허용
+        trackBuffer = 120,    // ↑ 일시 미검출을 더 오래 기억(30fps 기준 ~4초)
+        matchThresh = 0.3f   // ↓ 재매칭 허들 낮춤(이게 핵심)
     )
 
     // 라벨 → 인덱스
