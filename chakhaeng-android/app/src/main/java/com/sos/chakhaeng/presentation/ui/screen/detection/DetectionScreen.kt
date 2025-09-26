@@ -134,6 +134,7 @@ fun DetectionScreen(
                             if (showTrackingOverlay){
                                 TrackingOverlay(
                                     tracks = tracks,
+                                    coords = coords,
                                     modifier = Modifier.matchParentSize()
                                 )
                             }

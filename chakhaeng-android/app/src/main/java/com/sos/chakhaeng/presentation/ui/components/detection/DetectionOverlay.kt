@@ -20,9 +20,8 @@ import kotlin.math.max
 private const val TAG = "Lane_Overlay"
 @Composable
 fun DetectionOverlay(
-    modifier: Modifier = Modifier.fillMaxSize(),
     detections: List<Detection>,
-    coords: List<List<Pair<Float, Float>>> = emptyList(),
+    modifier: Modifier = Modifier.fillMaxSize(),
 ) {
     LaunchedEffect(detections) {
         // 원본 좌표 로그(스팸 방지로 상위 5개)
@@ -82,21 +81,6 @@ fun DetectionOverlay(
                         p
                     )
                 }
-            }
-        }
-        Log.d(TAG, "Check lane: ${coords}")
-        coords.forEach { lane ->
-            // lane은 List<Pair<Int, Int>>
-            lane.zipWithNext { p1, p2 ->
-                android.util.Log.d("Overlay", "lane point: x=${p1.first}, y=${p1.second}, " +
-                        "scaled=(${p1.first * viewW}, ${p1.second * viewH}), view=(${viewW}x$viewH)")
-                Log.d(TAG, "DetectionOverlay: ${p1}, ${p2}")
-                drawLine(
-                    color = Color.Red,
-                    start = Offset(p1.first.toFloat() * viewW, p1.second.toFloat() * viewH),
-                    end   = Offset(p2.first.toFloat() * viewW, p2.second.toFloat() * viewH),
-                    strokeWidth = 12f
-                )
             }
         }
     }

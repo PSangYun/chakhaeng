@@ -91,7 +91,9 @@ class DetectionViewModel @Inject constructor(
                     .filterNotNull()
                     .collect { laneResult ->
                         _laneCoords.value = laneResult.coords
-                        Log.d("Lane_Final", "laneFlow update coords=${laneResult.coords.size}")
+                        Log.d("Lane_Debug", "laneFlow update coords=${laneResult.coords.size}")
+                        Log.d("Lane_Debug", "laneFlow update: lanes=${laneResult.coords.size}, first=${laneResult.coords.firstOrNull()}")
+
                     }
             }
         }
