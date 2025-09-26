@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.navigation.BottomTabRoute
 import com.sos.chakhaeng.core.navigation.Navigator
+import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.utils.DetectionStateManager
 import com.sos.chakhaeng.domain.model.home.RecentViolation
 import com.sos.chakhaeng.domain.model.home.TodayStats
@@ -15,6 +16,7 @@ import com.sos.chakhaeng.recording.startCameraFgService
 import com.sos.chakhaeng.recording.stopCameraFgService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -46,6 +48,7 @@ class HomeViewModel @Inject constructor(
 
     fun navigateDetection(){
         viewModelScope.launch {
+            delay(1500)
             navigator.navigate(BottomTabRoute.Detect)
         }
     }
@@ -110,6 +113,12 @@ class HomeViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(recentViolations = recentViolations)
                 }
                 .onFailure { /* handle error */ }
+        }
+    }
+
+    fun navigateDetectionDetail(violationId : String){
+        viewModelScope.launch {
+            navigator.navigate(Route.DetectionDetail(violationId))
         }
     }
 }

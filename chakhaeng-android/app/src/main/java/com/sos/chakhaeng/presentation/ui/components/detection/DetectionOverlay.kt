@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import com.sos.chakhaeng.core.ai.Detection
+import com.sos.chakhaeng.core.ai.TrackObj
 import kotlin.math.max
 
 
@@ -53,24 +54,10 @@ fun DetectionOverlay(
             val boxW = right - left
             val boxH = bottom - top
 
-            android.util.Log.d(
-                "BBox",
-                "calc[$idx] isPixel=$isPixel, view=(${viewW.toInt()}x${viewH.toInt()})," +
-                        " px(l=${"%.1f".format(left)}, t=${"%.1f".format(top)}, r=${
-                            "%.1f".format(
-                                right
-                            )
-                        }, b=${"%.1f".format(bottom)})," +
-                        " w=${"%.1f".format(boxW)}, h=${"%.1f".format(boxH)}"
-            )
-
             if (boxW < 1f || boxH < 1f) {
                 // 너무 작으면 점으로라도 표시
                 drawCircle(Color(0xFFFF9800), radius = 6f, center = Offset(left, top))
-                android.util.Log.d(
-                    "BBox",
-                    "skip[$idx] too small -> dot (${left.toInt()}, ${top.toInt()})"
-                )
+                android.util.Log.d("BBox", "skip[$idx] too small -> dot (${left.toInt()}, ${top.toInt()})")
             } else {
                 // ✅ 박스
                 drawRect(
@@ -113,4 +100,12 @@ fun DetectionOverlay(
             }
         }
     }
+}
+
+
+// ID별로 고유 색
+private fun colorForId(id: Int): Color {
+    val hue = (id * 137.508f) % 360f    // golden angle
+    val intColor = android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.85f, 0.95f))
+    return Color(intColor)
 }

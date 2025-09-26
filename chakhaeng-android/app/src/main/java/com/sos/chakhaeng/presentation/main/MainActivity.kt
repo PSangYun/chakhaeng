@@ -1,9 +1,16 @@
 package com.sos.chakhaeng.presentation.main
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.tween
@@ -20,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
@@ -36,8 +45,9 @@ import com.sos.chakhaeng.core.session.GoogleAuthManager
 import com.sos.chakhaeng.core.session.SessionManager
 import com.sos.chakhaeng.presentation.theme.ChakHaengTheme
 import com.sos.chakhaeng.presentation.ui.components.BottomNavigationBar
- import com.sos.chakhaeng.presentation.ui.screen.allbadges.AllBadgesRoute
+import com.sos.chakhaeng.presentation.ui.screen.allbadges.AllBadgesRoute
 import com.sos.chakhaeng.presentation.ui.screen.detection.DetectionScreen
+import com.sos.chakhaeng.presentation.ui.screen.detectionDetail.DetectionDetailRoute
 import com.sos.chakhaeng.presentation.ui.screen.home.HomeRoute
 import com.sos.chakhaeng.presentation.ui.screen.login.LoginScreen
 import com.sos.chakhaeng.presentation.ui.screen.mission.MissionRoute
@@ -46,6 +56,7 @@ import com.sos.chakhaeng.presentation.ui.screen.report.ReportRoute
 import com.sos.chakhaeng.presentation.ui.screen.reportdetail.ReportDetailRoute
 import com.sos.chakhaeng.presentation.ui.screen.statistics.StatisticsRoute
 import com.sos.chakhaeng.presentation.ui.screen.violationDetail.ViolationDetailScreen
+import com.sos.chakhaeng.recording.CameraRecordingService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.collections.immutable.toImmutableList
 import javax.inject.Inject
@@ -110,8 +121,36 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    // ===== Permission helpers =====
+
+    fun requiredPermissions(): Array<String> {
+        val list = mutableListOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            list += Manifest.permission.POST_NOTIFICATIONS
+        }
+        return list.toTypedArray()
+    }
+
+    private fun hasPermission(p: String): Boolean =
+        ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
+
+    internal fun needsAnyPermission(): Boolean =
+        requiredPermissions().any { !hasPermission(it) }
+
+    internal fun startRecordingService() {
+        val intent = Intent(this, CameraRecordingService::class.java).apply {
+            action = CameraRecordingService.ACTION_START
+        }
+        ContextCompat.startForegroundService(this, intent)
+    }
 }
 
+@SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ChakhaengApp(
@@ -119,6 +158,24 @@ internal fun ChakhaengApp(
     googleAuthManager: GoogleAuthManager,
     onTabSelected: (MainTab) -> Unit
 ) {
+    val activity = LocalContext.current as MainActivity
+
+    // ===== Permission bottom sheet state =====
+    var showPermissionSheet by remember { mutableStateOf(activity.needsAnyPermission()) }
+
+    // 런처: 여러 권한 일괄 요청
+    val permLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        // 결과 합산: 전부 승인됐는지 확인
+        val allOk = activity.requiredPermissions().all { p ->
+            result[p] == true || ContextCompat.checkSelfPermission(activity, p) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+    LaunchedEffect(Unit) {
+        permLauncher.launch(activity.requiredPermissions())
+    }
+
     val currentRoute = navBackStack.lastOrNull()
     val currentTab = when (currentRoute) {
         is BottomTabRoute.Home -> MainTab.HOME
@@ -223,7 +280,12 @@ internal fun ChakhaengApp(
                             navBackStack = navBackStack
                         )
                     }
-
+                    is Route.DetectionDetail -> NavEntry(key){
+                        DetectionDetailRoute(
+                            padding = paddingValues,
+                            violationId = key.violationId
+                        )
+                    }
                     else -> NavEntry(key) { Unit }
                 }
             },

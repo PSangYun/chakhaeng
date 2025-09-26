@@ -1,6 +1,5 @@
 package com.sos.chakhaeng.presentation.ui.screen.detection
 
-import android.graphics.Bitmap
 import android.util.Log
 import androidx.camera.core.Camera
 import androidx.lifecycle.ViewModel
@@ -12,19 +11,25 @@ import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
 import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.domain.model.ViolationType
-import com.sos.chakhaeng.domain.usecase.violation.DetectionUseCase
-import com.sos.chakhaeng.domain.usecase.violation.GetViolationsInRangeUseCase
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.model.violation.ViolationInRangeEntity
-import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
+import com.sos.chakhaeng.domain.usecase.violation.DetectionUseCase
+import com.sos.chakhaeng.domain.usecase.violation.GetViolationsInRangeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import java.time.Instant
 import javax.inject.Inject
 
@@ -34,7 +39,6 @@ class DetectionViewModel @Inject constructor(
     private val detectionUseCase: DetectionUseCase,
     private val getViolationsInRangeUseCase: GetViolationsInRangeUseCase,
     private val detector: Detector,
-    private val processDetectionsUseCase: ProcessDetectionsUseCase,
     private val sessionHolder: DetectionSessionHolder
 ) : ViewModel() {
 
@@ -47,10 +51,6 @@ class DetectionViewModel @Inject constructor(
     // ✅ lane 좌표 StateFlow
     private val _laneCoords = MutableStateFlow<List<List<Pair<Float, Float>>>>(emptyList())
     val laneCoords: StateFlow<List<List<Pair<Float, Float>>>> = _laneCoords.asStateFlow()
-
-    private val inferGate = Semaphore(1)
-    private var lastInferTs = 0L
-    private val minGapMs = 80L
 
     private val _uiState = MutableStateFlow(DetectionUiState())
     val uiState: StateFlow<DetectionUiState> = combine(
@@ -81,6 +81,7 @@ class DetectionViewModel @Inject constructor(
 
     var debugLastInferMs = MutableStateFlow(0L)
     var debugLastDetCount = MutableStateFlow(0)
+
 
     init {
         // ✅ Lane flow 구독 (LaneDetector는 Detector 내부에서 비동기로 계속 실행됨)
@@ -120,56 +121,6 @@ class DetectionViewModel @Inject constructor(
             }
         }
     }
-
-    fun onFrame(bitmap: Bitmap, rotation: Int): Boolean {
-        val now = System.currentTimeMillis()
-        if (now - lastInferTs < minGapMs) return false
-        if (!inferGate.tryAcquire()) return false
-
-        lastInferTs = now
-        val thisFrame = ++frameIndex
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val merged = ArrayList<Detection>(64)
-
-                for (key in activeModelKeys) {
-                    val period = cadence[key] ?: 1
-                    if (thisFrame % period != 0L) continue
-                    if (detector is MultiModelInterpreterDetector) detector.switchModel(key)
-
-                    val t0 = android.os.SystemClock.elapsedRealtime()
-                    val yoloDetections: List<Detection> = runCatching {
-                        withTimeout(3000) { detector.detect(bitmap, rotation) }
-                    }.getOrElse { e ->
-                        Log.e("TAG", "detect($key) failed: ${e.message}", e)
-                        emptyList()
-                    }
-
-                    merged += yoloDetections
-
-                    val t1 = android.os.SystemClock.elapsedRealtime()
-                    debugLastInferMs.value = (t1 - t0)
-                    debugLastDetCount.value = yoloDetections.size
-                }
-
-                // ✅ LaneDetector는 Detector 내부 워커가 별도 수행 → 여기선 submit만
-                if (detector is MultiModelInterpreterDetector) {
-                    detector.submitLaneFrame(bitmap)
-                }
-
-                withContext(Dispatchers.Main) {
-                    _detections.value = merged
-                    _violations.value = processDetectionsUseCase(merged)
-                }
-            } finally {
-                if (!bitmap.isRecycled) bitmap.recycle()
-                inferGate.release()
-            }
-        }
-        return true
-    }
-
     fun initializeCamera() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -186,10 +137,16 @@ class DetectionViewModel @Inject constructor(
         }
     }
 
-    fun onCameraReady(camera: Camera) { this.camera = camera }
-    fun pauseCamera() { _uiState.value = _uiState.value.copy(isCameraReady = false) }
-    fun toggleFullscreen() { _uiState.value = _uiState.value.copy(isFullscreen = !_uiState.value.isFullscreen) }
-    fun onViolationFilterSelected(filter: ViolationType) { _uiState.value = _uiState.value.copy(selectedViolationFilter = filter) }
+    fun toggleFullscreen() {
+        _uiState.value = _uiState.value.copy(
+            isFullscreen = !_uiState.value.isFullscreen
+        )
+    }
+
+    fun onViolationFilterSelected(filter: ViolationType) {
+        _uiState.value = _uiState.value.copy(selectedViolationFilter = filter)
+    }
+
     fun onViolationClick(violation: ViolationInRangeEntity) {
         viewModelScope.launch { navigator.navigate(Route.ViolationDetail(violation.id)) }
     }

@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import com.sos.chakhaeng.presentation.ui.components.detection.CameraLoadingScree
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraPermissionRequest
 import com.sos.chakhaeng.presentation.ui.components.detection.CameraPreviewSection
 import com.sos.chakhaeng.presentation.ui.components.detection.DetectionOverlay
+import com.sos.chakhaeng.presentation.ui.components.detection.TrackingOverlay
 import com.sos.chakhaeng.presentation.ui.components.detection.ViolationDetectionSection
 import com.sos.chakhaeng.recording.CameraRecordingService
 import kotlinx.coroutines.flow.flowOf
@@ -54,8 +56,6 @@ fun DetectionScreen(
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
 
     var service by remember { mutableStateOf<CameraRecordingService?>(null) }
-
-    // ✅ YOLO 결과
     val detections by remember(service) {
         service?.detectionsFlow() ?: flowOf(emptyList())
     }.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -65,6 +65,14 @@ fun DetectionScreen(
     }.collectAsStateWithLifecycle(initialValue = LaneDetection())
 
     val coords = laneDetection.coords
+
+    // ★ ByteTrack tracks 수집 (ID/정규화 bbox)
+    val tracks by remember(service) {
+        service?.tracksFlow() ?: flowOf(emptyList())
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    var showDetectionOverlay by rememberSaveable { mutableStateOf(true) }
+    var showTrackingOverlay by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (!cameraPermission.status.isGranted) {
@@ -103,14 +111,33 @@ fun DetectionScreen(
                             CameraPreviewSection(
                                 isDetectionActive = uiState.isDetectionActive,
                                 isFullscreen = uiState.isFullscreen,
-                                onToggleFullscreen = { viewModel.toggleFullscreen() },
-                                onServiceConnected = { svc -> service = svc }
+                                onToggleFullscreen = {
+                                    viewModel.toggleFullscreen()
+                                },
+                                isDetectionOn = showDetectionOverlay,
+                                isTrackingOn = showTrackingOverlay,
+                                onToggleDetection = {
+                                    showDetectionOverlay = !showDetectionOverlay
+                                },
+                                onToggleTracking = {
+                                    showTrackingOverlay = !showTrackingOverlay
+                                },
+                                onServiceConnected = {svc -> service = svc}
                             )
-                            DetectionOverlay(
-                                detections = detections,
-                                coords = coords, // ✅ lane overlay 같이 전달
-                                modifier = Modifier.matchParentSize()
-                            )
+
+                            if (showDetectionOverlay) {
+                                DetectionOverlay(
+                                    detections = detections,
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+                            if (showTrackingOverlay){
+                                TrackingOverlay(
+                                    tracks = tracks,
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+
                         }
                     }
 
@@ -125,7 +152,7 @@ fun DetectionScreen(
                 }
             }
 
-            // ✅ 하단 위반 목록
+            // 하단 위반 목록
             if (!uiState.isFullscreen) {
                 ViolationDetectionSection(
                     isActive = uiState.isDetectionActive,
@@ -139,8 +166,6 @@ fun DetectionScreen(
                 )
             }
         }
-
-        // ✅ FloatingActionButton
         FloatingActionButton(
             onClick = {
                 viewModel.navigateViolationDetail(null)

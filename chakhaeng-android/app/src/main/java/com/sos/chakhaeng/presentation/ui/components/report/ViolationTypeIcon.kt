@@ -10,8 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.domain.model.ViolationType
+import com.sos.chakhaeng.R
 
 @Composable
 fun ViolationTypeIcon(
@@ -25,17 +28,18 @@ fun ViolationTypeIcon(
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = when (violationType) {
-                ViolationType.ALL -> Icons.Default.Check
-                ViolationType.WRONG_WAY -> Icons.Default.Warning
-                ViolationType.SIGNAL -> Icons.Default.Traffic
-                ViolationType.LANE -> Icons.Default.SwapHoriz
-                ViolationType.NO_PLATE -> Icons.Default.CreditCard
-                ViolationType.NO_HELMET -> Icons.Default.Security
-                ViolationType.OTHERS -> Icons.Default.Error
+            painter = when (violationType) {
+                ViolationType.ALL -> painterResource(R.drawable.ic_siren)
+                ViolationType.WRONG_WAY -> painterResource(R.drawable.ic_wrong_way)
+                ViolationType.SIGNAL -> painterResource(R.drawable.ic_traffic)
+                ViolationType.LANE -> painterResource(R.drawable.lane)
+                ViolationType.LOVE_BUG -> painterResource(R.drawable.ic_scooter)
+                ViolationType.NO_PLATE -> painterResource(R.drawable.ic_plate)
+                ViolationType.NO_HELMET -> painterResource(R.drawable.ic_helmet)
+                ViolationType.OTHERS -> painterResource(R.drawable.ic_ete)
             },
             contentDescription = violationType.displayName,
-            tint = violationType.iconColor,
+            tint = Color.Unspecified,
             modifier = Modifier.size(20.dp)
         )
     }

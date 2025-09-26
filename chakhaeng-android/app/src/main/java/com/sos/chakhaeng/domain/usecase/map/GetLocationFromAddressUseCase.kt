@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.domain.usecase.map
 
+import android.util.Log
 import com.sos.chakhaeng.domain.model.location.Address
 import com.sos.chakhaeng.domain.model.location.Location
 import com.sos.chakhaeng.domain.repository.LocationRepository
@@ -16,6 +17,7 @@ class GetLocationFromAddressUseCase @Inject constructor(
         return try {
             locationRepository.getLocationFromAddress(address)
         } catch (e: Exception) {
+            Log.d("test21337",e.message,e)
             null
         }
     }

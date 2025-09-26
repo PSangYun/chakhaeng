@@ -12,9 +12,11 @@ object StatisticsDataMapper {
             detectionAccuracy = detectionAccuracy,
             weeklyDetections = weeklyDetections,
             dailyAverageDetections = dailyAverageDetections,
-            violationTypeStats = listOf(violationTypeStats.toEntity()),
-            hourlyStats = listOf(hourlyStatistic.toEntity()),
-            monthlyTrend = listOf(monthlyTrend.toEntity())
+            violationTypeStats = violationTypeStats.map {
+                it.toEntity()
+            },
+            hourlyStats = hourlyStatistic.map{it.toEntity()},
+            monthlyTrend = monthlyTrend.map{it.toEntity()}
         )
 
     fun ReportStatisticsDTO.toEntity(): ReportStatistics =
@@ -25,7 +27,7 @@ object StatisticsDataMapper {
             rejectedReports = rejectedReports,
             successRate = successRate,
             totalSuccessRate = totalSuccessRate,
-            reportStatusStats = listOf(reportStatusStats.toEntity())
+            reportStatusStats = reportStatusStats.map{it.toEntity()}
         )
 
     private fun ViolationTypeStatisticDTO.toEntity(): ViolationTypeStatistic =
@@ -55,11 +57,12 @@ object StatisticsDataMapper {
         )
 
     private fun String.toViolationType(): ViolationType = when (this.uppercase()) {
-        "WRONG_WAY" -> ViolationType.WRONG_WAY
-        "SIGNAL" -> ViolationType.SIGNAL
-        "LANE" -> ViolationType.LANE
-        "NO_PLATE" -> ViolationType.NO_PLATE
-        "NO_HELMET" -> ViolationType.NO_HELMET
+        "역주행" -> ViolationType.WRONG_WAY
+        "신호위반" -> ViolationType.SIGNAL
+        "차선침범" -> ViolationType.LANE
+        "킥보드 2인이상" -> ViolationType.LOVE_BUG
+        "무번호판" -> ViolationType.NO_PLATE
+        "헬멧 미착용" -> ViolationType.NO_HELMET
         "OTHERS" -> ViolationType.OTHERS
         else -> ViolationType.OTHERS
     }

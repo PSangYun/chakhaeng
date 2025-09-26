@@ -14,7 +14,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,9 +25,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
@@ -38,6 +40,14 @@ import com.sos.chakhaeng.core.utils.findActivity
 import com.sos.chakhaeng.core.utils.setFullscreen
 import com.sos.chakhaeng.presentation.ui.screen.streaming.PlayerUiState
 import com.sos.chakhaeng.presentation.ui.screen.streaming.PlayerViewModel
+
+private fun effectiveAspectRatio(v: VideoSize): Float {
+    val rotated = (v.unappliedRotationDegrees % 180) != 0
+    val w = if (rotated) v.height else v.width
+    val h = if (rotated) v.width  else v.height
+    if (w <= 0 || h <= 0) return 1f
+    return w.toFloat() / h.toFloat()
+}
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -58,14 +68,28 @@ fun VideoPlayer(
 
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val uiState by playerViewModel.uiState.collectAsStateWithLifecycle()
+    var isPortraitVideo by remember { mutableStateOf(false) }
 
-    // 소스 세팅
+    DisposableEffect(playerViewModel.player) {
+        val listener = object : Player.Listener {
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                isPortraitVideo = effectiveAspectRatio(videoSize) < 1f
+            }
+        }
+        playerViewModel.player.addListener(listener)
+        onDispose { playerViewModel.player.removeListener(listener) }
+    }
+    LaunchedEffect(playerViewModel.player) {
+        val v = playerViewModel.player.videoSize
+        if (v.width > 0 && v.height > 0) {
+            isPortraitVideo = effectiveAspectRatio(v) < 1f
+        }
+    }
     LaunchedEffect(url, mimeType, autoPlay, initialMute) {
         playerViewModel.setSource(url, mimeType, autoPlay, initialMute)
         playerViewModel.showControls(autoHide = true)
     }
 
-    // === 일반(임베디드) 플레이어: 16:9 박스 안에만 표시 ===
     if (!uiState.isFullscreen) {
         EmbeddedPlayerBox(
             url = url,
@@ -82,12 +106,30 @@ fun VideoPlayer(
 
     // === 전체화면 모드: Dialog로 분리 표시 ===
     if (uiState.isFullscreen) {
-        // 진입 시 시스템바/회전 처리
+        // 진입/변경 시 시스템바/회전 처리
+        LaunchedEffect(uiState.isFullscreen, isPortraitVideo) {
+            activity?.setFullscreen(true)
+            if (rotateOnFullscreen) {
+                activity?.requestedOrientation = if (isPortraitVideo)
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                else
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
+        }
+        // 빠져나갈 때 복원
+        DisposableEffect(Unit) {
+            onDispose {
+                activity?.setFullscreen(false)
+                if (rotateOnFullscreen) {
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                }
+            }
+        }
         LaunchedEffect(Unit) {
             activity?.setFullscreen(true)
             if (rotateOnFullscreen) {
                 activity?.requestedOrientation =
-                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             }
         }
         // 빠져나갈 때 복원
@@ -126,7 +168,8 @@ fun VideoPlayer(
                 onExit = {
                     playerViewModel.setFullscreen(false)
                     onBackFromFullscreen?.invoke()
-                }
+                },
+                isPortrait = isPortraitVideo
             )
         }
     }
@@ -181,7 +224,8 @@ private fun EmbeddedPlayerBox(
         PlayerAndroidView(
             playerViewModel = playerViewModel,
             useController = useController,
-            fullscreen = false
+            fullscreen = false,
+            false
         )
 
         PosterSpinnerAndError(
@@ -211,7 +255,8 @@ private fun EmbeddedPlayerBox(
                 onSeekTo = playerViewModel::seekTo,
                 onScrubStart = { playerViewModel.setUserScrubbing(true) },
                 onScrubEnd = { playerViewModel.setUserScrubbing(false) },
-                onToggleFullscreen = { onRequestFullscreen() }
+                onToggleFullscreen = { onRequestFullscreen() },
+                forcePortraitUi = true
             )
         }
     }
@@ -224,6 +269,7 @@ private fun FullscreenPlayerLayer(
     useController: Boolean,
     onExit: () -> Unit,
     url: String,
+    isPortrait : Boolean
 ) {
     val uiState by playerViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -231,11 +277,23 @@ private fun FullscreenPlayerLayer(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { playerViewModel.toggleControls() },
+                    onDoubleTap = { offset ->
+                        val width = this.size.width
+                        if (offset.x < width / 2f) playerViewModel.seekBack()
+                        else playerViewModel.seekForward()
+                        playerViewModel.showControls()
+                    }
+                )
+            }
     ) {
         PlayerAndroidView(
             playerViewModel = playerViewModel,
             useController = useController,
-            fullscreen = true
+            fullscreen = true,
+            isPortraitVideo = isPortrait
         )
 
         PosterSpinnerAndError(
@@ -253,20 +311,23 @@ private fun FullscreenPlayerLayer(
             visible = uiState.controlsVisible && uiState.error == null,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().zIndex(1f)
         ) {
-            ControlOverlay(
-                isPlaying = uiState.isPlaying,
-                durationMs = uiState.durationMs,
-                positionMs = uiState.positionMs,
-                onPlayPause = playerViewModel::playPause,
-                onSeekBack = playerViewModel::seekBack,
-                onSeekForward = playerViewModel::seekForward,
-                onSeekTo = playerViewModel::seekTo,
-                onScrubStart = { playerViewModel.setUserScrubbing(true) },
-                onScrubEnd = { playerViewModel.setUserScrubbing(false) },
-                onToggleFullscreen = { onExit() } // 전체화면에서 누르면 닫기
-            )
+            PortraitLockedOverlay {
+                ControlOverlay(
+                    isPlaying = uiState.isPlaying,
+                    durationMs = uiState.durationMs,
+                    positionMs = uiState.positionMs,
+                    onPlayPause = playerViewModel::playPause,
+                    onSeekBack = playerViewModel::seekBack,
+                    onSeekForward = playerViewModel::seekForward,
+                    onSeekTo = playerViewModel::seekTo,
+                    onScrubStart = { playerViewModel.setUserScrubbing(true) },
+                    onScrubEnd = { playerViewModel.setUserScrubbing(false) },
+                    onToggleFullscreen = { onExit() },
+                    forcePortraitUi = true,
+                )
+            }
         }
     }
 }
@@ -277,17 +338,19 @@ private fun FullscreenPlayerLayer(
 private fun PlayerAndroidView(
     playerViewModel: PlayerViewModel,
     useController: Boolean,
-    fullscreen: Boolean
+    fullscreen: Boolean,
+    isPortraitVideo: Boolean
 ) {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { ctx ->
             PlayerView(ctx).apply {
                 this.useController = useController
-                resizeMode = if (fullscreen)
-                    AspectRatioFrameLayout.RESIZE_MODE_ZOOM  // 전체화면은 꽉 채우기
-                else
-                    AspectRatioFrameLayout.RESIZE_MODE_FIT
+                resizeMode = when {
+                    fullscreen && isPortraitVideo -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    fullscreen && !isPortraitVideo -> AspectRatioFrameLayout.RESIZE_MODE_FIT // or FIT
+                    else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                }
                 this.player = playerViewModel.player
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -298,10 +361,11 @@ private fun PlayerAndroidView(
         },
         update = { pv ->
             pv.player = playerViewModel.player
-            pv.resizeMode = if (fullscreen)
-                AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-            else
-                AspectRatioFrameLayout.RESIZE_MODE_FIT
+            pv.resizeMode = when {
+                fullscreen && isPortraitVideo -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                fullscreen && !isPortraitVideo -> AspectRatioFrameLayout.RESIZE_MODE_FIT // or FIT
+                else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+            }
         }
     )
 }

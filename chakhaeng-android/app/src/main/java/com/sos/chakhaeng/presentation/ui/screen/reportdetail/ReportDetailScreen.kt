@@ -24,6 +24,7 @@ import com.sos.chakhaeng.presentation.ui.components.report.ReportStatusSection
 import com.sos.chakhaeng.presentation.theme.BackgroundGray
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.presentation.ui.components.report.LocationInfoSection
+import com.sos.chakhaeng.presentation.ui.components.report.LocationInfoSectionForReportDetail
 import com.sos.chakhaeng.presentation.ui.components.report.ReportContentSection
 import com.sos.chakhaeng.presentation.ui.components.report.ReportDetailInfoSection
 
@@ -74,7 +75,7 @@ fun ReportDetailScreen(uiState: ReportDetailUiState, reportDetailViewModel: Repo
         }
 
         item{
-            LocationInfoSection(
+            LocationInfoSectionForReportDetail(
                 reportDetailItem = uiState.reportDetailItem,
                 reportDetailUiState = uiState,
                 onLocationRequest = { address ->
