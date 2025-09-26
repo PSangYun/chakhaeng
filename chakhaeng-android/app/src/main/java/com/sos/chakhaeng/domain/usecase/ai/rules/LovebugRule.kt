@@ -2,6 +2,7 @@ package com.sos.chakhaeng.domain.usecase.ai.rules
 
 import android.graphics.RectF
 import com.sos.chakhaeng.core.ai.Detection
+import com.sos.chakhaeng.core.ai.TrackObj
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.ai.ViolationThrottle
 import com.sos.chakhaeng.domain.usecase.ai.geom.centerX
@@ -12,9 +13,9 @@ import kotlin.math.min
 
 data class LovebugConfig(
     val minKickboard: Float = 0.45f,
-    val minLovebug: Float = 0.55f,
+    val minLovebug: Float = 0.40f,
 
-    val kbLbIou: Float = 0.20f, // 킥보드-러브버그 IoU 임계값
+    val kbLbIou: Float = 0.15f, // 킥보드-러브버그 IoU 임계값
     val centerInsideBoost: Float = 0.70f // 러브버그 중심이 킥보드 박스 안이면 강한 매칭
 )
 
@@ -25,7 +26,7 @@ class LovebugRule @Inject constructor(
 
     override val name: String = "Lovebug"
 
-    override fun evaluate(detections: List<Detection>): List<ViolationEvent> {
+    override fun evaluate(detections: List<Detection>, tracks: List<TrackObj>): List<ViolationEvent> {
         fun isKickboard(d: Detection) =
             d.score >= cfg.minKickboard && d.label.equals("kickboard", ignoreCase = true)
         fun isLovebug(d: Detection) =
