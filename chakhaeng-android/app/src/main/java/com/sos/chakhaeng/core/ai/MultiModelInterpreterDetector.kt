@@ -4,11 +4,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
 import android.util.Log
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
-import org.tensorflow.lite.DataType
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.TimeoutCancellationException
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.gpu.GpuDelegate
@@ -17,42 +19,143 @@ import org.tensorflow.lite.support.common.FileUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.ArrayDeque
+import kotlin.math.abs
+import kotlin.math.atan2
 
 class MultiModelInterpreterDetector(
     private val context: Context,
     private val backend: Backend = Backend.CPU,
-    specs: List<ModelSpec>
+    specs: List<ModelSpec>,
+    private val scope: CoroutineScope
 ) : Detector {
 
-    // 🔒 JNI 크래시 방지용
+    // 🔒 YOLO 동기화
     private val mutex = Mutex()
     private val running = AtomicBoolean(false)
 
+    // YOLO 캐시
     private var cachedOutArray: Array<Array<FloatArray>>? = null
     private var cachedOutShape: IntArray? = null
     private var cachedOutputsMap: HashMap<Int, Any>? = null
-
     private var cachedInputBuffer: ByteBuffer? = null
     private var cachedInputW = -1
     private var cachedInputH = -1
-
     private var cachedInputRange = InputRange.FLOAT32_0_1
 
+    // Lane 관련
+    private val laneDetector = LaneDetector(context, "models/culane_res18_dynamic.tflite")
+    private val _laneFlow = MutableStateFlow<LaneDetection?>(null)
+    val laneFlow: StateFlow<LaneDetection?> = _laneFlow.asStateFlow()
+
+    @Volatile private var latestLaneFrame: Bitmap? = null
+
+    // lane 안정화용 history
+    private val laneHistories = mutableMapOf<Int, ArrayDeque<List<Pair<Float, Float>>>>()
+    private val MAX_HISTORY = 5
+    private val OUTLIER_THRESHOLD = 80f // 픽셀 단위 예시
+
+    // Spec 관리
     private val specsByKey = specs.associateBy { it.key }.toMutableMap()
     private val labelCache = mutableMapOf<String, List<String>>()
-
     private var debugLoggedOnce = false
-
-    // key → lazy singletons
     private val interpreters = mutableMapOf<String, Interpreter>()
     private val parsers = mutableMapOf<String, YoloV8Parser>()
-
     private var currentKey: String = specs.first().key
+
+    init {
+        // LaneDetector 워커 루프
+        scope.launch(Dispatchers.Default) {
+            while (isActive) {
+                try {
+                    val frame = latestLaneFrame
+                    if (frame != null && !frame.isRecycled) {
+                        val safeBmp = try {
+                            frame.copy(frame.config ?: Bitmap.Config.ARGB_8888, false)
+                        } catch (t: Throwable) {
+                            Log.w("LaneDetector", "bitmap copy failed", t)
+                            null
+                        }
+
+                        if (safeBmp != null) {
+                            try {
+                                val coords = laneDetector.detect(safeBmp) // List<List<Pair<Float, Float>>>
+
+                                if (coords.isNotEmpty()) {
+                                    val stabilized = mutableListOf<List<Pair<Float, Float>>>()
+
+                                    coords.forEachIndexed { idx, lane ->
+                                        val history = laneHistories.getOrPut(idx) { ArrayDeque() }
+
+                                        // ① 각도 계산
+                                        val angle = computeSlopeDeg(lane)
+                                        val isWeirdAngle = angle?.let { !isAnglePlausible(it) } ?: false
+
+                                        // ② 중앙값 차선 구하기
+                                        val medianLane = computeMedianLane(history)
+
+                                        // ③ Outlier 판단
+                                        val isOutlier = if (medianLane != null) {
+                                            deviationTooLarge(lane, medianLane, OUTLIER_THRESHOLD) || isWeirdAngle
+                                        } else isWeirdAngle
+
+                                        if (!isOutlier) {
+                                            if (history.size >= MAX_HISTORY) history.removeFirst()
+                                            history.addLast(lane)
+                                            stabilized.add(lane)
+                                        } else {
+                                            Log.d("LaneDetector", "lane $idx outlier ignored (angle=$angle), keep previous")
+                                            stabilized.add(history.lastOrNull() ?: lane)
+                                        }
+                                    }
+
+                                    _laneFlow.value = LaneDetection(stabilized)
+                                } else {
+                                    Log.d("LaneDetector", "empty coords, keep previous lanes")
+                                }
+
+                            } catch (e: Exception) {
+                                Log.e("LaneDetector", "detect failed", e)
+                            } finally {
+                                if (!safeBmp.isRecycled) safeBmp.recycle()
+                            }
+                        }
+                        latestLaneFrame = null
+                    }
+                } catch (t: Throwable) {
+                    Log.e("LaneDetector", "worker loop error", t)
+                }
+
+                delay(33) // ~30fps
+            }
+        }
+    }
+
+    private fun computeSlopeDeg(lane: List<Pair<Float, Float>>): Float? {
+        if (lane.size < 2) return null
+        val (x1, y1) = lane.first()
+        val (x2, y2) = lane.last()
+        val angleRad = atan2(y2 - y1, x2 - x1)
+        return Math.toDegrees(angleRad.toDouble()).toFloat()
+    }
+
+    private fun isAnglePlausible(angleDeg: Float): Boolean {
+        // 보통 도로 차선은 수평에서 ±45° 범위를 넘지 않음
+        return angleDeg in -45f..45f
+    }
+
+    /**
+     * LaneDetector에 프레임 제출 (최신 프레임만 유지)
+     */
+    fun submitLaneFrame(bitmap: Bitmap) {
+        latestLaneFrame?.recycle()
+        val safeConfig = bitmap.config ?: Bitmap.Config.ARGB_8888
+        latestLaneFrame = bitmap.copy(safeConfig, false)
+    }
 
     fun switchModel(key: String) {
         require(specsByKey.containsKey(key)) { "Unknown model key: $key" }
         currentKey = key
-        // 필요 시 이 타이밍에 ensureInterpreter()로 선 로딩도 가능
     }
 
     // ---------------- Detector ----------------
@@ -64,34 +167,16 @@ class MultiModelInterpreterDetector(
         val w = spec.resolvedInputW.takeIf { it > 0 } ?: spec.preferInputSize ?: 640
         val h = spec.resolvedInputH.takeIf { it > 0 } ?: spec.preferInputSize ?: 640
 
-        // 입력 버퍼 미리 확보
         ensureInputBuffer(w, h, spec.inputRange)
-
-        // 출력 버퍼 미리 확보
-        val shape = itp.getOutputTensor(0).shape() // e.g. [1,84,8400]
+        val shape = itp.getOutputTensor(0).shape()
         ensureOutputBuffers(shape)
 
-        // mutex.withLock {
-        //     itp.runForMultipleInputsOutputs(arrayOf(cachedInputBuffer!!), cachedOutputsMap!!)
-        // }
         Log.d("DTAG", "warmup prepared: in=(${w}x${h}), outShape=${shape.contentToString()}")
     }
 
-    override suspend fun detect(bitmap: Bitmap, rotation: Int): Pair<List<Detection>, LaneDetection> {
-        Log.d("DTAG","detect entry")
-        // 이미 처리 중이면 "비우고 최신만" 정책 – 바로 리턴
-        if (!running.compareAndSet(false, true)) return Pair(emptyList(), LaneDetection(emptyList()))
+    override suspend fun detect(bitmap: Bitmap, rotation: Int): List<Detection> {
+        if (!running.compareAndSet(false, true)) return emptyList()
         try {
-
-            val laneDetector = LaneDetector(context, "models/culane_res18_dynamic.tflite")
-            val coords = laneDetector.detect(bitmap)
-
-            coords.forEachIndexed { i, lane ->
-                Log.d("Lane", "lane#$i size=${lane.size}, sample=${lane.take(10)}")
-            }
-            Log.d("Lane", "detect() coords=${coords.size}, sample=${coords.firstOrNull()}")
-            val laneResult = LaneDetection(coords)
-
             val spec = requireNotNull(specsByKey[currentKey])
             val itp = interpreters.getOrPut(currentKey) { ensureInterpreter(spec) }
             val parser = parsers.getOrPut(currentKey) { YoloV8Parser(spec.numClasses) }
@@ -99,7 +184,6 @@ class MultiModelInterpreterDetector(
 
             val inW = spec.resolvedInputW.takeIf { it > 0 } ?: spec.preferInputSize ?: 640
             val inH = spec.resolvedInputH.takeIf { it > 0 } ?: spec.preferInputSize ?: 640
-            val inType = spec.resolvedInputType
 
             ensureInputBuffer(inW, inH, spec.inputRange)
             val input = bitmapToInputBufferInto(
@@ -109,15 +193,9 @@ class MultiModelInterpreterDetector(
                 colorOrder = spec.colorOrder
             )
 
-            Log.d("DTAG", "detect() in model=$currentKey")
-
-
             val outTensor = itp.getOutputTensor(0)
             val shape = outTensor.shape()
-            Log.d("DTAG", "outShape=${shape.contentToString()}")
             if (!debugLoggedOnce) {
-                Log.d("BTAG", "spec.numClasses=${spec.numClasses}")
-                // 보통 YOLOv8: shape[1]이 4+numClasses (CHW), shape[2]가 N
                 val channels = shape.getOrNull(1) ?: -1
                 val derivedClasses = if (channels >= 0) channels - 4 else -1
                 Log.d("BTAG", "derivedClasses=$derivedClasses, labels=${labels?.size ?: 0}")
@@ -127,14 +205,13 @@ class MultiModelInterpreterDetector(
             ensureOutputBuffers(shape)
 
             val runTimeoutMs = when (backend) {
-                Backend.GPU -> 5000L   // ✅ GPU: 3~5초 권장 (첫 프레임 대비)
+                Backend.GPU -> 5000L
                 Backend.NNAPI -> 3000L
                 Backend.CPU -> 2000L
             }
 
             val t0 = SystemClock.elapsedRealtime()
             try {
-                // 🔒 + ⏱️ 1500ms 타임아웃 (에뮬레이터면 2000ms까지도)
                 withTimeout(runTimeoutMs) {
                     mutex.withLock {
                         itp.runForMultipleInputsOutputs(arrayOf(input), cachedOutputsMap!!)
@@ -142,7 +219,7 @@ class MultiModelInterpreterDetector(
                 }
             } catch (t: TimeoutCancellationException) {
                 Log.e("DTAG", "tflite.run timeout ($runTimeoutMs ms)-> skip this frame")
-                return Pair(emptyList(), LaneDetection(emptyList()))
+                return emptyList()
             }
             val t1 = SystemClock.elapsedRealtime()
             Log.d("DTAG", "tflite.run took=${t1 - t0}ms")
@@ -151,27 +228,22 @@ class MultiModelInterpreterDetector(
             val b = shape[2]
             val out = cachedOutArray!!
 
-            Log.d("Lane_Final", "returning coords=${laneResult.coords.size}, sample=${laneResult.coords.firstOrNull()}")
-
-
             return when {
                 a == 4 + spec.numClasses -> {
-                    val detections = YoloV8Parser(spec.numClasses).parseCHW(
+                    parser.parseCHW(
                         out = out,
                         inputW = inW, inputH = inH,
                         origW = bitmap.width, origH = bitmap.height,
                         labels = labels
                     )
-                    Pair(detections, laneResult)
                 }
                 b == 4 + spec.numClasses -> {
-                    val detections = YoloV8Parser(spec.numClasses).parseHWC(
+                    parser.parseHWC(
                         out = out,
                         inputW = inW, inputH = inH,
                         origW = bitmap.width, origH = bitmap.height,
                         labels = labels
                     )
-                    Pair(detections, laneResult)
                 }
                 else -> error("Unsupported output shape: ${shape.contentToString()}")
             }
@@ -187,7 +259,6 @@ class MultiModelInterpreterDetector(
             }.getOrElse { emptyList() }
         }
 
-
     override fun close() {
         interpreters.values.forEach { runCatching { it.close() } }
         interpreters.clear()
@@ -196,132 +267,90 @@ class MultiModelInterpreterDetector(
 
     // ---------------- Internal ----------------
 
-    /** Interpreter를 만들고, 입력 메타(크기/타입)를 spec.resolved*에 주입 */
     private fun ensureInterpreter(spec: ModelSpec): Interpreter {
         interpreters[spec.key]?.let { return it }
-
         val model = FileUtil.loadMappedFile(context, spec.assetPath)
         val options = buildInterpreterOptions(backend)
         val itp = Interpreter(model, options)
 
-        // 🔎 입력 메타 런타임 확인 → resolved 필드 채움
         runCatching {
             val inT = itp.getInputTensor(0)
-            val shape = inT.shape() // 보통 [1, H, W, 3]
+            val shape = inT.shape()
             spec.resolvedInputH = shape.getOrNull(1) ?: spec.preferInputSize ?: 0
             spec.resolvedInputW = shape.getOrNull(2) ?: spec.preferInputSize ?: 0
             spec.resolvedInputType = inT.dataType()
-        }.onFailure {
-            // 동적 shapeSignature가 필요한 모델이면 여기에 보강
         }
-
         interpreters[spec.key] = itp
         return itp
     }
 
-    // 파일 내 아무 곳 (클래스 안 private 메서드로) 추가
     private fun buildInterpreterOptions(backend: Backend): Interpreter.Options {
         return Interpreter.Options().apply {
             when (backend) {
                 Backend.CPU -> {
-                    // CPU: XNNPACK 권장
-                    setUseXNNPACK(true)
-                    setNumThreads(4)
+                    setUseXNNPACK(true); setNumThreads(4)
                 }
                 Backend.NNAPI -> {
-                    // NNAPI: 기기별 편차가 커서 테스트 필요
                     runCatching { addDelegate(NnApiDelegate()) }
-                    setUseXNNPACK(false)
-                    setNumThreads(1)
+                    setUseXNNPACK(false); setNumThreads(1)
                 }
                 Backend.GPU -> {
-                    // ✅ GPU delegate (호환성 체크 후 부착, 미지원이면 CPU로 폴백)
                     val compat = CompatibilityList()
                     if (compat.isDelegateSupportedOnThisDevice) {
                         val opts = compat.bestOptionsForThisDevice
-                        // 필요시 성능 옵션 조정 가능:
-                        // opts.setPrecisionLossAllowed(true) // FP16 허용
-                        // opts.setInferencePreference(GpuDelegate.Options.INFERENCE_PREFERENCE_SUSTAINED_SPEED)
                         val gpu = GpuDelegate(opts)
                         addDelegate(gpu)
-
-                        // GPU 사용 시 XNNPACK/NNAPI는 끄는 편
-                        setUseXNNPACK(false)
-                        setNumThreads(1)
+                        setUseXNNPACK(false); setNumThreads(1)
                         Log.d("DTAG", "GPU delegate attached")
                     } else {
-                        // 폴백: CPU + XNNPACK
-                        setUseXNNPACK(true)
-                        setNumThreads(4)
-                        Log.w("DTAG", "GPU not supported on this device -> fallback to CPU")
+                        setUseXNNPACK(true); setNumThreads(4)
+                        Log.w("DTAG", "GPU not supported -> fallback to CPU")
                     }
                 }
             }
         }
     }
 
-
-
-    /** 입력 버퍼 1회 할당 후 재사용 */
     private fun ensureInputBuffer(w: Int, h: Int, range: InputRange) {
         if (cachedInputBuffer != null &&
             cachedInputW == w && cachedInputH == h && cachedInputRange == range) return
-
         val bytesPerPix = when (range) {
             InputRange.FLOAT32_0_1 -> 4
             InputRange.UINT8_0_255 -> 1
         }
         val cap = 1L * w * h * 3 * bytesPerPix
-        require(cap <= Int.MAX_VALUE) { "Input buffer too large: $cap" }
-
+        require(cap <= Int.MAX_VALUE)
         cachedInputBuffer = ByteBuffer.allocateDirect(cap.toInt()).order(ByteOrder.nativeOrder())
-        cachedInputW = w
-        cachedInputH = h
-        cachedInputRange = range
+        cachedInputW = w; cachedInputH = h; cachedInputRange = range
     }
 
-    /** 출력 버퍼/맵 1회 할당 후 재사용 */
     private fun ensureOutputBuffers(shape: IntArray) {
         if (cachedOutShape != null && cachedOutShape!!.contentEquals(shape)) return
-
-        require(shape.size == 3 && shape[0] == 1) { "Unexpected output: ${shape.contentToString()}" }
-        val rows = shape[1] // 84
-        val cols = shape[2] // N (e.g., 8400)
-
-        // 1×rows×cols – Object array 재사용 (JNI 안전)
+        require(shape.size == 3 && shape[0] == 1)
+        val rows = shape[1]
+        val cols = shape[2]
         val arr = Array(1) { Array(rows) { FloatArray(cols) } }
-        cachedOutArray = arr
-        cachedOutShape = shape.copyOf()
-
-        // HashMap도 재사용 (put으로 교체)
+        cachedOutArray = arr; cachedOutShape = shape.copyOf()
         val map = cachedOutputsMap ?: HashMap<Int, Any>(1)
-        map.clear()
-        map[0] = arr
+        map.clear(); map[0] = arr
         cachedOutputsMap = map
     }
 
-    /**
-     * 기존 bitmapToInputBuffer를 대체: dst ByteBuffer를 비워 넣기
-     */
     private fun bitmapToInputBufferInto(
         dst: ByteBuffer,
         src: Bitmap,
         w: Int, h: Int,
         inputRange: InputRange,
-        colorOrder: ColorOrder // 네 프로젝트에 이미 있을 가능성이 큼. 없으면 enum class ColorOrder { RGB, BGR }
+        colorOrder: ColorOrder
     ): ByteBuffer {
         val resized = if (src.width != w || src.height != h)
-            Bitmap.createScaledBitmap(src, w, h, true)
-        else src
-
+            Bitmap.createScaledBitmap(src, w, h, true) else src
         dst.clear()
         val pixels = IntArray(w * h)
         resized.getPixels(pixels, 0, w, 0, 0, w, h)
         var i = 0
-
         when (inputRange) {
             InputRange.FLOAT32_0_1 -> {
-                // float32 [0,1]
                 for (y in 0 until h) for (x in 0 until w) {
                     val c = pixels[i++]
                     val r = ((c ushr 16) and 0xFF) / 255f
@@ -330,13 +359,11 @@ class MultiModelInterpreterDetector(
                     when (colorOrder) {
                         ColorOrder.RGB -> { dst.putFloat(r); dst.putFloat(g); dst.putFloat(b) }
                         ColorOrder.BGR -> { dst.putFloat(b); dst.putFloat(g); dst.putFloat(r) }
-                        // 혹시 ColorOrder가 다른 값도 있으면 else로 RGB 처리
                         else -> { dst.putFloat(r); dst.putFloat(g); dst.putFloat(b) }
                     }
                 }
             }
             InputRange.UINT8_0_255 -> {
-                // uint8 [0,255]
                 for (y in 0 until h) for (x in 0 until w) {
                     val c = pixels[i++]
                     val r = ((c ushr 16) and 0xFF).toByte()
@@ -350,13 +377,28 @@ class MultiModelInterpreterDetector(
                 }
             }
         }
-
         dst.rewind()
         if (resized !== src) resized.recycle()
         return dst
     }
 
-    /** YOLOv8 계열 기본: [1, N, 5+C] */
-    private fun makeOutputBuffer(spec: ModelSpec): Array<Array<FloatArray>> =
-        Array(1) { Array(spec.maxDetections) { FloatArray(5 + spec.numClasses) } }
+    // ---------------- Lane 안정화 유틸 ----------------
+    private fun computeMedianLane(history: ArrayDeque<List<Pair<Float, Float>>>): List<Pair<Float, Float>>? {
+        if (history.isEmpty()) return null
+        // 가장 최근 N개의 lane 중 기울기 기준 중앙값에 가까운 lane 선택
+        val sorted = history.sortedBy { computeSlopeDeg(it) ?: 0f }
+        return sorted[sorted.size / 2]
+    }
+
+    private fun deviationTooLarge(
+        current: List<Pair<Float, Float>>,
+        ref: List<Pair<Float, Float>>,
+        threshold: Float
+    ): Boolean {
+        if (current.size != ref.size) return false
+        val diffs = current.zip(ref).map { (c, r) ->
+            abs(c.first - r.first) + abs(c.second - r.second)
+        }
+        return diffs.average() > threshold
+    }
 }

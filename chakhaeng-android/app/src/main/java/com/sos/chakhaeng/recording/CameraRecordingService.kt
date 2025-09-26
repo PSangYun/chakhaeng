@@ -2,76 +2,43 @@ package com.sos.chakhaeng.recording
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
+import android.app.*
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
-import android.graphics.Bitmap
-import android.graphics.Color
+import android.graphics.*
 import android.graphics.SurfaceTexture
 import android.hardware.display.DisplayManager
-import android.media.MediaCodec
-import android.media.MediaExtractor
-import android.media.MediaFormat
-import android.media.MediaMuxer
+import android.media.*
 import android.net.Uri
-import android.os.Binder
-import android.os.Build
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
-import android.os.SystemClock
+import android.os.*
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
-import android.view.Display
 import android.view.OrientationEventListener
 import android.view.Surface
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceRequest
+import androidx.camera.core.*
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.FallbackStrategy
-import androidx.camera.video.FileOutputOptions
-import androidx.camera.video.Quality
-import androidx.camera.video.QualitySelector
-import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
-import androidx.camera.video.VideoCapture
-import androidx.camera.video.VideoRecordEvent
+import androidx.camera.video.*
 import androidx.camera.view.PreviewView
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.sos.chakhaeng.core.ai.Detection
-import com.sos.chakhaeng.core.ai.Detector
-import com.sos.chakhaeng.core.ai.LaneDetection
+import com.sos.chakhaeng.core.ai.*
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
-import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.core.camera.toBitmap
+import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.core.worker.getCurrentLocationAndEnqueue
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -80,9 +47,7 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util.ArrayDeque
-import java.util.Date
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Inject
@@ -96,6 +61,7 @@ class CameraRecordingService : LifecycleService() {
     @Inject lateinit var yuvConverter: YuvToRgbConverter
     @Inject lateinit var processDetectionsUseCase: ProcessDetectionsUseCase
     @Inject lateinit var detectionSessionHolder: DetectionSessionHolder
+
     companion object {
         const val CHANNEL_ID = "record_cam_channel"
         const val NOTI_ID = 7771
@@ -107,13 +73,10 @@ class CameraRecordingService : LifecycleService() {
 
         const val EXTRA_PRE_MS = "preMs"
         const val EXTRA_POST_MS = "postMs"
-    }
 
-    private val SEGMENT_MS = 5_000L
-    private val SEGMENT_COOLDOWN_MS = 150L
-    private val PRE_WINDOW_LIMIT_MS = 12_000L
-    private val DEFAULT_PRE_MS = 6_000L
-    private val DEFAULT_POST_MS = 5_000L
+        const val DEFAULT_PRE_MS = 6000L
+        const val DEFAULT_POST_MS = 5000L
+    }
 
     /** CameraX & Recording state */
     private var cameraProvider: ProcessCameraProvider? = null
@@ -121,76 +84,40 @@ class CameraRecordingService : LifecycleService() {
     private var videoCapture: VideoCapture<Recorder>? = null
     private var imageAnalysis: ImageAnalysis? = null
     private var displayListener: DisplayManager.DisplayListener? = null
-
     private var currentRecording: Recording? = null
     private var bufferingJob: Job? = null
-
-    /** Analyzer(추후 사용) */
     private lateinit var analysisExecutor: ExecutorService
 
+    /** Detection state */
     private val _detections = MutableStateFlow<List<Detection>>(emptyList())
     fun detectionsFlow(): StateFlow<List<Detection>> = _detections
 
-    private val _lanes = MutableStateFlow<LaneDetection>(LaneDetection(emptyList()))
+    private val _lanes = MutableStateFlow(LaneDetection(emptyList()))
     fun lanesFlow(): StateFlow<LaneDetection> = _lanes
 
     private var orientationListener: OrientationEventListener? = null
     private var lastSurfaceRotation: Int = Surface.ROTATION_0
-
-    private fun surfaceRotationFromDegrees(deg: Int): Int {
-        if (deg == OrientationEventListener.ORIENTATION_UNKNOWN) return lastSurfaceRotation
-        // 0/90/180/270으로 양자화 (45° 히스테리시스)
-        return when (((deg + 45) / 90) % 4) {
-            0 -> Surface.ROTATION_0
-            1 -> Surface.ROTATION_90
-            2 -> Surface.ROTATION_180
-            else -> Surface.ROTATION_270
-        }
-    }
-
     private val detectorReady = MutableStateFlow(false)
 
     private val inferGate = kotlinx.coroutines.sync.Semaphore(1)
     private var lastInferTs = 0L
     private val minGapMs = 16L
 
-    // 탐지(inference) FPS
-    private var infFpsCnt = 0
-    private var infFpsLast = SystemClock.elapsedRealtime()
-
-    // 입력(analysis callback) FPS
-    private var inFpsCnt = 0
-    private var inFpsLast = SystemClock.elapsedRealtime()
-
-    /** 링버퍼 */
+    /** Ring buffer */
     private data class Segment(val file: File, val startMs: Long, var endMs: Long)
     private val segmentQueue: ArrayDeque<Segment> = ArrayDeque()
     private val segMutex = Mutex()
 
-    private data class CaptureRequest(
-        val eventTs: Long,
-        val preMs: Long,
-        val postMs: Long,
-        val displayName: String,
-    )
+    private data class CaptureRequest(val eventTs: Long, val preMs: Long, val postMs: Long, val displayName: String)
     @Volatile private var pendingCapture: CaptureRequest? = null
     private var mergingJob: Job? = null
 
     /** Preview handling */
     private class HeadlessSurfaceProvider : Preview.SurfaceProvider {
-        private var surfaceTexture: SurfaceTexture? = null
-        private var surface: Surface? = null
         override fun onSurfaceRequested(request: SurfaceRequest) {
-            Log.d(TAG, "HSP.onSurfaceRequested res=${request.resolution} thread=${Thread.currentThread().name}")
-            val tex = SurfaceTexture(0).apply {
-                setDefaultBufferSize(request.resolution.width, request.resolution.height)
-            }
+            val tex = SurfaceTexture(0).apply { setDefaultBufferSize(request.resolution.width, request.resolution.height) }
             val surf = Surface(tex)
-            surfaceTexture = tex
-            surface = surf
-            Log.d(TAG, "HSP.provideSurface surface=$surf")
             request.provideSurface(surf, Runnable::run) {
-                Log.d(TAG, "HSP.releaseCallback called -> releasing surface")
                 runCatching { surf.release() }
                 runCatching { tex.release() }
             }
@@ -198,33 +125,9 @@ class CameraRecordingService : LifecycleService() {
     }
 
     private var lastPreviewViewRef: WeakReference<PreviewView>? = null
-
-    private fun currentRotation(): Int {
-        // 1순위: OrientationEventListener가 마지막으로 기록한 값
-        val cached = lastSurfaceRotation
-        if (cached in arrayOf(
-                Surface.ROTATION_0, Surface.ROTATION_90,
-                Surface.ROTATION_180, Surface.ROTATION_270
-            )
-        ) return cached
-
-        // 2순위: PreviewView.display
-        val pv = lastPreviewViewRef?.get()
-        pv?.display?.rotation?.let { return it }
-
-        // 3순위: DisplayManager (기기에 따라 null/고정 0일 수 있음)
-        val dm = getSystemService(DISPLAY_SERVICE) as DisplayManager
-        val d = dm.getDisplay(Display.DEFAULT_DISPLAY)
-        return d?.rotation ?: Surface.ROTATION_0
-    }
     @Volatile private var cameraBound = false
 
-    private fun runOnMain(block: () -> Unit) {
-        if (Looper.myLooper() == Looper.getMainLooper()) block()
-        else Handler(Looper.getMainLooper()).post(block)
-    }
-
-    /** Binder */
+    /** Binder for Compose */
     inner class LocalBinder : Binder() {
         fun getService(): CameraRecordingService = this@CameraRecordingService
         fun attachPreview(view: PreviewView) {
@@ -233,41 +136,43 @@ class CameraRecordingService : LifecycleService() {
                 view.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                 view.scaleType = PreviewView.ScaleType.FILL_CENTER
             }
-            // UI 붙었을 때는 UI SurfaceProvider로 "재바인딩"
             lifecycleScope.launch { ensureCamera(view.surfaceProvider) }
         }
-        fun detachPreview() {
-            // 화면 떠날 땐 Headless로 "재바인딩"
-            lifecycleScope.launch { ensureCamera(HeadlessSurfaceProvider()) }
-        }
-        fun startDetection() { startBuffering() }
-        fun stopDetection()  { stopBuffering() }
-        fun markIncident(preMs: Long, postMs: Long) { lifecycleScope.launch { markEvent(preMs, postMs) } }
     }
     private val binder = LocalBinder()
-    override fun onBind(intent: Intent): IBinder { super.onBind(intent); return binder }
+    override fun onBind(intent: Intent): IBinder {
+        super.onBind(intent)
+        return binder
+    }
 
-    /** Lifecycle */
-    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun runOnMain(block: () -> Unit) {
+        if (Looper.myLooper() == Looper.getMainLooper()) block()
+        else Handler(Looper.getMainLooper()).post(block)
+    }
+
+    // ------------------- Lifecycle -------------------
     override fun onCreate() {
         super.onCreate()
         analysisExecutor = Executors.newSingleThreadExecutor()
-        Log.d(TAG, "onCreate() pid=${android.os.Process.myPid()} tid=${Thread.currentThread().name}")
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "onCreate: no CAMERA permission")
             stopSelf(); return
         }
 
         createNotificationChannel()
         yuvConverter = YuvToRgbConverter(this)
+
         lifecycleScope.launch(Dispatchers.Default) {
             runCatching { detector.warmup() }
-                .onSuccess {
-                    detectorReady.value = true
-                    Log.d("AI", "warmup ok")
-                }
+                .onSuccess { detectorReady.value = true }
                 .onFailure { Log.e("AI", "warmup fail", it) }
+        }
+
+        if (detector is MultiModelInterpreterDetector) {
+            (detector as MultiModelInterpreterDetector).laneFlow
+                .filterNotNull()
+                .onEach { lane -> _lanes.value = lane }
+                .launchIn(lifecycleScope)
         }
 
         val notif = buildNotification("준비 중…")
@@ -276,43 +181,14 @@ class CameraRecordingService : LifecycleService() {
         } else {
             startForeground(NOTI_ID, notif)
         }
-
-        val dm = getSystemService(DISPLAY_SERVICE) as DisplayManager
-        displayListener = object : DisplayManager.DisplayListener {
-            override fun onDisplayChanged(id: Int) {
-                val rot = currentRotation()
-                preview?.targetRotation = rot
-                imageAnalysis?.targetRotation = rot
-                videoCapture?.targetRotation = rot
-                Log.d("CamSvc", "rotation updated -> $rot")
-                // 재바인딩은 필요 없음. targetRotation만 갱신하는 게 가장 안전.
-            }
-            override fun onDisplayAdded(id: Int) {}
-            override fun onDisplayRemoved(id: Int) {}
-        }
-        orientationListener = object : OrientationEventListener(this) {
-            override fun onOrientationChanged(degrees: Int) {
-                val rot = surfaceRotationFromDegrees(degrees)
-                if (rot != lastSurfaceRotation) {
-                    lastSurfaceRotation = rot
-                    // ▶ 화면/분석/녹화 모두 갱신
-                    preview?.targetRotation = rot
-                    imageAnalysis?.targetRotation = rot
-                    videoCapture?.targetRotation = rot
-                    Log.d(TAG, "orientation updated -> $rot ($degrees°)")
-                }
-            }
-        }
-        orientationListener?.enable()
-        dm.registerDisplayListener(displayListener, Handler(Looper.getMainLooper()))
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        Log.d(TAG, "onStartCommand action=${intent?.action}")
+
         when (intent?.action) {
             ACTION_START -> lifecycleScope.launch {
-                // UI가 아직 없어도 Headless로 먼저 바인딩 보장
                 if (!cameraBound) ensureCamera(HeadlessSurfaceProvider())
                 detectionSessionHolder.start()
                 startBuffering()
@@ -328,143 +204,131 @@ class CameraRecordingService : LifecycleService() {
                 if (launch != null) startActivity(launch)
             }
             ACTION_MARK_EVENT -> {
-                val pre = intent.getLongExtra(EXTRA_PRE_MS, DEFAULT_PRE_MS)
-                val post = intent.getLongExtra(EXTRA_POST_MS, DEFAULT_POST_MS)
+                val pre = intent.getLongExtra(EXTRA_PRE_MS, 6000)
+                val post = intent.getLongExtra(EXTRA_POST_MS, 5000)
                 lifecycleScope.launch { markEvent(pre, post) }
             }
         }
         return START_STICKY
     }
 
-    /** ✅ 한 곳에서만 바인딩: UI/Headless 공급자만 바꿔서 매번 "재바인딩" */
+    // ------------------- CameraX setup -------------------
+    @SuppressLint("UnsafeOptInUsageError")
     private suspend fun ensureCamera(surfaceProvider: Preview.SurfaceProvider) = withContext(Dispatchers.Main) {
         val provider = cameraProvider ?: ProcessCameraProvider.getInstance(this@CameraRecordingService).get().also {
             cameraProvider = it
         }
 
-        val analysisResolution = Size(1600, 533) // 또는 960x540, 1280x720로 점증 테스트
-
+        val analysisResolution = Size(1600, 533)
         val analysisSelector = ResolutionSelector.Builder()
-            .setResolutionStrategy(
-                ResolutionStrategy(
-                    analysisResolution,
-                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER // 우선 근접 큰 해상도, 없으면 작은 해상도
-                )
-            )
+            .setResolutionStrategy(ResolutionStrategy(analysisResolution, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER))
             .build()
 
-        val rotation = currentRotation()
-
-        // VideoCapture: 가볍게 (SD 우선)
-        val qualitySelector = QualitySelector.fromOrderedList(
-            listOf(Quality.SD, Quality.HD),
-            FallbackStrategy.lowerQualityThan(Quality.SD)
-        )
+        val rotation = lastSurfaceRotation
+        val qualitySelector = QualitySelector.fromOrderedList(listOf(Quality.SD, Quality.HD), FallbackStrategy.lowerQualityThan(Quality.SD))
         val recorder = Recorder.Builder().setQualitySelector(qualitySelector).build()
         videoCapture = VideoCapture.withOutput(recorder).apply { targetRotation = rotation }
 
-        val previewSelector = ResolutionSelector.Builder()
-            .setResolutionStrategy(
-                ResolutionStrategy(
-                    Size(1280, 720),
-                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
-                )
-            )
-            .build()
+        preview = Preview.Builder().setTargetRotation(rotation).build().also { it.setSurfaceProvider(surfaceProvider) }
 
-        // Preview
-        preview = Preview.Builder()
-            .setResolutionSelector(previewSelector)
+        imageAnalysis = ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .setImageQueueDepth(1)
+            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+            .setResolutionSelector(analysisSelector)
             .setTargetRotation(rotation)
-            .build().also { it.setSurfaceProvider(surfaceProvider) }
-
-         imageAnalysis = ImageAnalysis.Builder()
-             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-             .setImageQueueDepth(1)
-             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
-             .setResolutionSelector(analysisSelector)
-             .setTargetRotation(rotation)
-             .build().apply { setAnalyzer(analysisExecutor, ::analyzeFrame) }
+            .build().apply { setAnalyzer(analysisExecutor, ::analyzeFrame) }
 
         provider.unbindAll()
-        provider.bindToLifecycle(
-            this@CameraRecordingService,
-            CameraSelector.DEFAULT_BACK_CAMERA,
-            preview!!,
-            videoCapture!!,
-            imageAnalysis!!
-        )
+        provider.bindToLifecycle(this@CameraRecordingService, CameraSelector.DEFAULT_BACK_CAMERA, preview!!, videoCapture!!, imageAnalysis!!)
         cameraBound = true
-        Log.d("AI", "ensureCamera(): bound (rotation=$rotation, provider=$surfaceProvider)")
         updateNotification("준비 완료")
     }
 
+    private fun detectLaneViolationSimple(
+        detection: Detection?,        // YOLO 차량 1대
+        laneDetection: LaneDetection  // LaneDetector 결과 (왼쪽 차선 1개만 있음)
+    ): Boolean {
+        if (detection == null) return false
+        if (laneDetection.coords.isEmpty()) return false
+
+        val leftLane = laneDetection.coords[0]
+
+        // 🚘 차량 중심
+        val cx = (detection.box.left + detection.box.right) / 2f
+        val cy = detection.box.bottom
+
+        // 현재 y 기준 차선의 x 좌표
+        val laneX = interpolateX(leftLane, cy)
+
+        // 🚨 침범: 차량 중심이 차선보다 왼쪽에 있으면 true
+        return cx < laneX
+    }
+
+    // y 위치에 맞는 차선 x 좌표 보간
+    private fun interpolateX(lane: List<Pair<Float, Float>>, y: Float): Float {
+        val sorted = lane.sortedBy { it.second }
+        for (i in 0 until sorted.size - 1) {
+            val (x1, y1) = sorted[i]
+            val (x2, y2) = sorted[i + 1]
+            if (y1 <= y && y <= y2) {
+                val t = (y - y1) / (y2 - y1)
+                return x1 + t * (x2 - x1)
+            }
+        }
+        return sorted.last().first
+    }
+
+    // ------------------- Analysis -------------------
     @OptIn(ExperimentalGetImage::class)
     private fun analyzeFrame(image: ImageProxy) {
         var gateAcquired = false
-        var launchedJob = false
         try {
-            inFpsCnt++
-            val nowIn = SystemClock.elapsedRealtime()
-            if (nowIn - inFpsLast >= 1000) {
-                Log.d("AI", "input fps=$inFpsCnt")
-                inFpsCnt = 0
-                inFpsLast = nowIn
-            }
-
             if (!detectorReady.value) { image.close(); return }
 
-            val now = android.os.SystemClock.elapsedRealtime()
+            val now = SystemClock.elapsedRealtime()
             if (now - lastInferTs < minGapMs) { image.close(); return }
             if (!inferGate.tryAcquire()) { image.close(); return }
             gateAcquired = true
             lastInferTs = now
 
-            // YUV -> Bitmap
             val rotation = image.imageInfo.rotationDegrees
             val bmp0 = image.toBitmap(yuvConverter)
             val bmp = if (rotation != 0) bmp0.rotateDeg(rotation) else bmp0
-            image.close() // 비트맵으로 변환했으니 즉시 반납
+            image.close() // ImageProxy 반납
 
             lifecycleScope.launch(Dispatchers.Default) {
-                launchedJob = true
                 try {
-                    Log.d("AI", "analyze rotate=$rotation, bmp=${bmp.width}x${bmp.height}")
+                    // 🟢 YOLO 추론
+                    val dets = withTimeoutOrNull(3000) { detector.detect(bmp, 0) } ?: emptyList()
 
-                    val result = withTimeoutOrNull(3000) { detector.detect(bmp, 0) }
-                    val (dets, lanes) = result ?: (emptyList<Detection>() to LaneDetection(emptyList()))
-
-                    infFpsCnt++
-                    val nowInf = SystemClock.elapsedRealtime()
-                    if (nowInf - infFpsLast >= 1000) {
-                        Log.d("AI", "inference fps=$infFpsCnt")
-                        infFpsCnt = 0
-                        infFpsLast = nowInf
-                    }
-
-                    // 🔎 탐지 개수/상위 샘플 로깅
-                    if (dets.isEmpty()) {
-                        Log.d("AI", "no detections")
-                    } else {
-                        val top = dets.take(3).joinToString { "${it.label}@${"%.2f".format(it.score)}" }
-                        Log.d("AI", "detections=${dets.size}, top=$top")
-                    }
-
-                    // UI에 흘리는 상태도 갱신
+                    // detection 상태 업데이트
                     val prev = _detections.value
                     if (!sameDetections(prev, dets)) _detections.value = dets
 
-                    if (lanes.coords.isNotEmpty()) {
-                        _lanes.value = lanes
-                    }
-
+                    // violation 발생 시 이벤트 마킹
                     val violations = processDetectionsUseCase(dets)
                     if (violations.isNotEmpty()) {
-                        Log.d("AI", "violations=${violations.size} -> markEvent()")
                         markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS)
                     }
-                } catch (t: Throwable) {
-                    Log.e("AI", "detect failed: ${t.message}", t)
+
+                    // 🟢 LaneDetector에 프레임 전달 (YOLO와 별개 스레드에서 동작)
+                    if (detector is MultiModelInterpreterDetector) {
+                        (detector as MultiModelInterpreterDetector).submitLaneFrame(
+                            bmp.copy(bmp.config ?: Bitmap.Config.ARGB_8888, false)
+                        )
+                    }
+
+                    val lane = _lanes.value
+
+// 🚘 차량 (car/truck/bus만 고려)
+                    val car = dets.firstOrNull { it.label.lowercase() in listOf("car", "truck", "bus") }
+
+// 🚨 침범 체크
+                    if (detectLaneViolationSimple(car, lane)) {
+                        Log.d("Violation", "중앙선 침범 발생!")
+                    }
+
                 } finally {
                     if (!bmp.isRecycled) bmp.recycle()
                     if (gateAcquired) inferGate.release()
@@ -473,49 +337,45 @@ class CameraRecordingService : LifecycleService() {
         } catch (t: Throwable) {
             Log.e("AI", "analyzeFrame error: ${t.message}", t)
             try { image.close() } catch (_: Throwable) {}
-            if (gateAcquired && !launchedJob) {
-                inferGate.release()
-            }
+            if (gateAcquired) inferGate.release()
         }
     }
 
-    // 추가: Bitmap 회전 헬퍼
+
     private fun Bitmap.rotateDeg(deg: Int): Bitmap {
         if (deg % 360 == 0) return this
-        val m = android.graphics.Matrix().apply { postRotate(deg.toFloat()) }
+        val m = Matrix().apply { postRotate(deg.toFloat()) }
         val rotated = Bitmap.createBitmap(this, 0, 0, width, height, m, true)
         if (rotated !== this) this.recycle()
         return rotated
     }
 
-
     private fun sameDetections(a: List<Detection>, b: List<Detection>): Boolean {
         if (a.size != b.size) return false
-        for (i in a.indices) {
+        return a.indices.all { i ->
             val x = a[i]; val y = b[i]
-            if (x.label != y.label) return false
-            if (kotlin.math.abs(x.box.left - y.box.left) > 1e-4) return false
-            if (kotlin.math.abs(x.box.top - y.box.top) > 1e-4) return false
-            if (kotlin.math.abs(x.box.right - y.box.right) > 1e-4) return false
-            if (kotlin.math.abs(x.box.bottom - y.box.bottom) > 1e-4) return false
+            x.label == y.label &&
+                    kotlin.math.abs(x.box.left - y.box.left) < 1e-4 &&
+                    kotlin.math.abs(x.box.top - y.box.top) < 1e-4 &&
+                    kotlin.math.abs(x.box.right - y.box.right) < 1e-4 &&
+                    kotlin.math.abs(x.box.bottom - y.box.bottom) < 1e-4
         }
-        return true
     }
 
-    /** Ring buffer loop */
+    // ------------------- Buffering & Merge -------------------
     private fun startBuffering() {
         if (bufferingJob?.isActive == true) return
         updateNotification("버퍼링 시작…")
         bufferingJob = lifecycleScope.launch(Dispatchers.Default) {
             while (isActive) {
-                val seg = recordOneSegment(SEGMENT_MS)
+                val seg = recordOneSegment(5000)
                 if (seg == null) { delay(120); continue }
                 segMutex.withLock {
                     segmentQueue.addLast(seg)
-                    pruneOldSegmentsLocked(keepMs = PRE_WINDOW_LIMIT_MS)
+                    pruneOldSegmentsLocked(12000)
                 }
                 checkAndMaybeMerge()
-                delay(SEGMENT_COOLDOWN_MS)
+                delay(150)
             }
         }
     }
@@ -532,7 +392,6 @@ class CameraRecordingService : LifecycleService() {
         }
     }
 
-    /** 녹화 세그먼트 */
     private suspend fun recordOneSegment(durationMs: Long): Segment? = withContext(Dispatchers.Main) {
         val vc = videoCapture ?: return@withContext null
         val startTs = System.currentTimeMillis()
@@ -550,7 +409,6 @@ class CameraRecordingService : LifecycleService() {
                         if (!startDef.isCompleted) startDef.complete(false)
                         finalizeDef.complete(ev)
                     }
-                    else -> Unit
                 }
             }
         currentRecording = rec
@@ -561,7 +419,6 @@ class CameraRecordingService : LifecycleService() {
             runCatching { finalizeDef.await() }
             currentRecording = null
             file.delete()
-            Log.w("Recorder", "Start not received, skip segment (no valid data).")
             return@withContext null
         }
 
@@ -569,14 +426,9 @@ class CameraRecordingService : LifecycleService() {
         rec.stop()
         val fin = finalizeDef.await()
         currentRecording = null
-
-        if (fin.hasError()) {
-            Log.e("Recorder", "segment finalize error: ${fin.error}")
-            file.delete()
-            return@withContext null
-        }
+        if (fin.hasError()) { file.delete(); return@withContext null }
         val endTs = System.currentTimeMillis()
-        Segment(file = file, startMs = startTs, endMs = endTs)
+        Segment(file, startTs, endTs)
     }
 
     private fun pruneOldSegmentsLocked(keepMs: Long) {
@@ -587,24 +439,11 @@ class CameraRecordingService : LifecycleService() {
         }
     }
 
-    /** Incident handling & merge */
     private fun markEvent(preMs: Long, postMs: Long) {
         val now = System.currentTimeMillis()
         val name = "incident_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(now))}.mp4"
-        pendingCapture = CaptureRequest(eventTs = now, preMs = preMs, postMs = postMs, displayName = name)
+        pendingCapture = CaptureRequest(now, preMs, postMs, name)
         updateNotification("사건 감지! 후단 ${postMs / 1000}s 수집 중…")
-    }
-
-    private fun createVideoUri(displayName: String): Uri {
-        val values = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-            put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/ChakHaeng/Incidents")
-            put(MediaStore.Video.Media.DATE_TAKEN, System.currentTimeMillis())
-            put(MediaStore.Video.Media.IS_PENDING, 1)
-        }
-        return contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
-            ?: error("Failed to insert MediaStore row")
     }
 
     private suspend fun checkAndMaybeMerge() {
@@ -614,13 +453,10 @@ class CameraRecordingService : LifecycleService() {
         }
         if (!enough) return
 
-        val sources: List<File> = segMutex.withLock {
+        val sources = segMutex.withLock {
             val fromTs = req.eventTs - req.preMs
             val toTs = req.eventTs + req.postMs
-            segmentQueue.filter { it.endMs >= fromTs }
-                .takeWhile { it.startMs <= toTs }
-                .map { it.file }
-                .toList()
+            segmentQueue.filter { it.endMs >= fromTs }.takeWhile { it.startMs <= toTs }.map { it.file }
         }
         if (sources.isEmpty() || mergingJob?.isActive == true) return
 
@@ -630,7 +466,7 @@ class CameraRecordingService : LifecycleService() {
                 updateNotification("사건 클립 병합 중 (${sources.size}개)…")
                 outUri = createVideoUri(req.displayName)
                 mergeMp4SegmentsToUri(sources, outUri)
-                getCurrentLocationAndEnqueue(this@CameraRecordingService, outUri, "신호위반", "12가1234" )
+                getCurrentLocationAndEnqueue(this@CameraRecordingService, outUri, "신호위반", "12가1234")
                 notifyIncidentSaved(outUri)
                 updateNotification("사건 저장 완료: ${req.displayName}")
             } catch (t: Throwable) {
@@ -639,7 +475,7 @@ class CameraRecordingService : LifecycleService() {
                 runCatching { outUri?.let { contentResolver.delete(it, null, null) } }
             } finally {
                 pendingCapture = null
-                segMutex.withLock { pruneOldSegmentsLocked(keepMs = PRE_WINDOW_LIMIT_MS) }
+                segMutex.withLock { pruneOldSegmentsLocked(12000) }
             }
         }
     }
@@ -648,33 +484,26 @@ class CameraRecordingService : LifecycleService() {
     private fun mergeMp4SegmentsToUri(inputs: List<File>, outUri: Uri): Uri {
         val pfd = contentResolver.openFileDescriptor(outUri, "w") ?: error("openFD failed")
         val muxer = MediaMuxer(pfd.fileDescriptor, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-
         var dstVideoTrack = -1
         var started = false
-
         val buffer = ByteBuffer.allocate(2 * 1024 * 1024)
         val info = MediaCodec.BufferInfo()
         var ptsOffsetUs = 0L
         var maxPtsUs = 0L
-
         fun selectTrack(ex: MediaExtractor, prefix: String): Int {
             for (i in 0 until ex.trackCount) {
-                val fmt = ex.getTrackFormat(i)
-                val mime = fmt.getString(MediaFormat.KEY_MIME) ?: continue
+                val mime = ex.getTrackFormat(i).getString(MediaFormat.KEY_MIME) ?: continue
                 if (mime.startsWith(prefix)) return i
             }
             return -1
         }
-
         inputs.forEach { file ->
             val ex = MediaExtractor().apply { setDataSource(file.absolutePath) }
             val vIdx = selectTrack(ex, "video/")
-
             if (!started) {
                 if (vIdx != -1) dstVideoTrack = muxer.addTrack(ex.getTrackFormat(vIdx))
                 muxer.start(); started = true
             }
-
             if (vIdx != -1 && dstVideoTrack != -1) {
                 ex.selectTrack(vIdx)
                 while (true) {
@@ -693,22 +522,30 @@ class CameraRecordingService : LifecycleService() {
             ex.release()
             ptsOffsetUs = maxPtsUs
         }
-
         muxer.stop(); muxer.release(); pfd.close()
         val cv = ContentValues().apply { put(MediaStore.Video.Media.IS_PENDING, 0) }
         contentResolver.update(outUri, cv, null, null)
         return outUri
     }
 
-    /** Notifications */
+    // ------------------- Notifications -------------------
+    private fun createVideoUri(displayName: String): Uri {
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+            put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/ChakHaeng/Incidents")
+            put(MediaStore.Video.Media.DATE_TAKEN, System.currentTimeMillis())
+            put(MediaStore.Video.Media.IS_PENDING, 1)
+        }
+        return contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values) ?: error("insert fail")
+    }
+
     private fun notifyIncidentSaved(uri: Uri) {
         val open = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "video/mp4")
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        val openPending = PendingIntent.getActivity(
-            this, 2001, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val openPending = PendingIntent.getActivity(this, 2001, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         val noti = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.presence_video_online)
@@ -721,27 +558,8 @@ class CameraRecordingService : LifecycleService() {
         nm.notify(8891, noti)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopBuffering()
-        cameraProvider?.unbindAll()
-        // 회전 리스너 해제
-        (getSystemService(DISPLAY_SERVICE) as? DisplayManager)
-            ?.unregisterDisplayListener(displayListener)
-        displayListener = null
-
-        // Analyzer 스레드 정리
-        runCatching { analysisExecutor.shutdown() }
-        orientationListener?.disable()
-        orientationListener = null
-    }
-
     private fun createNotificationChannel() {
-        val ch = NotificationChannel(
-            CHANNEL_ID,
-            "Camera Recording",
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply {
+        val ch = NotificationChannel(CHANNEL_ID, "Camera Recording", NotificationManager.IMPORTANCE_LOW).apply {
             description = "Foreground camera recording"
             enableLights(false); enableVibration(false)
             lightColor = Color.BLUE
@@ -750,16 +568,11 @@ class CameraRecordingService : LifecycleService() {
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(ch)
     }
 
-    @SuppressLint("LaunchActivityFromNotification")
     private fun buildNotification(content: String): Notification {
         val stopIntent = Intent(this, CameraRecordingService::class.java).apply { action = ACTION_STOP }
-        val stopPending = PendingIntent.getService(
-            this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val stopPending = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val openIntent = Intent(this, CameraRecordingService::class.java).apply { action = ACTION_OPEN }
-        val openPending = PendingIntent.getService(
-            this, 1, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val openPending = PendingIntent.getService(this, 1, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.presence_video_online)
             .setContentTitle("ChakHaeng 녹화")
@@ -774,5 +587,21 @@ class CameraRecordingService : LifecycleService() {
     private fun updateNotification(content: String) {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(NOTI_ID, buildNotification(content))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopBuffering()
+        cameraProvider?.unbindAll()
+
+        val dm = getSystemService(DISPLAY_SERVICE) as? DisplayManager
+        displayListener?.let {
+            dm?.unregisterDisplayListener(it)
+        }
+        displayListener = null
+
+        runCatching { analysisExecutor.shutdown() }
+        orientationListener?.disable()
+        orientationListener = null
     }
 }

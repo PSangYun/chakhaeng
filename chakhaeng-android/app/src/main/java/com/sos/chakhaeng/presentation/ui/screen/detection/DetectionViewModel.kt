@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.Detector
-import com.sos.chakhaeng.core.ai.LaneDetection
 import com.sos.chakhaeng.core.ai.MultiModelInterpreterDetector
 import com.sos.chakhaeng.core.navigation.Navigator
 import com.sos.chakhaeng.core.navigation.Route
@@ -21,15 +20,7 @@ import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
@@ -48,18 +39,16 @@ class DetectionViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _detections = MutableStateFlow<List<Detection>>(emptyList())
-    val detections = _detections.asStateFlow()
+    val detections: StateFlow<List<Detection>> = _detections.asStateFlow()
 
     private val _violations = MutableStateFlow<List<ViolationEvent>>(emptyList())
-    val violations = _violations.asStateFlow()
+    val violations: StateFlow<List<ViolationEvent>> = _violations.asStateFlow()
 
     // ✅ lane 좌표 StateFlow
     private val _laneCoords = MutableStateFlow<List<List<Pair<Float, Float>>>>(emptyList())
     val laneCoords: StateFlow<List<List<Pair<Float, Float>>>> = _laneCoords.asStateFlow()
 
     private val inferGate = Semaphore(1)
-    private val detectorReady = MutableStateFlow(false)
-
     private var lastInferTs = 0L
     private val minGapMs = 80L
 
@@ -83,20 +72,30 @@ class DetectionViewModel @Inject constructor(
     )
 
     private var camera: Camera? = null
-    private val activeModelKeys = listOf("yolov8s")
-    private val cadence = mapOf("yolov8s" to 1)
+    private val activeModelKeys = listOf("final") // YOLO 모델 키
+    private val cadence = mapOf("final" to 1)
 
     private var frameIndex = 0L
-    private val gateWatchdogMs = 2500L
 
     val personCount = MutableStateFlow(0)
-    private var hadPerson = false
 
-    private fun isPerson(d: Detection): Boolean {
-        return d.label.equals("person", ignoreCase = true) || d.label == "0"
-    }
+    var debugLastInferMs = MutableStateFlow(0L)
+    var debugLastDetCount = MutableStateFlow(0)
 
     init {
+        // ✅ Lane flow 구독 (LaneDetector는 Detector 내부에서 비동기로 계속 실행됨)
+        if (detector is MultiModelInterpreterDetector) {
+            viewModelScope.launch {
+                detector.laneFlow
+                    .filterNotNull()
+                    .collect { laneResult ->
+                        _laneCoords.value = laneResult.coords
+                        Log.d("Lane_Final", "laneFlow update coords=${laneResult.coords.size}")
+                    }
+            }
+        }
+
+        // ✅ 주기적으로 violation 갱신
         viewModelScope.launch {
             detectionUseCase.isDetectionActive.collect { isActive ->
                 if (isActive) {
@@ -122,9 +121,6 @@ class DetectionViewModel @Inject constructor(
         }
     }
 
-    var debugLastInferMs = MutableStateFlow(0L)
-    var debugLastDetCount = MutableStateFlow(0)
-
     fun onFrame(bitmap: Bitmap, rotation: Int): Boolean {
         val now = System.currentTimeMillis()
         if (now - lastInferTs < minGapMs) return false
@@ -136,7 +132,6 @@ class DetectionViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val merged = ArrayList<Detection>(64)
-                var latestLaneCoords: List<List<Pair<Float, Float>>> = emptyList()
 
                 for (key in activeModelKeys) {
                     val period = cadence[key] ?: 1
@@ -144,27 +139,28 @@ class DetectionViewModel @Inject constructor(
                     if (detector is MultiModelInterpreterDetector) detector.switchModel(key)
 
                     val t0 = android.os.SystemClock.elapsedRealtime()
-                    val dets: Pair<List<Detection>, LaneDetection> = runCatching {
+                    val yoloDetections: List<Detection> = runCatching {
                         withTimeout(3000) { detector.detect(bitmap, rotation) }
                     }.getOrElse { e ->
                         Log.e("TAG", "detect($key) failed: ${e.message}", e)
-                        Pair(emptyList(), LaneDetection(emptyList()))
+                        emptyList()
                     }
 
-                    val (yoloDetections, laneResult) = dets
                     merged += yoloDetections
-                    latestLaneCoords = laneResult.coords
 
                     val t1 = android.os.SystemClock.elapsedRealtime()
                     debugLastInferMs.value = (t1 - t0)
                     debugLastDetCount.value = yoloDetections.size
                 }
 
+                // ✅ LaneDetector는 Detector 내부 워커가 별도 수행 → 여기선 submit만
+                if (detector is MultiModelInterpreterDetector) {
+                    detector.submitLaneFrame(bitmap)
+                }
+
                 withContext(Dispatchers.Main) {
                     _detections.value = merged
                     _violations.value = processDetectionsUseCase(merged)
-                    _laneCoords.value = latestLaneCoords
-                    Log.d("Lane_Final", "update lane coords=${latestLaneCoords.size}")
                 }
             } finally {
                 if (!bitmap.isRecycled) bitmap.recycle()
