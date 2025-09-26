@@ -2,6 +2,7 @@ package com.sos.chakhaeng.domain.usecase.ai.rules
 
 import android.graphics.RectF
 import com.sos.chakhaeng.core.ai.Detection
+import com.sos.chakhaeng.core.ai.TrackObj
 import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.ai.ViolationThrottle
 import com.sos.chakhaeng.domain.usecase.ai.geom.centerX
@@ -25,7 +26,7 @@ class LovebugRule @Inject constructor(
 
     override val name: String = "Lovebug"
 
-    override fun evaluate(detections: List<Detection>): List<ViolationEvent> {
+    override fun evaluate(detections: List<Detection>, tracks: List<TrackObj>): List<ViolationEvent> {
         fun isKickboard(d: Detection) =
             d.score >= cfg.minKickboard && d.label.equals("kickboard", ignoreCase = true)
         fun isLovebug(d: Detection) =
