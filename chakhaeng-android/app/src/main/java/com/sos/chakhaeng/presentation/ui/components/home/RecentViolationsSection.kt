@@ -96,7 +96,7 @@ fun ViolationItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
+            .height(80.dp)
             .clickable{
                 onClick(violation.violationId)
             }, // 고정 높이
@@ -131,7 +131,6 @@ fun ViolationItem(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // 위반 정보
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -142,27 +141,41 @@ fun ViolationItem(
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1
                 )
-                Log.d("TAG", "ViolationItem: ${violation.type}")
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = violation.location,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            // 시간 표시
-            Column {
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier
+                    .widthIn(min = 72.dp)
+                    .wrapContentWidth(Alignment.End),
+                horizontalAlignment = Alignment.End
+            ) {
                 Text(
                     text = violation.carNumber,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = formatTimeAgo(violation.timestamp),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
                 )
             }
+
         }
     }
 }

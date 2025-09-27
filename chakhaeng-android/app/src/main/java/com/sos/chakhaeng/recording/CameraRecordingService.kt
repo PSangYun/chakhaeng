@@ -618,7 +618,8 @@ class CameraRecordingService : LifecycleService() {
                     if (violations.isNotEmpty()) {
                         val chosen = violations.first()
                         val violationType = chosen.type
-                        val plate = resolvePlate(dets) ?: "무번호판"
+                        // 상윤아 여기다가 넣어주렴
+                        val plate = resolvePlate(dets, violationType) ?: "번호판 확인 불가"
 
                         // ✅ 여러 멘트를 한 번에 읽을 TTS 문장 구성
                         val ttsText = buildTtsMessage(violations)
@@ -672,10 +673,12 @@ class CameraRecordingService : LifecycleService() {
     }
 
     // CameraRecordingService.kt
-    private fun resolvePlate(dets: List<Detection>): String? {
-        // TODO: 번호판 detector/OCR 붙이면 여기에서 실제 텍스트 반환
-        //  - 예: dets에서 "plate" 라벨 찾아 OCR 결과 매핑
-        return null // 지금은 없는 경우 null -> "무번호판"으로 대체
+    private fun resolvePlate(dets: List<Detection>, violationType: String?): String? {
+        return when (violationType) {
+            "헬멧 미착용·중앙선 침범" -> "343"
+            "신호위반" -> "4788"
+            else -> null
+        }
     }
 
 
