@@ -11,9 +11,9 @@ import kotlin.math.min
 
 /** 룰 파라미터 (원하면 RemoteConfig/Datastore로 교체) */
 data class RedSignalConfig(
-    val vehicleLabels: Set<String> = setOf("car","motorcycle","bicycle","kickboard","lovebug"),
+    val vehicleLabels: Set<String> = setOf("car","motocycle","bicycle","kickboard","lovebug"),
     val crosswalkLabels: Set<String> = setOf("crosswalk"),
-    val vehicularSignalPrefix: String = "vehicular_signal_",
+    val vehicularSignalPrefix: String = "vehicular_signal_red",
 
     val crossingTol: Float = 0.012f,       // 위/아래 밴드 판정 여유(y 정규화)
     val lateralStepTol: Float = 0.004f,    // 프레임간 최소 왼쪽 이동량

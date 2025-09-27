@@ -42,12 +42,12 @@ object ViolationRulesModule {
         defaultCooldownMs = 1_000L,
         dedupIou = 0.30f,
         perTypeCooldownMs = mapOf(
-            "헬멧 미착용" to 600_000L,
+            "헬멧 미착용·중앙선 침범" to 600_000L,
             "신호위반" to 600_000L,
-            "킥보드 2인이상" to 600_000L,
+            "킥보드 2인이상·헬멧 미착용" to 600_000L,
             "무번호판" to 600_000L
         ),
-        globalCooldownTypes = setOf("헬멧 미착용", "신호위반", "킥보드 2인이상", "무번호판")
+        globalCooldownTypes = setOf("헬멧 미착용·중앙선 침범", "신호위반", "킥보드 2인이상·헬멧 미착용", "무번호판")
     )
 
     @Provides @IntoSet
@@ -58,8 +58,9 @@ object ViolationRulesModule {
 
     @Provides @IntoSet
     fun provideCrosswalkRule(
-        cfg: CrosswalkConfig
-    ): ViolationRule = CrosswalkInvadeRule(cfg)
+        cfg: CrosswalkConfig,
+        throttle: ViolationThrottle
+    ): ViolationRule = CrosswalkInvadeRule(cfg, throttle)
 
     @Provides @IntoSet
     fun provideRedSignalRule(

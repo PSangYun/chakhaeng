@@ -62,7 +62,10 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         val channelId = "Notice_Notification"
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(
-            NotificationChannel(channelId, "Notice", NotificationManager.IMPORTANCE_DEFAULT)
+            NotificationChannel(
+                channelId,
+                "Notice", NotificationManager.IMPORTANCE_HIGH
+            )
         )
 
         val builder = NotificationCompat.Builder(this, channelId)
@@ -71,6 +74,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
             .setContentText(remoteMessage.notification?.body)
             .setAutoCancel(true)
             .setContentIntent(pending)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
 
         nm.notify((System.currentTimeMillis() / 7).toInt(), builder.build())
     }

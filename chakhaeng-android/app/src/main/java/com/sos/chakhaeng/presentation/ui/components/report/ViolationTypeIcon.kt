@@ -36,6 +36,8 @@ fun ViolationTypeIcon(
                 ViolationType.LOVE_BUG -> painterResource(R.drawable.ic_scooter)
                 ViolationType.NO_PLATE -> painterResource(R.drawable.ic_plate)
                 ViolationType.NO_HELMET -> painterResource(R.drawable.ic_helmet)
+                ViolationType.NO_HELMET_AND_LANE -> painterResource(R.drawable.ic_helmet)
+                ViolationType.NO_HELMET_AND_LOVE_BUG -> painterResource(R.drawable.ic_scooter)
                 ViolationType.OTHERS -> painterResource(R.drawable.ic_ete)
             },
             contentDescription = violationType.displayName,

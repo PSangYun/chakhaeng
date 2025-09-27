@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.sos.chakhaeng.core.utils.TimeAgo
 import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.model.violation.ViolationInRangeEntity
+import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 
 private const val TAG = "ViolationDetectionList"
 
@@ -66,7 +67,7 @@ private fun ViolationDetectionItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(14.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ViolationThumbnail(
@@ -88,7 +89,7 @@ private fun ViolationDetectionItem(
                     ) {
                         Text(
                             text = violation.violationType.displayName,
-                            style = MaterialTheme.typography.titleSmall,
+                            style = chakhaengTypography().bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                         )
                         // 신뢰도
@@ -116,7 +117,7 @@ private fun ViolationDetectionItem(
                                     ViolationType.OTHERS -> "경미"
                                     else -> "경미"
                                 },
-                                style = MaterialTheme.typography.bodySmall,
+                                style = chakhaengTypography().labelMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = when (violation.violationType) {
                                     ViolationType.WRONG_WAY -> Color(0xFFEF4444)
@@ -133,11 +134,7 @@ private fun ViolationDetectionItem(
                         }
                     }
 
-                    Text(
-                        text = TimeAgo.from(violation.occurredAt),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -177,6 +174,12 @@ private fun ViolationDetectionItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
+                    )
+
+                    Text(
+                        text = TimeAgo.from(violation.occurredAt),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

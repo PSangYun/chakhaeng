@@ -63,6 +63,8 @@ object StatisticsDataMapper {
         "킥보드 2인이상" -> ViolationType.LOVE_BUG
         "무번호판" -> ViolationType.NO_PLATE
         "헬멧 미착용" -> ViolationType.NO_HELMET
+        "헬멧 미착용·중앙선 침범" -> ViolationType.NO_HELMET_AND_LANE
+        "킥보드 2인이상·헬멧 미착용" -> ViolationType.NO_HELMET_AND_LOVE_BUG
         "OTHERS" -> ViolationType.OTHERS
         else -> ViolationType.OTHERS
     }

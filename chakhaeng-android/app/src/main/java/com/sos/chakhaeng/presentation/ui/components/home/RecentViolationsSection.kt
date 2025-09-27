@@ -14,7 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import com.sos.chakhaeng.domain.model.home.RecentViolation
 import com.sos.chakhaeng.presentation.theme.chakhaengTypography
 import com.sos.chakhaeng.R
@@ -136,7 +138,9 @@ fun ViolationItem(
                 Text(
                     text = violation.type,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1
                 )
                 Log.d("TAG", "ViolationItem: ${violation.type}")
                 Text(
@@ -145,7 +149,7 @@ fun ViolationItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
+            Spacer(modifier = Modifier.width(12.dp))
             // 시간 표시
             Column {
                 Text(
@@ -173,6 +177,8 @@ private fun getSeverityColor(severity: String): Color {
         "무번호판" -> Color(0xFFCDDC39)
         "헬멧 미착용" -> Color(0xFF9C27B0)
         "킥보드 2인이상" -> Color(0xFF03A9F4)
+        "헬멧 미착용·중앙선 침범" -> Color(0xFF9C27B0)
+        "킥보드 2인이상·헬멧 미착용" -> Color(0xFF03A9F4)
         else -> Color.Black
     }
 }
@@ -185,6 +191,8 @@ private fun getViolationIcon(violationType: String):Int {
         "무번호판" -> R.drawable.ic_plate
         "헬멧 미착용" -> R.drawable.ic_helmet
         "킥보드 2인이상" -> R.drawable.ic_scooter
+        "헬멧 미착용·중앙선 침범" -> R.drawable.ic_helmet
+        "킥보드 2인이상·헬멧 미착용" -> R.drawable.ic_scooter
         else -> R.drawable.ic_ete
     }
 }

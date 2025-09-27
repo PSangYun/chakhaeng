@@ -16,5 +16,7 @@ enum class ViolationType(
     LOVE_BUG("킥보드 2인이상", ViolationColors.Critical, ViolationColors.CriticalIcon),
     NO_PLATE("무번호판", ViolationColors.LowAmber, ViolationColors.LowAmberIcon),
     NO_HELMET("헬멧 미착용", ViolationColors.LowPurple, ViolationColors.LowPurpleIcon),
+    NO_HELMET_AND_LANE("헬멧 미착용·중앙선 침범", ViolationColors.LowPurple, ViolationColors.LowPurpleIcon),
+    NO_HELMET_AND_LOVE_BUG("킥보드 2인이상·헬멧 미착용", ViolationColors.Critical, ViolationColors.CriticalIcon),
     OTHERS("기타", ViolationColors.Others, ViolationColors.OthersIcon)
 }

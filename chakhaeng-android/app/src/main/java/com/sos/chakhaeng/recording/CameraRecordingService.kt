@@ -65,6 +65,7 @@ import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import com.sos.chakhaeng.core.utils.DetectionSessionHolder
 import com.sos.chakhaeng.core.camera.toBitmap
 import com.sos.chakhaeng.core.worker.getCurrentLocationAndEnqueue
+import com.sos.chakhaeng.domain.model.violation.ViolationEvent
 import com.sos.chakhaeng.domain.usecase.ai.ProcessDetectionsUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CompletableDeferred
@@ -498,6 +499,27 @@ class CameraRecordingService : LifecycleService() {
         updateNotification("준비 완료")
     }
 
+    private val TTS_PHRASE = mapOf(
+        "신호위반" to "신호위반이 감지되었습니다.",
+        "중앙선 침범" to "중앙선 침범이 감지되었습니다.",
+        "헬멧 미착용" to "헬멧 미착용이 감지되었습니다.",
+        "무번호판" to "무번호판이 감지되었습니다. 바로 신고하시겠습니까?",
+        "킥보드 2인이상" to "킥보드 2인 이상 탑승이 감지되었습니다."
+    )
+
+    private fun buildTtsMessage(events: List<ViolationEvent>): String? {
+        if (events.isEmpty()) return null
+        // announceTypes가 비어 있으면 type 사용
+        val types = events.flatMap { e ->
+            if (e.announceTypes.isNotEmpty()) e.announceTypes else listOf(e.type)
+        }.distinct()
+
+        val phrases = types.map { TTS_PHRASE[it] ?: "$it 이(가) 감지되었습니다." }
+        if (phrases.isEmpty()) return null
+        // 한 번에 자연스럽게 이어서 읽기 (공백 구분)
+        return phrases.joinToString(" ")
+    }
+
     @OptIn(ExperimentalGetImage::class)
     private fun analyzeFrame(image: ImageProxy) {
         var gateAcquired = false
@@ -596,8 +618,21 @@ class CameraRecordingService : LifecycleService() {
                     if (violations.isNotEmpty()) {
                         val chosen = violations.first()
                         val violationType = chosen.type
-                        val plate = resolvePlate(dets) ?: "무번호판"  // 지금은 placeholder
-                        markEvent(preMs = DEFAULT_PRE_MS, postMs = DEFAULT_POST_MS, violationType = violationType, plate = plate)
+                        val plate = resolvePlate(dets) ?: "무번호판"
+
+                        // ✅ 여러 멘트를 한 번에 읽을 TTS 문장 구성
+                        val ttsText = buildTtsMessage(violations)
+                        val delayMs = (violations.firstOrNull()?.attrs?.get("ttsDelayMs") as? Number)?.toLong() ?: 0L
+
+                        // ✅ 새 오버로드로 호출(없으면 type 기본 멘트로)
+                        markEvent(
+                            preMs = DEFAULT_PRE_MS,
+                            postMs = DEFAULT_POST_MS,
+                            violationType = violationType,
+                            plate = plate,
+                            ttsText = ttsText,
+                            ttsDelayMs = delayMs
+                        )
                     }
                 } catch (t: Throwable) {
                     Log.e("AI", "detect failed: ${t.message}", t)
@@ -739,16 +774,55 @@ class CameraRecordingService : LifecycleService() {
 
     /** Incident handling & merge */
     private fun markEvent(preMs: Long, postMs: Long, violationType: String, plate: String) {
+//        val now = System.currentTimeMillis()
+//        val name = "incident_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(now))}.mp4"
+//        val textToRead = "$violationType 감지되었습니다."
+//        if (ChakHaengApplication.ttsReady) {
+//            ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
+//        } else {
+//            Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
+//        }
+//        // 넣어줘 상윤아
+//        pendingCapture = CaptureRequest(eventTs = now, preMs = preMs, postMs = postMs, displayName = name, violationType = violationType, plate = plate)
+//        updateNotification("사건 감지! 후단 ${postMs / 1000}s 수집 중…")
+        markEvent(preMs, postMs, violationType, plate, ttsText = null)
+    }
+
+    private fun markEvent(
+        preMs: Long,
+        postMs: Long,
+        violationType: String,
+        plate: String,
+        ttsText: String?,
+        ttsDelayMs: Long = 0L   // ✅ 지연 추가 (기본 0 = 즉시)
+    ) {
         val now = System.currentTimeMillis()
         val name = "incident_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(now))}.mp4"
-        val textToRead = "$violationType 감지되었습니다."
+
+        val toSpeak = ttsText ?: "$violationType 감지되었습니다."
         if (ChakHaengApplication.ttsReady) {
-            ChakHaengApplication.tts.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
+            if (ttsDelayMs > 0L) {
+                // ✅ 지연 재생
+                lifecycleScope.launch {
+                    delay(ttsDelayMs)
+                    ChakHaengApplication.tts.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
+                }
+            } else {
+                // 기존 즉시 재생
+                ChakHaengApplication.tts.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null, "FCM_TTS")
+            }
         } else {
             Log.w(TAG, "TTS 준비 안 됨, 음성 출력 건너뜀")
         }
-        // 넣어줘 상윤아
-        pendingCapture = CaptureRequest(eventTs = now, preMs = preMs, postMs = postMs, displayName = name, violationType = violationType, plate = plate)
+
+        pendingCapture = CaptureRequest(
+            eventTs = now,
+            preMs = preMs,
+            postMs = postMs,
+            displayName = name,
+            violationType = violationType,
+            plate = plate
+        )
         updateNotification("사건 감지! 후단 ${postMs / 1000}s 수집 중…")
     }
 

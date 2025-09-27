@@ -57,6 +57,8 @@ object ViolationDataMapper {
         "차선침범" -> ViolationType.LANE
         "무번호판" -> ViolationType.NO_PLATE
         "헬멧 미착용" -> ViolationType.NO_HELMET
+        "헬멧 미착용·중앙선 침범" -> ViolationType.NO_HELMET_AND_LANE
+        "킥보드 2인이상·헬멧 미착용" -> ViolationType.NO_HELMET_AND_LOVE_BUG
         else -> ViolationType.OTHERS
     }
 }

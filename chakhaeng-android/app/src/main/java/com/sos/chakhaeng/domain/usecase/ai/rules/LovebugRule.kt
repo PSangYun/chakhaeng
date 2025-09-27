@@ -58,7 +58,10 @@ class LovebugRule @Inject constructor(
             if (bestKb != null) {
                 val kb = bestKb!!
                 val conf = min(kb.score, lb.score)
-                val evt = ViolationEvent(type = "킥보드 2인이상", confidence = conf)
+                val evt = ViolationEvent(
+                    type = "킥보드 2인이상·헬멧 미착용",
+                    confidence = conf,
+                    announceTypes = listOf("킥보드 2인이상", "헬멧 미착용"))
                 val region = union(kb.box, lb.box)
                 if (throttle.allow(evt, region)) events += evt
             }
