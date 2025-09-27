@@ -7,13 +7,13 @@ import com.sos.chakhaeng.core.ai.Detector
 import com.sos.chakhaeng.core.ai.InputRange
 import com.sos.chakhaeng.core.ai.ModelSpec
 import com.sos.chakhaeng.core.ai.MultiModelInterpreterDetector
-import com.sos.chakhaeng.core.ai.Normalization
 import com.sos.chakhaeng.core.camera.YuvToRgbConverter
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
 import javax.inject.Singleton
 
 @Module
@@ -22,7 +22,10 @@ object AIModule {
 
     @Provides
     @Singleton
-    fun provideDetector(@ApplicationContext context: Context): Detector {
+    fun provideDetector(
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope
+    ): Detector {
         val specs = listOf(
             ModelSpec(
                 key = "final_best",
@@ -36,16 +39,18 @@ object AIModule {
             )
         )
 
-        val backend = Backend.GPU // 필요 시 Backend.NNAPI / Backend.GPU
+        val backend = Backend.GPU // 필요 시 Backend.CPU / NNAPI
 
         return MultiModelInterpreterDetector(
             context = context,
             backend = backend,
-            specs = specs
+            specs = specs,
+            scope = scope // 🔑 ApplicationScope 전달
         )
     }
 
     @Provides
     @Singleton
-    fun provideYuv(@ApplicationContext context: Context): YuvToRgbConverter = YuvToRgbConverter(context)
+    fun provideYuv(@ApplicationContext context: Context): YuvToRgbConverter =
+        YuvToRgbConverter(context)
 }

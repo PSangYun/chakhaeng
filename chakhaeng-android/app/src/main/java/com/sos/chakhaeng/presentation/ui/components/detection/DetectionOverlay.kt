@@ -1,6 +1,8 @@
 package com.sos.chakhaeng.presentation.ui.components.detection
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -14,10 +16,12 @@ import com.sos.chakhaeng.core.ai.Detection
 import com.sos.chakhaeng.core.ai.TrackObj
 import kotlin.math.max
 
+
+private const val TAG = "Lane_Overlay"
 @Composable
 fun DetectionOverlay(
     detections: List<Detection>,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.fillMaxSize(),
 ) {
     LaunchedEffect(detections) {
         // 원본 좌표 로그(스팸 방지로 상위 5개)
@@ -37,14 +41,14 @@ fun DetectionOverlay(
 
             // 1) 1차 스케일(정규화 가정)
             var l0 = if (isPixel) d.box.left else d.box.left * viewW
-            var t0 = if (isPixel) d.box.top  else d.box.top  * viewH
+            var t0 = if (isPixel) d.box.top else d.box.top * viewH
             var r0 = if (isPixel) d.box.right else d.box.right * viewW
             var b0 = if (isPixel) d.box.bottom else d.box.bottom * viewH
 
             // 3) 좌표 정렬/클램프
-            val left   = minOf(l0, r0).coerceIn(0f, viewW)
-            val right  = maxOf(l0, r0).coerceIn(0f, viewW)
-            val top    = minOf(t0, b0).coerceIn(0f, viewH)
+            val left = minOf(l0, r0).coerceIn(0f, viewW)
+            val right = maxOf(l0, r0).coerceIn(0f, viewW)
+            val top = minOf(t0, b0).coerceIn(0f, viewH)
             val bottom = maxOf(t0, b0).coerceIn(0f, viewH)
             val boxW = right - left
             val boxH = bottom - top
@@ -70,7 +74,12 @@ fun DetectionOverlay(
                         isAntiAlias = true
                         setShadowLayer(4f, 0f, 0f, android.graphics.Color.BLACK)
                     }
-                    c.nativeCanvas.drawText("${d.label} ${(d.score * 100).toInt()}%", left, textY, p)
+                    c.nativeCanvas.drawText(
+                        "${d.label} ${(d.score * 100).toInt()}%",
+                        left,
+                        textY,
+                        p
+                    )
                 }
             }
         }

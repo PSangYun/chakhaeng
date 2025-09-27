@@ -1,5 +1,6 @@
 package com.sos.chakhaeng.presentation.ui.components.detection
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -10,10 +11,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import com.sos.chakhaeng.core.ai.TrackObj
+import kotlin.text.toFloat
+import kotlin.times
 
 @Composable
 fun TrackingOverlay(
     tracks: List<TrackObj>,
+    coords: List<List<Pair<Float, Float>>> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier)
@@ -46,6 +50,19 @@ fun TrackingOverlay(
                 val label = "ID:${t.id} ${t.label}"
                 val y = if (top < 30f) top + 30f else top - 8f
                 c.nativeCanvas.drawText(label, left, y, p)
+            }
+        }
+        coords.forEach { lane ->
+            // lane은 List<Pair<Int, Int>>
+            lane.zipWithNext { p1, p2 ->
+                android.util.Log.d("Overlay", "lane point: x=${p1.first}, y=${p1.second}, " +
+                        "scaled=(${p1.first * viewW}, ${p1.second * viewH}), view=(${viewW}x$viewH)")
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(p1.first.toFloat() * viewW, p1.second.toFloat() * viewH),
+                    end   = Offset(p2.first.toFloat() * viewW, p2.second.toFloat() * viewH),
+                    strokeWidth = 12f
+                )
             }
         }
     }
