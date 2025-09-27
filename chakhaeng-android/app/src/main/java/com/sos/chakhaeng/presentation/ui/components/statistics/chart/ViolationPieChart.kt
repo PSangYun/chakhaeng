@@ -23,8 +23,10 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sos.chakhaeng.domain.model.ViolationType
 import com.sos.chakhaeng.domain.model.statistics.ViolationTypeStatistic
 import com.sos.chakhaeng.presentation.theme.NEUTRAL100
 import com.sos.chakhaeng.presentation.theme.NEUTRAL400
@@ -52,6 +54,8 @@ fun ViolationPieChart(
             "WRONG_WAY" to PieChartColors.WRONG_WAY,
             "NO_PLATE" to PieChartColors.NO_PLATE,
             "NO_HELMET" to PieChartColors.NO_HELMET,
+            "NO_HELMET_AND_LANE" to PieChartColors.LANE,
+            "NO_HELMET_AND_LOVE_BUG" to PieChartColors.WRONG_WAY,
             "OTHERS" to PieChartColors.OTHERS
         )
     }
@@ -175,6 +179,7 @@ private fun CleanLegendItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -189,7 +194,9 @@ private fun CleanLegendItem(
                 Text(
                     text = label,
                     style = chakhaengTypography().bodyMedium,
+                    overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.Medium,
+                    maxLines = 1
                 )
             }
 
