@@ -122,6 +122,8 @@ public class ViolationService {
             case "WRONG_WAY" -> "역주행";
             case "NO_PLATE" -> "무번호판";
             case "NO_HELMET" -> "헬멧 미착용";
+            case "NO_HELMET_AND_LANE" -> "헬멧 미착용·중앙선 침범";
+            case "NO_HELMET_AND_LOVE_BUG" -> "킥보드 2인이상·헬멧 미착용";
             case "LOVE_BUG" -> "킥보드 2인 이상";
             default -> "위반";
         };
