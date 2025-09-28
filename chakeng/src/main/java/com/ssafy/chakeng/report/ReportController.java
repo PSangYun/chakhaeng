@@ -26,7 +26,7 @@ public class ReportController {
 
     private final ReportService reportService;
 
-    private final String webhookUrl = "https://meeting.ssafy.com/hooks/57qyur84a3nzupbrxxsbghkcjy";
+    private final String webhookUrl = "https://meeting.ssafy.com/hooks/u9g44idunjbnmgux9ikrewb3ah";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
