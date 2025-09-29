@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:16
+    container_name: chakeng-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      TZ: ${TZ}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+      - ./db/backup:/backup
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5431:5432"
+    networks: [ appnet ]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chakeng-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+
+      # DB 연결
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
+      # OAuth2
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_ID}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_SECRET}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_MINUTES: ${JWT_ACCESS_MINUTES}
+      JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS}
+
+      # Springdoc/Swagger
+      SPRINGDOC_API_DOCS_ENABLED: ${SPRINGDOC_API_DOCS_ENABLED}
+      SPRINGDOC_SWAGGER_UI_ENABLED: ${SPRINGDOC_SWAGGER_UI_ENABLED}
+      SPRINGDOC_SWAGGER_UI_OPERATIONSSORTER: ${SPRINGDOC_SWAGGER_UI_OPERATIONSSORTER}
+      SPRINGDOC_SWAGGER_UI_TAGSSORTER: ${SPRINGDOC_SWAGGER_UI_TAGSSORTER}
+
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks: [ appnet ]
+
+volumes:
+  db_data:
+
+networks:
+  appnet:
+    driver: bridge
