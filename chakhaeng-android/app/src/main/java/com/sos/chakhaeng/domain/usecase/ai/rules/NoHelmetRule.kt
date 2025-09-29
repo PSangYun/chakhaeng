@@ -14,10 +14,10 @@ import javax.inject.Inject
 import kotlin.math.min
 
 data class NoHelmetConfig(
-    val minPerson: Float = 0.40f,
-    val minVehicle: Float = 0.45f,
+    val minPerson: Float = 0.35f,
+    val minVehicle: Float = 0.35f,
     val minHelmet: Float = 0.50f,
-    val minNoHelmet: Float = 0.55f,
+    val minNoHelmet: Float = 0.40f,
     val pvIou: Float = 0.20f,
     val pvCenterBoost: Float = 0.65f,
     val headOverlap: Float = 0.30f,
